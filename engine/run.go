@@ -26,6 +26,8 @@ var (
 	FixDt                   float64                      // fixed time step?
 	stepper                 Stepper                      // generic step, can be EulerStep, HeunStep, etc
 	solvertype              int
+	// Added for LLB solvers
+	LLBeq			= false
 )
 
 func init() {
@@ -63,6 +65,12 @@ const (
 	RUNGEKUTTA     = 4
 	DORMANDPRINCE  = 5
 	FEHLBERG       = 6
+	
+	LLB            = 26
+        LLBJH          = 27
+        LLB3T          = 28
+	
+	
 )
 
 func SetSolver(typ int) {
@@ -87,6 +95,16 @@ func SetSolver(typ int) {
 		stepper = new(RK45DP)
 	case FEHLBERG:
 		stepper = new(RK56)
+//      LLB Solvers		
+	case LLB:
+		stepper = new(HeunLLB)
+		LLBeq=true
+	case LLBJH:
+                stepper = new(HeunLLBJH)
+		LLBeq=true
+	case LLB3T:
+                stepper = new(HeunLLB3T)
+		LLBeq=true 		
 	}
 	solvertype = typ
 }
@@ -96,6 +114,29 @@ func torqueFn(dst *data.Slice) {
 	SetTorque(dst)
 	NEvals++
 }
+
+////////////////////////////////////   Added for LLB
+
+func torqueFnLLB(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
+	SetTorqueLLB(dst,hth1,hth2)
+	NEvals++
+}
+
+////////////////////////////////////   Added for LLBJH
+
+func torqueFnLLBJH(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
+	SetTorqueLLBJH(dst,hth1,hth2)
+	NEvals++
+}
+
+
+////////////////////////////////////   Added for LLB 3T
+
+func torqueFnLLB3T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
+	SetTorqueLLB3T(dst,hth1,hth2)
+	NEvals++
+}
+
 
 // returns number of torque evaluations
 func getNEval() int {
