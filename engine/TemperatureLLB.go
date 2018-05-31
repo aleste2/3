@@ -82,15 +82,15 @@ func Start3T() {
 func SetM() {
 	TCurie := TCurie.MSlice()
 	defer TCurie.Recycle()
-	if solvertype==6 {
+	if solvertype==26 {
 	Temp := Temp.MSlice()
 	defer Temp.Recycle()
 	cuda.InitmLLB(M.Buffer(),Temp,TCurie)
 	}
-	if solvertype==7 {
+	if solvertype==27 {
 	cuda.InitmLLBJH(M.Buffer(),TempJH.temp,TCurie)
 	}
-	if solvertype==8 {
+	if solvertype==28 {
 	cuda.InitmLLBJH(M.Buffer(),Ts.temp,TCurie)
 	}
 }
