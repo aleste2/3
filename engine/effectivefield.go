@@ -15,7 +15,9 @@ func SetEffectiveField(dst *data.Slice) {
 	AddAnisotropyField(dst)
 	B_ext.AddTo(dst)
 	if !relaxing {
-		B_therm.AddTo(dst)
+                if LLBeq!=true {   // Needed not to add two times thermal noises in the case of LLB equation
+                  B_therm.AddTo(dst)
+                 }
 	}
 	AddCustomField(dst)
 }
