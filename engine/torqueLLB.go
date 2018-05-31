@@ -3,7 +3,6 @@ package engine
 import (
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
-	"github.com/mumax/3/util"
 )
 
 // For LLB the same functions as for LLG
