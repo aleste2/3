@@ -127,7 +127,6 @@ func (b *thermField) LLBupdate() {
 	defer temp.Recycle()
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
-	Noise_scale:=1.0
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
 		if (solvertype<27) {
