@@ -66,6 +66,93 @@ type LocalTemp struct {
 	name string
 }
 
+// Update B_therm for LLB
+
+func (b *thermField) LLBAddTo(dst *data.Slice) {
+	if !Temp.isZero() {
+		b.update()
+		cuda.Add(dst, dst, b.noise)
+	}
+}
+
+func (b *thermField) LLBupdate() {
+	// we need to fix the time step here because solver will not yet have done it before the first step.
+	// FixDt as an lvalue that sets Dt_si on change might be cleaner.
+
+	if FixDt != 0 {
+		Dt_si = FixDt
+	}
+
+	if b.generator == 0 {
+		b.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		b.generator.SetSeed(b.seed)
+	}
+	if b.noise == nil {
+		b.noise = cuda.NewSlice(b.NComp(), b.Mesh().Size())
+		// when noise was (re-)allocated it's invalid for sure.
+		B_therm.step = -1
+		B_therm.dt = -1
+	}
+
+	if Temp.isZero() {
+		cuda.Memset(b.noise, 0, 0, 0)
+		b.step = NSteps
+		b.dt = Dt_si
+		return
+	}
+
+	// keep constant during time step
+	if NSteps == b.step && Dt_si == b.dt && solvertype<6 {
+		return
+	}
+
+	if FixDt == 0 {
+		util.Fatal("Finite temperature requires fixed time step. Set FixDt != 0.")
+	}
+
+	N := Mesh().NCell()
+	k2_VgammaDt := 2 * mag.Kb / (GammaLL * cellVolume() * Dt_si)
+	noise := cuda.Buffer(1, Mesh().Size())
+	defer cuda.Recycle(noise)
+
+	const mean = 0
+	const stddev = 1
+	dst := b.noise
+	ms := Msat.MSlice()
+	defer ms.Recycle()
+	temp := Temp.MSlice()
+	defer temp.Recycle()
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+	Noise_scale:=1.0
+	if (JHThermalnoise==false){
+	Noise_scale=0.0} else {
+	Noise_scale=1.0
+	}  // To cancel themal noise if needed
+	for i := 0; i < 3; i++ {
+		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
+		if (solvertype<27) {
+                               cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha)
+                               } else{
+				if (solvertype==27){
+			       		TempJH.update()
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, TempJH.temp, alpha)
+				}else
+				{
+			       		Te.update()
+			       		Tl.update()
+			       		Ts.update()
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, Ts.temp, alpha)
+				}
+                               }
+	}
+
+	b.step = NSteps
+	b.dt = Dt_si
+}
+
+
+
 func StartJH() {
 	TempJH.JHSetLocalTemp()
 }
