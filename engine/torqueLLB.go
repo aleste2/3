@@ -57,9 +57,9 @@ func SetLLBTorqueJH(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	defer Msat.Recycle()
 
   cuda.Zero(hth1)       
-  B_therm.AddTo(hth1)
+  B_therm.LLBAddTo(hth1)
   cuda.Zero(hth2)       
-  B_therm.AddTo(hth2)
+  B_therm.LLBAddTo(hth2)
 	if Precess {
 		cuda.LLBTorqueJH(dst, M.Buffer(), dst, TempJH.temp,alpha,TCurie,Msat,hth1,hth2) // overwrite dst with torque
 	} else {
@@ -87,9 +87,9 @@ func SetLLBTorque3T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	defer Msat.Recycle()
 
   cuda.Zero(hth1)       
-  B_therm.AddTo(hth1)
+  B_therm.LLBAddTo(hth1)
   cuda.Zero(hth2)       
-  B_therm.AddTo(hth2)
+  B_therm.LLBAddTo(hth2)
 	if Precess {
 		cuda.LLBTorqueJH(dst, M.Buffer(), dst, Ts.temp,alpha,TCurie,Msat,hth1,hth2) // overwrite dst with torque
 	} else {
