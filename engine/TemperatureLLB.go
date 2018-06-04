@@ -97,7 +97,7 @@ func (b *thermField) LLBupdate() {
 		B_therm.dt = -1
 	}
 
-	if Temp.isZero() {
+	if JHThermalnoise==false {
 		cuda.Memset(b.noise, 0, 0, 0)
 		b.step = NSteps
 		b.dt = Dt_si
@@ -128,24 +128,20 @@ func (b *thermField) LLBupdate() {
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
 	Noise_scale:=1.0
-	if (JHThermalnoise==false){
-	Noise_scale=0.0} else {
-	Noise_scale=1.0
-	}  // To cancel themal noise if needed
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
 		if (solvertype<27) {
-                               cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha)
+                               cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt, ms, temp, alpha)
                                } else{
 				if (solvertype==27){
 			       		TempJH.update()
-                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, TempJH.temp, alpha)
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha)
 				}else
 				{
 			       		Te.update()
 			       		Tl.update()
 			       		Ts.update()
-                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, Ts.temp, alpha)
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Ts.temp, alpha)
 				}
                                }
 	}
