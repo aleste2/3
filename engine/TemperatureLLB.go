@@ -73,7 +73,7 @@ type LocalTemp struct {
 
 func (b *thermField) LLBAddTo(dst *data.Slice) {
 	if !Temp.isZero() {
-		b.update()
+		b.LLBupdate()
 		cuda.Add(dst, dst, b.noise)
 	}
 }
