@@ -33,27 +33,17 @@ func (_ *HeunLLB3T) Step() {
         // Rewrite to calculate m step 1 
 	torqueFnLLB3T(dy0,Hth1,Hth2)
 	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
-        //cuda.Evaldt03T(temp0e,dtemp0e,temp0l,dtemp0l,temp0s,dtemp0s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
-	//cuda.Madd2(temp0e, temp0e, dtemp0e, 1, dt/float32(GammaLL)) // temp = temp + dt * dtemp0 electron
-	//cuda.Madd2(temp0l, temp0l, dtemp0l, 1, dt/float32(GammaLL)) // temp = temp + dt * dtemp0 lattice
-	//cuda.Madd2(temp0s, temp0s, dtemp0s, 1, dt/float32(GammaLL)) // temp = temp + dt * dtemp0 spins
+
         
 
 	// stage 2
 	dy := cuda.Buffer(3, y.Size())
 	defer cuda.Recycle(dy)
 
-	//dtempe := cuda.Buffer(1, temp0e.Size())
-	//defer cuda.Recycle(dtempe)
-	//dtempl := cuda.Buffer(1, temp0l.Size())
-	//defer cuda.Recycle(dtempl)
-	//dtemps := cuda.Buffer(1, temp0s.Size())
-	//defer cuda.Recycle(dtemps)
 	Time += Dt_si
 
         // Rewrite to calculate step 2
 	torqueFnLLB3T(dy,Hth1,Hth2)
-        //cuda.Evaldt03T(temp0e,dtempe,temp0l,dtempl,temp0s,dtemps,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
 
 	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
 	// adjust next time step
@@ -68,10 +58,6 @@ func (_ *HeunLLB3T) Step() {
 			rk4Step3T(dt/float32(substeps)/float32(GammaLL))
 		}
 
-		//cuda.Madd3(temp0e, temp0e, dtempe, dtemp0e, 1, 0.5*dt/float32(GammaLL), -0.5*dt/float32(GammaLL)) //****
-		//cuda.Madd3(temp0l, temp0l, dtempl, dtemp0l, 1, 0.5*dt/float32(GammaLL), -0.5*dt/float32(GammaLL)) //****
-		//cuda.Madd3(temp0s, temp0s, dtemps, dtemp0s, 1, 0.5*dt/float32(GammaLL), -0.5*dt/float32(GammaLL)) //****
-		//M.normalizeLLB()   // not in LLB!!
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
 		setLastErr(err)
@@ -82,9 +68,6 @@ func (_ *HeunLLB3T) Step() {
 		Time -= Dt_si
 		cuda.Madd2(y, y, dy0, 1, -dt)  //****
 		// nothing to do with temperatures now
-		//cuda.Madd2(temp0e, temp0e, dtemp0e, 1, -dt/float32(GammaLL)) // temp = temp - dt * dtemp0
-		//cuda.Madd2(temp0l, temp0l, dtemp0l, 1, -dt/float32(GammaLL)) // temp = temp - dt * dtemp0
-		//cuda.Madd2(temp0s, temp0s, dtemp0s, 1, -dt/float32(GammaLL)) // temp = temp - dt * dtemp0
 		NUndone++
 		adaptDt(math.Pow(MaxErr/err, 1./3.))
 	}
