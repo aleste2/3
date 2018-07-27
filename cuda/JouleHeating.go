@@ -34,7 +34,7 @@ func Evaldt0(temp0, dt0, m *data.Slice,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext ,J
 
 // Thermal equation for 3T model
 
-func Evaldt03T(temp0e, dt0e,temp0l, dt0l,temp0s, dt0s, m *data.Slice,Ke,Ce,Kl,Cl,Ks,Cs,Gel,Ges,Gls,Dth,Tsubsth,Tausubsth,res,Qext ,J MSlice,mesh *data.Mesh){
+func Evaldt03T(temp0e, dt0e,temp0l, dt0l,temp0s, dt0s, m *data.Slice,Ke,Ce,Kl,Cl,Ks,Cs,Gel,Ges,Gls,Dth,Tsubsth,Tausubsth,res,Qext,CD ,J MSlice,mesh *data.Mesh){
 	c := mesh.CellSize()
 	N := mesh.Size()
 //	pbc := mesh.PBC_code()
@@ -61,6 +61,9 @@ func Evaldt03T(temp0e, dt0e,temp0l, dt0l,temp0s, dt0s, m *data.Slice,Ke,Ce,Kl,Cl
 		Tausubsth.DevPtr(0), Tausubsth.Mul(0),
 		res.DevPtr(0), res.Mul(0),
 		Qext.DevPtr(0), Qext.Mul(0),
+		CD.DevPtr(X), CD.Mul(X),
+		CD.DevPtr(Y), CD.Mul(Y),
+		CD.DevPtr(Z), CD.Mul(Z),
 		J.DevPtr(X), J.Mul(X),
 		J.DevPtr(Y), J.Mul(Y),
 		J.DevPtr(Z), J.Mul(Z),
