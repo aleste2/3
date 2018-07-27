@@ -119,6 +119,9 @@ func rk4Step3T(dt float32) {
 	defer Qext.Recycle()
 	j := J.MSlice()
 	defer j.Recycle()
+	
+	CD := CD.MSlice()
+	defer CD.Recycle()
 
 	// backup temps
 	t0e := cuda.Buffer(1, size)
@@ -149,28 +152,28 @@ func rk4Step3T(dt float32) {
 	defer cuda.Recycle(k4s)
 
 	// stage 1
-        cuda.Evaldt03T(te,k1e,tl,k1l,ts,k1s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+        cuda.Evaldt03T(te,k1e,tl,k1l,ts,k1s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
 
 	// stage 2
 	cuda.Madd2(te, te, k1e, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 	cuda.Madd2(tl, tl, k1l, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 	cuda.Madd2(ts, ts, k1s, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 
-        cuda.Evaldt03T(te,k2e,tl,k2l,ts,k2s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+        cuda.Evaldt03T(te,k2e,tl,k2l,ts,k2s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
 
 	// stage 3
 	cuda.Madd2(te, t0e, k2e, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 	cuda.Madd2(tl, t0l, k2l, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 	cuda.Madd2(ts, t0s, k2s, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 
-        cuda.Evaldt03T(te,k3e,tl,k3l,ts,k3s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+        cuda.Evaldt03T(te,k3e,tl,k3l,ts,k3s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
 
 	// stage 4
 	cuda.Madd2(te, t0e, k3e, 1, 1.*dt) // m = m0*1 + k3*1
 	cuda.Madd2(tl, t0l, k3l, 1, 1.*dt) // m = m0*1 + k3*1
 	cuda.Madd2(ts, t0s, k3s, 1, 1.*dt) // m = m0*1 + k3*1
 
-        cuda.Evaldt03T(te,k4e,tl,k4l,ts,k4s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+        cuda.Evaldt03T(te,k4e,tl,k4l,ts,k4s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
 
 	madd5(te, t0e, k1e, k2e, k3e, k4e, 1, (1./6.)*dt, (1./3.)*dt, (1./3.)*dt, (1./6.)*dt)
 	madd5(tl, t0l, k1l, k2l, k3l, k4l, 1, (1./6.)*dt, (1./3.)*dt, (1./3.)*dt, (1./6.)*dt)
