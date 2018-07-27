@@ -24,6 +24,9 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
                 float* __restrict__ Tausubsth_, float Tausubsth_mul,
                 float* __restrict__ res_, float res_mul,
                 float* __restrict__ Qext_, float Qext_mul,
+	        float* __restrict__ cdx_, float cdx_mul,
+                float* __restrict__ cdy_, float cdy_mul,
+                float* __restrict__ cdz_, float cdz_mul,
                 float* __restrict__ jx_, float jx_mul,
                 float* __restrict__ jy_, float jy_mul,
                 float* __restrict__ jz_, float jz_mul,
@@ -60,6 +63,7 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     float Gel = amul(Gel_, Gel_mul, i);
     float Ges = amul(Ges_, Ges_mul, i);
     float Gls = amul(Gls_, Gls_mul, i);
+    float3 cd = vmul(cdx_, cdy_, cdz_, cdx_mul, cdy_mul, cdz_mul, i);
 
     float Tsubsth = amul(Tsubsth_, Tsubsth_mul, i);
     float Tausubsth = amul(Tausubsth_, Tausubsth_mul, i);
@@ -190,7 +194,18 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 
 //External sources on electron?
     dt0l_[i]+=dot(J,J)*res;          //Joule Heating
-    dt0e_[i]+=Qext;                  //External Heating source in W/m3
+// Circular dichroism
+    float alphaD=dot(cd,cd);
+    if (alphaD==0){
+	    dt0e_[i]+=Qext;                  //External Heating source in W/m3 without circular dichoism
+	} else
+	{
+	float norm1=sqrt(mm);
+	float norm2=sqrt(alphaD);
+	float pe = dot(m0,cd);
+	float scaleCD=1.0+(pe/norm1/norm2-1.0)/2.0*norm2;
+	dt0e_[i]+=Qext*scaleCD;
+	}
 
 // Missing constants
     dt0e_[i]=dt0e_[i]/Ce;
