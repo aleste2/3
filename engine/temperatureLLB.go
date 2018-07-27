@@ -36,6 +36,9 @@ var (
 	Gel    = NewScalarParam("Gel", "W/(m3·K)", "Transfer electron-lattice")
 	Ges    = NewScalarParam("Ges", "W/(m3·K)", "Transfer electron-spin")
 	Gls    = NewScalarParam("Gls", "W/(m3·K)", "Transfer lattice-spin")
+	
+	// For circular dichroism (only 3T model)
+	CD	=NewVectorParam("CD", "", "Laser beam direction and Circular Dichroism magnitude")
 )
 
 func init() {
