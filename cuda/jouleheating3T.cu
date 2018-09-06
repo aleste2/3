@@ -202,7 +202,7 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 	{
 	float norm1=sqrt(mm);
 	float norm2=sqrt(alphaD);
-	float pe = dot(m0,cd);
+	float pe = -1.0*dot(m0,cd);		// Inversion of sign to lead to the same results as IFE
 	float scaleCD=1.0+(pe/norm1/norm2-1.0)/2.0*norm2;
 	dt0e_[i]+=Qext*scaleCD;
 	}
