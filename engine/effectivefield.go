@@ -13,6 +13,7 @@ func SetEffectiveField(dst *data.Slice) {
 	SetDemagField(dst)    // set to B_demag...
 	AddExchangeField(dst) // ...then add other terms
 	AddAnisotropyField(dst)
+	AddMagnetoelasticField(dst)
 	B_ext.AddTo(dst)
 	if !relaxing {
                 if LLBeq!=true {   // Needed not to add two times thermal noises in the case of LLB equation
