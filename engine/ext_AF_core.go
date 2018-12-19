@@ -30,9 +30,9 @@ var (
 	AnisC22     = NewVectorParam("anisC22", "", "Cubic anisotorpy directon #2")
 	M1 magnetization // reduced magnetization (unit length)
 	M2 magnetization // reduced magnetization (unit length)
-	Msat1        = NewScalarParam("Msat1", "A/m", "Saturation magnetization", &lex21, &din21, &dbulk21)
+	Msat1        = NewScalarParam("Msat1", "A/m", "Saturation magnetization")
 	M_full1      = NewVectorField("m_full1", "A/m", "Unnormalized magnetization", SetMFull1)
-	Msat2        = NewScalarParam("Msat2", "A/m", "Saturation magnetization", &lex22, &din22, &dbulk22)
+	Msat2        = NewScalarParam("Msat2", "A/m", "Saturation magnetization")
 	M_full2      = NewVectorField("m_full2", "A/m", "Unnormalized magnetization", SetMFull2)
 	GammaLL1                 float64 = 1.7595e11 // Gyromagnetic ratio of spins, in rad/Ts
 	GammaLL2                 float64 = 1.7595e11 // Gyromagnetic ratio of spins, in rad/Ts
