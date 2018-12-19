@@ -61,8 +61,8 @@ func AddExchangeFieldAF(dst1,dst2 *data.Slice) {
 	}
 
 	//Sublattice 2
-	inter = !Dind1.isZero()
-	bulk = !Dbulk1.isZero()
+	inter = !Dind2.isZero()
+	bulk = !Dbulk2.isZero()
 	ms2:=Msat2.MSlice()
 	defer ms2.Recycle()
 	switch {
