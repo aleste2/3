@@ -92,3 +92,4 @@ addexchangeAfll(float* __restrict__ dst1x, float* __restrict__ dst1y, float* __r
     dst1y[I] += B.y*invMs1;
     dst1z[I] += B.z*invMs1;
     }
+}
