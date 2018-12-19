@@ -9,7 +9,8 @@ import (
 
 var M magnetization // reduced magnetization (unit length)
 
-func init() { DeclLValue("m", &M, `Reduced magnetization (unit length)`) }
+func init() { DeclLValue("m", &M, `Reduced magnetization (unit length)`)
+	    		M.name="m" }  // Modified for AF solvers
 
 // Special buffered quantity to store magnetization
 // makes sure it's normalized etc.
@@ -19,7 +20,7 @@ type magnetization struct {
 
 func (m *magnetization) Mesh() *data.Mesh    { return Mesh() }
 func (m *magnetization) NComp() int          { return 3 }
-func (m *magnetization) Name() string        { return "m" }
+func (m *magnetization) Name() string        { return m.name }    // Modified for AF solvers
 func (m *magnetization) Unit() string        { return "" }
 func (m *magnetization) Buffer() *data.Slice { return m.buffer_ } // todo: rename Gpu()?
 
@@ -28,7 +29,7 @@ func (m *magnetization) SetValue(v interface{})  { m.SetInShape(nil, v.(Config))
 func (m *magnetization) InputType() reflect.Type { return reflect.TypeOf(Config(nil)) }
 func (m *magnetization) Type() reflect.Type      { return reflect.TypeOf(new(magnetization)) }
 func (m *magnetization) Eval() interface{}       { return m }
-func (m *magnetization) average() []float64      { return sAverageMagnet(M.Buffer()) }
+func (m *magnetization) average() []float64      { return sAverageMagnet(m.Buffer()) }  // Previouly M.buffer (bug?)
 func (m *magnetization) Average() data.Vector    { return unslice(m.average()) }
 func (m *magnetization) normalize()              { cuda.Normalize(m.Buffer(), geometry.Gpu()) }
 
