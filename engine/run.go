@@ -26,8 +26,11 @@ var (
 	FixDt                   float64                      // fixed time step?
 	stepper                 Stepper                      // generic step, can be EulerStep, HeunStep, etc
 	solvertype              int
-	// Added for LLB solvers
+	// Added flags for for LLB and AF solvers
 	LLBeq			= false
+	LLBJHf			= false
+	LLB3Tf			= false
+	AFf			= false
 )
 
 func init() {
@@ -69,7 +72,9 @@ const (
 	LLB            = 26
         LLBJH          = 27
         LLB3T          = 28
-	
+
+	ANTIFERRORK4   =100
+	ANTIFERRORK23  =101	
 	
 )
 
@@ -78,6 +83,13 @@ func SetSolver(typ int) {
 	if stepper != nil {
 		stepper.Free()
 	}
+	
+	// Flags for temperature
+	LLBeq= false
+	LLBJHf= false
+	LLB3Tf= false
+	AFf=false
+	
 	switch typ {
 	default:
 		util.Fatalf("SetSolver: unknown solver type: %v", typ)
@@ -102,9 +114,22 @@ func SetSolver(typ int) {
 	case LLBJH:
                 stepper = new(HeunLLBJH)
 		LLBeq=true
+		LLBJHf= true
 	case LLB3T:
                 stepper = new(HeunLLB3T)
-		LLBeq=true 		
+		LLBeq=true 
+		LLB3Tf= true
+
+// Antiferro solvers
+		
+	case ANTIFERRORK4:
+                stepper = new(AntiferroRK4)
+		AFf=true
+	case ANTIFERRORK23:
+                stepper = new(AntiferroRK23)
+		AFf=true		
+		
+		
 	}
 	solvertype = typ
 }
