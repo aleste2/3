@@ -55,15 +55,14 @@ func AddExchangeFieldAF(dst1,dst2 *data.Slice) {
 	case inter && !bulk:
 		cuda.AddDMI(dst1, M1.Buffer(), lex21.Gpu(), din21.Gpu(),ms1, regions.Gpu(), M.Mesh(),OpenBC) // dmi+exchange
 	case bulk && !inter:
-		util.AssertMsg(allowUnsafe || (Msat1.IsUniform() && Aex1.IsUniform() && Dbulk1.IsUniform()), "DMI: Msat, Aex, Dex must be uniform")
 		cuda.AddDMIBulk(dst1, M1.Buffer(), lex21.Gpu(), dbulk21.Gpu(),ms1, regions.Gpu(), M.Mesh(),OpenBC) // dmi+exchange
 	case inter && bulk:
 		util.Fatal("Cannot have induced and interfacial DMI at the same time")
 	}
 
 	//Sublattice 2
-	inter := !Dind1.isZero()
-	bulk := !Dbulk1.isZero()
+	inter = !Dind1.isZero()
+	bulk = !Dbulk1.isZero()
 	ms2:=Msat2.MSlice()
 	defer ms2.Recycle()
 	switch {
@@ -72,19 +71,13 @@ func AddExchangeFieldAF(dst1,dst2 *data.Slice) {
 	case inter && !bulk:
 		cuda.AddDMI(dst2, M2.Buffer(), lex22.Gpu(), din22.Gpu(),ms2, regions.Gpu(), M.Mesh(),OpenBC) // dmi+exchange
 	case bulk && !inter:
-		util.AssertMsg(allowUnsafe || (Msat2.IsUniform() && Aex2.IsUniform() && Dbulk2.IsUniform()), "DMI: Msat, Aex, Dex must be uniform")
 		cuda.AddDMIBulk(dst2, M2.Buffer(), lex22.Gpu(), dbulk22.Gpu(),ms2, regions.Gpu(), M.Mesh(),OpenBC) // dmi+exchange
 	case inter && bulk:
 		util.Fatal("Cannot have induced and interfacial DMI at the same time")
 	}
-
 	
-	ms1 := Msat1.MSlice()
-	defer ms1.Recycle()
-	ms2 := Msat2.MSlice()
-	defer ms2.Recycle()
 	bex := Bex.MSlice()
 	defer bex.Recycle()
 	cuda.AddExchangeAFCell(dst1,dst2,M1.Buffer(),M2.Buffer(),ms1,ms2,bex)
-	cuda.AddExchangeAFll(dst1,dst2,M1.Buffer(),M2.Buffer(),ms1,ms2,lexll.Gpull(), regions.Gpu(), M.Mesh())
+	cuda.AddExchangeAFll(dst1,dst2,M1.Buffer(),M2.Buffer(),ms1,ms2,lexll.Gpu(), regions.Gpu(), M.Mesh())
 }
