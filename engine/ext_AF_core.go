@@ -118,11 +118,13 @@ func torqueFnAF(dst1,dst2 *data.Slice) {
 	SetDemagField(dst1)
 	data.Copy(dst2, dst1)
 	} else {   // Just for code debug
+	data.Copy(M.Buffer(), M1.Buffer())
 	*Msat=*Msat1
 	SetDemagField(dst1)
 	data.Copy(M.Buffer(), M2.Buffer())
 	*Msat=*Msat2
 	SetDemagField(dst2)
+	}
 	}
 	AddExchangeFieldAF(dst1,dst2)
 	AddAnisotropyFieldAF(dst1,dst2)
