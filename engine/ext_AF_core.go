@@ -212,9 +212,13 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 			epsPrime := EpsilonPrime.MSlice()
 			defer epsPrime.Recycle()
 			cuda.AddSlonczewskiTorque2(dst1, M1.Buffer(),
-				msat1, j, fixedP, alpha, pol1, lambda, epsPrime, Mesh())
+				msat1, j, fixedP, alpha, pol1, lambda, epsPrime, 
+				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+				Mesh())
 			cuda.AddSlonczewskiTorque2(dst2, M2.Buffer(),
-				msat2, j, fixedP, alpha, pol2, lambda, epsPrime, Mesh())
+				msat2, j, fixedP, alpha, pol2, lambda, epsPrime,
+				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+				Mesh())
 	}
 }
 
