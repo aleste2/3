@@ -191,7 +191,6 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 	}
 	if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
 
-		if (IndpendentSlonczewskiTorque== false){
 			msat := Msat.MSlice()
 			defer msat.Recycle()
 			msat1 := Msat1.MSlice()
@@ -216,28 +215,6 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 				msat1, j, fixedP, alpha, pol1, lambda, epsPrime, Mesh())
 			cuda.AddSlonczewskiTorque2(dst2, M2.Buffer(),
 				msat2, j, fixedP, alpha, pol2, lambda, epsPrime, Mesh())
-		}else{
-			msat1 := Msat1.MSlice()
-			defer msat1.Recycle()
-			msat2 := Msat2.MSlice()
-			defer msat2.Recycle()
-			jHM := JHM.MSlice()
-			defer jHM.Recycle()
-			fixedP := FixedLayer.MSlice()
-			defer fixedP.Recycle()
-			alpha := Alpha.MSlice()
-			defer alpha.Recycle()
-			polSL := PolSL.MSlice()
-			defer polSL.Recycle()
-			lambda := Lambda.MSlice()
-			defer lambda.Recycle()
-			epsPrime := EpsilonPrime.MSlice()
-			defer epsPrime.Recycle()
-			cuda.AddSlonczewskiTorque2(dst1, M1.Buffer(),
-				msat1, jHM, fixedP, alpha, polSL, lambda, epsPrime, Mesh())
-			cuda.AddSlonczewskiTorque2(dst2, M2.Buffer(),
-				msat2, jHM, fixedP, alpha, polSL, lambda, epsPrime, Mesh())
-		}
 	}
 }
 
