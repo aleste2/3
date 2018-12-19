@@ -17,7 +17,8 @@ var (
 	Aex1   = NewScalarParam("Aex1", "J/m", "Exchange stiffness lattice 1", &lex21)
 	Dind1  = NewScalarParam("Dind1", "J/m2", "Interfacial Dzyaloshinskii-Moriya strength lattice 1", &din21)
 	Dbulk1 = NewScalarParam("Dbulk1", "J/m2", "Bulk Dzyaloshinskii-Moriya strength lattice 1", &dbulk21)
-	Aex2   = NewScalarParam("Aex2", "J/m", "Exchange stiffness lattice 1", &lex22)
+	
+	Aex2   = NewScalarParam("Aex2", "J/m", "Exchange stiffness lattice 2", &lex22)
 	Dind2  = NewScalarParam("Dind2", "J/m2", "Interfacial Dzyaloshinskii-Moriya strength lattice 2", &din22)
 	Dbulk2 = NewScalarParam("Dbulk2", "J/m2", "Bulk Dzyaloshinskii-Moriya strength lattice 2", &dbulk22)
 
@@ -25,7 +26,8 @@ var (
 
 	lex21       exchParam // inter-cell exchange 
 	din21       exchParam // inter-cell interfacial DMI 
-	dbulk21     exchParam // inter-cell bulk DMI 
+	dbulk21     exchParam // inter-cell bulk DMI
+	
 	lex22       exchParam // inter-cell exchange 
 	din22       exchParam // inter-cell interfacial DMI
 	dbulk22     exchParam // inter-cell bulk DMI
@@ -35,9 +37,11 @@ func init() {
 	lex21.init(Aex1)
 	din21.init(Dind1)
 	dbulk21.init(Dbulk1)
+	
 	lex22.init(Aex2)
 	din22.init(Dind2)
 	dbulk22.init(Dbulk2)
+	
 	lexll.init(Aexll)
 }
 
