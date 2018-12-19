@@ -32,13 +32,13 @@ var (
 )
 
 func init() {
-	lex21.init()
+	lex21.init(Aex1)
 	din21.init(Dind1)
 	dbulk21.init(Dbulk1)
-	lex22.init()
+	lex22.init(Aex2)
 	din22.init(Dind2)
 	dbulk22.init(Dbulk2)
-	lexll.init()
+	lexll.init(Aexll)
 }
 
 // Adds the current exchange AFfield to dst
