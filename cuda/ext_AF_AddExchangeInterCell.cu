@@ -12,8 +12,8 @@ addexchangeAfll(float* __restrict__ dst1x, float* __restrict__ dst1y, float* __r
 	float* __restrict__ m2x, float* __restrict__ m2y, float* __restrict__ m2z,
 	float* __restrict__  Ms1_, float  Ms1_mul,
 	float* __restrict__  Ms2_, float  Ms2_mul,
-        float* __restrict__ aLUT2d, uint16_t* __restrict__ regions,
-        float wx, float wy, float wz, int Nx, int Ny, int Nz, uint16_t PBC) {
+        float* __restrict__ aLUT2d, uint8_t* __restrict__ regions,
+        float wx, float wy, float wz, int Nx, int Ny, int Nz, uint8_t PBC) {
 
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
