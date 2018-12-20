@@ -19,8 +19,6 @@ addAFMexchange(float* __restrict__ Bx, float* __restrict__ By, float* __restrict
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
     int iy = blockIdx.y * blockDim.y + threadIdx.y;
     int iz = blockIdx.z * blockDim.z + threadIdx.z;
- 
-
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -30,7 +28,7 @@ addAFMexchange(float* __restrict__ Bx, float* __restrict__ By, float* __restrict
     float3 m0 = make_float3(mx[I], my[I], mz[I]);
     float3 B  = make_float3(Bx[I], By[I], Bz[I]);
     float Ms   = amul(Ms_, Ms_mul, I);
-//printf("AFM %f %d %d\n",AFMex,AFMR1,AFMR2); 
+
     if (AFMex!=0) {
 
      if (iz==AFMR1)
@@ -58,10 +56,8 @@ addAFMexchange(float* __restrict__ Bx, float* __restrict__ By, float* __restrict
 
     }
 
-
     Bx[I] = B.x;
     By[I] = B.y;
     Bz[I] = B.z;
-
 }
 
