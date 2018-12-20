@@ -6,6 +6,8 @@ func init() {
 	DeclFunc("ext_skxPos", skxPos, "Skyrmion core position (x,y) + radio (z)")
 }
 
+// skxpos(sign of z, z layer: lattice 0=m 1=m1 2=m2)
+
 func skxPos(signo float64,skxlayer int, lattice int) []float64 {
 
 	m:= M.Buffer()
