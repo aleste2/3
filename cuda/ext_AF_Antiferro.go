@@ -33,9 +33,9 @@ func AddExchangeAFCell(dst1,dst2,m1,m2 *data.Slice,Ms1,Ms2,bex MSlice) {
 func AddExchangeAFll(dst1,dst2,m1,m2 *data.Slice,ms1,ms2 MSlice,llex_red SymmLUT, regions *Bytes, mesh *data.Mesh) {
 //func AddExchange(B, m *data.Slice, Aex_red SymmLUT, regions *Bytes, mesh *data.Mesh) {
 	c := mesh.CellSize()
-	wx := float32(2 * 1e-18 / (c[X] * c[X]))
-	wy := float32(2 * 1e-18 / (c[Y] * c[Y]))
-	wz := float32(2 * 1e-18 / (c[Z] * c[Z]))
+	wx := float32(2  / (c[X] * c[X]))
+	wy := float32(2  / (c[Y] * c[Y]))
+	wz := float32(2  / (c[Z] * c[Z]))
 	N := mesh.Size()
 	pbc := mesh.PBC_code()
 	cfg := make3DConf(N)
