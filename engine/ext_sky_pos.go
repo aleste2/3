@@ -52,7 +52,7 @@ func skxPos(signo float64,skxlayer int, lattice int) []float64 {
 	pos[Z] = math.Pow(c[X]*c[Y]*float64(acumZ)/float64(3.1416),0.5)
 
 	pos[X] += GetShiftPos() // add simulation window shift
-        pos[Y] += GetShiftPosY() // add simulation window shift
+        //pos[Y] += GetShiftPosY() // add simulation window shift
 	return pos
 }
 
