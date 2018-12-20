@@ -5,7 +5,7 @@ import (
 "github.com/mumax/3/data"
 )
 
-// Add AFM exchange field tbetween non adjacent layers
+// Add AFM exchange field between non adjacent layers
 func AddAFMExchange(B, m *data.Slice, AFMex float32, AFMR1 ,AFMR2 int, tsp float32,Msat MSlice,regions *Bytes, mesh *data.Mesh) {
 	c := mesh.CellSize()
 	wx := float32(2 * 1e-18 / (c[X] * c[X]))
