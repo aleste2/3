@@ -14,6 +14,7 @@ func SetEffectiveField(dst *data.Slice) {
 	AddExchangeField(dst) // ...then add other terms
 	AddAnisotropyField(dst)
 	AddMagnetoelasticField(dst)
+	AddAFMExchangeField(dst)  // AFM Exchange non adjacent layers Victor mod
 	B_ext.AddTo(dst)
 	if !relaxing {
                 if LLBeq!=true {   // Needed not to add two times thermal noises in the case of LLB equation
