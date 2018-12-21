@@ -43,7 +43,7 @@ func mMaxPos(comp int) []float64 {
 	pos[Z] = c[Z]*float64(indexz)
 
 	pos[X] += GetShiftPos() // add simulation window shift
-        pos[Y] += GetShiftPosY() // add simulation window shift
+        //pos[Y] += GetShiftPosY() // add simulation window shift
 	return pos
 }
 
