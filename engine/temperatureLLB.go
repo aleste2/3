@@ -143,7 +143,7 @@ func (b *thermField) LLBupdate() {
 			       		TempJH.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha)
 				}else
-				{
+				 if (solvertype==28){
 			       		Te.update()
 			       		Tl.update()
 			       		Ts.update()
