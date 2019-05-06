@@ -72,6 +72,7 @@ const (
 	LLB            = 26
         LLBJH          = 27
         LLB3T          = 28
+	LLB2T          = 29
 
 	ANTIFERRORK4   =100
 	ANTIFERRORK23  =101	
@@ -119,6 +120,10 @@ func SetSolver(typ int) {
                 stepper = new(HeunLLB3T)
 		LLBeq=true 
 		LLB3Tf= true
+	case LLB2T:
+                stepper = new(HeunLLB2T)
+		LLBeq=true 
+		LLB3Tf= true
 
 // Antiferro solvers
 		
@@ -162,6 +167,12 @@ func torqueFnLLB3T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	NEvals++
 }
 
+////////////////////////////////////   Added for LLB 2T
+
+func torqueFnLLB2T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
+	SetTorqueLLB2T(dst,hth1,hth2)
+	NEvals++
+}
 
 // returns number of torque evaluations
 func getNEval() int {
