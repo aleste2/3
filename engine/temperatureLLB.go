@@ -15,6 +15,7 @@ var (
   // For Joule heating
 	JHThermalnoise = true
 	RenormLLB   =false
+	TSubsteps=3
 	TempJH      LocalTemp   // Local temperature
 	Kthermal    = NewScalarParam("Kthermal", "W/(m·K)", "Thermal conductivity")
 	Cthermal    = NewScalarParam("Cthermal", "J/(Kg·K)", "Specific heat capacity")
@@ -48,8 +49,9 @@ func init() {
 	DeclFunc("RestartJH", StartJH, "Equals Temperature to substrate")
 	DeclFunc("GetTemp", GetCell, "Gets cell temperature")
 
-	// For 3T
+	// For 3T and 2T
 	DeclFunc("Restart3T", Start3T, "Equals Temperatures to substrate")
+	DeclFunc("Restart2T", Start2T, "Equals Temperatures to substrate")
 	DeclROnly("Te", AsScalarField(&Te), "Electron Local Temperature (K)")
 	Te.name="Local_Temperature_Electrons"
 	DeclROnly("Tl", AsScalarField(&Tl), "Lattice Local Temperature (K)")
@@ -63,6 +65,8 @@ func init() {
 	DeclFunc("SetM", SetM, "Adjust m to temperature")
 	DeclTVar("JHThermalnoise", &JHThermalnoise, "Enable/disable thermal noise")
 	DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
+	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
+
 }
 
 // LocalTemp definitions and Functions for JH
@@ -144,6 +148,11 @@ func (b *thermField) LLBupdate() {
 			       		Tl.update()
 			       		Ts.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Ts.temp, alpha)
+				}else
+				 if (solvertype==29){
+			       		Te.update()
+			       		Tl.update()
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Te.temp, alpha)
 				}
                                }
 	}
@@ -164,6 +173,11 @@ func Start3T() {
 	Ts.JHSetLocalTemp()
 }
 
+func Start2T() {
+	Te.JHSetLocalTemp()
+	Tl.JHSetLocalTemp()
+}
+
 func SetM() {
 	TCurie := TCurie.MSlice()
 	defer TCurie.Recycle()
@@ -177,6 +191,9 @@ func SetM() {
 	}
 	if solvertype==28 {
 	cuda.InitmLLBJH(M.Buffer(),Ts.temp,TCurie)
+	}
+	if solvertype==29 {
+	cuda.InitmLLBJH(M.Buffer(),Te.temp,TCurie)
 	}
 }
 
