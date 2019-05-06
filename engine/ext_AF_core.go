@@ -125,7 +125,6 @@ func torqueFnAF(dst1,dst2 *data.Slice) {
 	*Msat=*Msat2
 	SetDemagField(dst2)
 	}
-	}
 	AddExchangeFieldAF(dst1,dst2)
 	AddAnisotropyFieldAF(dst1,dst2)
 	//AddAFMExchangeField(dst)  // AFM Exchange non adjacent layers
