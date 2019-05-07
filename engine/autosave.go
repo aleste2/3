@@ -7,6 +7,8 @@ import "fmt"
 var (
 	output  = make(map[Quantity]*autosave) // when to save quantities
 	autonum = make(map[interface{}]int)    // auto number for out file
+	outputScaled  = make(map[Quantity]*autosavescaled) // when to save scaled snapshots quantities
+
 )
 
 func init() {
@@ -22,9 +24,19 @@ func DoOutput() {
 			a.count++
 		}
 	}
+	
 	if Table.needSave() {
 		Table.Save()
 	}
+
+	// For autosave scaled
+	for q, a := range outputScaled {
+		if a.needSave() {
+			a.save(q,a.min,a.max)
+			a.count++
+		}
+	}
+	
 }
 
 // Register quant to be auto-saved every period.
