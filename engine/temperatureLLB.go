@@ -5,7 +5,7 @@ import (
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/cuda/curand"
 	"github.com/mumax/3/mag"
-	"github.com/mumax/3/util"
+	//"github.com/mumax/3/util"
 )
 
 var (
@@ -13,6 +13,7 @@ var (
 	Qext		= NewExcitation("Qext", "W/m3", "External Heating")
 
   // For Joule heating
+	Langevin = 0
 	JHThermalnoise = true
 	RenormLLB   =false
 	TSubsteps=3
@@ -66,11 +67,10 @@ func init() {
 
 	DeclFunc("SetM", SetM, "Adjust m to temperature")
 	DeclTVar("JHThermalnoise", &JHThermalnoise, "Enable/disable thermal noise")
+	DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
 	DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
 	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
-	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
 	DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
-
 }
 
 // LocalTemp definitions and Functions for JH
@@ -121,7 +121,7 @@ func (b *thermField) LLBupdate() {
 	}
 
 	if FixDt == 0 {
-		util.Fatal("Finite temperature requires fixed time step. Set FixDt != 0.")
+		//util.Fatal("Finite temperature requires fixed time step. Set FixDt != 0.")
 	}
 
 	N := Mesh().NCell()
@@ -188,16 +188,16 @@ func SetM() {
 	if solvertype==26 {
 	Temp := Temp.MSlice()
 	defer Temp.Recycle()
-	cuda.InitmLLB(M.Buffer(),Temp,TCurie)
+	cuda.InitmLLB(M.Buffer(),Temp,TCurie,Langevin)
 	}
 	if solvertype==27 {
-	cuda.InitmLLBJH(M.Buffer(),TempJH.temp,TCurie)
+	cuda.InitmLLBJH(M.Buffer(),TempJH.temp,TCurie,Langevin)
 	}
 	if solvertype==28 {
-	cuda.InitmLLBJH(M.Buffer(),Ts.temp,TCurie)
+	cuda.InitmLLBJH(M.Buffer(),Ts.temp,TCurie,Langevin)
 	}
 	if solvertype==29 {
-	cuda.InitmLLBJH(M.Buffer(),Te.temp,TCurie)
+	cuda.InitmLLBJH(M.Buffer(),Te.temp,TCurie,Langevin)
 	}
 }
 
