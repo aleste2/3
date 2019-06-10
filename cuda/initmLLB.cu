@@ -9,7 +9,7 @@ __global__ void
 initmLLB(float* __restrict__  mx, float* __restrict__  my, float* __restrict__  mz,
         float* __restrict__  temp_, float temp_mul,
         float* __restrict__  TCurie_, float TCurie_mul,
-        int N) {
+        int N,int Langevin) {
  
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
 
@@ -25,7 +25,12 @@ initmLLB(float* __restrict__  mx, float* __restrict__  my, float* __restrict__  
         {
 	 if (temp<=TCurie)  // T<Tc
          {
-         	float me=pow(1.0f-pow(temp/TCurie,3.49f),0.54f);
+         	float me;
+		if (!Langevin) {
+				me=pow(1.0f-pow(temp/TCurie,3.49f),0.54f);
+				} else {
+				me=pow(1.0f-pow(temp/TCurie,1.23329f),0.43392f);
+				}
 		mx[i]=mx[i]*(me/pow(m2,0.5f));
 		my[i]=my[i]*(me/pow(m2,0.5f));
 		mz[i]=mz[i]*(me/pow(m2,0.5f));
