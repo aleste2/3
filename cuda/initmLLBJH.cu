@@ -9,7 +9,7 @@ __global__ void
 initmLLBJH(float* __restrict__  mx, float* __restrict__  my, float* __restrict__  mz,
         float* __restrict__  tempJH,
         float* __restrict__  TCurie_, float TCurie_mul,
-        int N) {
+        int N,int Langevin) {
  
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
 
