@@ -14,6 +14,18 @@ import (
 func LLBTorqueJH(torque, m, B *data.Slice, tempJH *data.Slice,alpha,TCurie,Msat MSlice,hth1 *data.Slice,hth2 *data.Slice) {
 	N := torque.Len()
 	cfg := make1DConf(N)
+        if (Langevin==1){
+	k_LLBtorque4JH_async(torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
+		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
+		B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
+		alpha.DevPtr(0), alpha.Mul(0),
+                TCurie.DevPtr(0), TCurie.Mul(0),
+                Msat.DevPtr(0), Msat.Mul(0),
+		hth1.DevPtr(X), hth1.DevPtr(Y), hth1.DevPtr(Z),
+		hth2.DevPtr(X), hth2.DevPtr(Y), hth2.DevPtr(Z),
+                tempJH.DevPtr(0),
+                N,cfg)
+	} else {
 	k_LLBtorque2JH_async(torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
 		B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
@@ -24,4 +36,5 @@ func LLBTorqueJH(torque, m, B *data.Slice, tempJH *data.Slice,alpha,TCurie,Msat 
 		hth2.DevPtr(X), hth2.DevPtr(Y), hth2.DevPtr(Z),
                 tempJH.DevPtr(0),
                 N,cfg)
+	}
 }
