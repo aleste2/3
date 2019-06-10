@@ -56,8 +56,11 @@ func (_ *HeunLLBJH) Step() {
         // Rewrite to calculate m step 1 
 	torqueFnLLBJH(dy0,Hth1,Hth2)
 	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
-        cuda.Evaldt0(temp0,dtemp0,y,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
-	cuda.Madd2(temp0, temp0, dtemp0, 1, dt/float32(GammaLL)) // temp = temp + dt * dtemp0
+        //cuda.Evaldt0(temp0,dtemp0,y,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+	if (TOversteps==1) {
+				cuda.Evaldt0(temp0,dtemp0,y,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+				cuda.Madd2(temp0, temp0, dtemp0, 1, dt/float32(GammaLL)) // temp = temp + dt * dtemp0
+			}
         
 
 	// stage 2
@@ -70,7 +73,6 @@ func (_ *HeunLLBJH) Step() {
 
         // Rewrite to calculate spep 2
 	torqueFnLLBJH(dy,Hth1,Hth2)
-        cuda.Evaldt0(temp0,dtemp,y,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
 
 	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
 
@@ -78,7 +80,20 @@ func (_ *HeunLLBJH) Step() {
 	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
 		// step OK
 		cuda.Madd3(y, y, dy, dy0, 1, 0.5*dt, -0.5*dt) //****
-		cuda.Madd3(temp0, temp0, dtemp, dtemp0, 1, 0.5*dt/float32(GammaLL), -0.5*dt/float32(GammaLL)) //****
+		if (TOversteps==1) {
+				        cuda.Evaldt0(temp0,dtemp,y,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+					cuda.Madd3(temp0, temp0, dtemp, dtemp0, 1, 0.5*dt/float32(GammaLL), -0.5*dt/float32(GammaLL)) //****
+				  }
+		if (TOversteps>1) {
+			TOverstepsCounter++
+			if (TOverstepsCounter>=TOversteps) {
+				cuda.Evaldt0(temp0,dtemp0,y,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+				cuda.Madd2(temp0, temp0, dtemp0, 1, dt*float32(TOversteps)/float32(GammaLL)) // temp = temp + dt * dtemp0
+			        cuda.Evaldt0(temp0,dtemp,y,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext,j,M.Mesh())
+				cuda.Madd3(temp0, temp0, dtemp, dtemp0, 1, 0.5*dt*float32(TOversteps)/float32(GammaLL), -0.5*dt*float32(TOversteps)/float32(GammaLL)) //****
+				TOverstepsCounter=0
+			}
+		}
 		if (RenormLLB==true) {M.normalize()}   // not in LLB!!
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
@@ -89,10 +104,12 @@ func (_ *HeunLLBJH) Step() {
 		util.Assert(FixDt == 0)
 		Time -= Dt_si
 		cuda.Madd2(y, y, dy0, 1, -dt)  //****
-		cuda.Madd2(temp0, temp0, dtemp0, 1, -dt/float32(GammaLL)) // temp = temp - dt * dtemp0
+		if (TOversteps==1) {cuda.Madd2(temp0, temp0, dtemp0, 1, -dt/float32(GammaLL))} // temp = temp - dt * dtemp0
 		NUndone++
 		adaptDt(math.Pow(MaxErr/err, 1./3.))
 	}
+
+
 }
 
 func (_ *HeunLLBJH) Free() {}
