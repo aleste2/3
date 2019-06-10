@@ -16,6 +16,8 @@ var (
 	JHThermalnoise = true
 	RenormLLB   =false
 	TSubsteps=3
+	TOversteps=1
+	TOverstepsCounter=1
 	TempJH      LocalTemp   // Local temperature
 	Kthermal    = NewScalarParam("Kthermal", "W/(m·K)", "Thermal conductivity")
 	Cthermal    = NewScalarParam("Cthermal", "J/(Kg·K)", "Specific heat capacity")
@@ -66,6 +68,8 @@ func init() {
 	DeclTVar("JHThermalnoise", &JHThermalnoise, "Enable/disable thermal noise")
 	DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
 	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
+	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
+	DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
 
 }
 
