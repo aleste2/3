@@ -26,14 +26,14 @@ func InitTemperatureJH(TempJH *data.Slice, TSubs MSlice) {
 
 }
 
-func InitmLLB(m *data.Slice,temp,TCurie MSlice) {
+func InitmLLB(m *data.Slice,temp,TCurie MSlice,Langevin int) {
 	N := m.Len()
 	cfg := make1DConf(N)
-	k_initmLLB_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),temp.DevPtr(0), temp.Mul(0),TCurie.DevPtr(0), TCurie.Mul(0),N, cfg)
+	k_initmLLB_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),temp.DevPtr(0), temp.Mul(0),TCurie.DevPtr(0), TCurie.Mul(0),N, Langevin,cfg)
 }
 
-func InitmLLBJH(m ,TempJH *data.Slice,TCurie MSlice) {
+func InitmLLBJH(m ,TempJH *data.Slice,TCurie MSlice,Langevin int) {
 	N := m.Len()
 	cfg := make1DConf(N)
-	k_initmLLBJH_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),TempJH.DevPtr(0),TCurie.DevPtr(0), TCurie.Mul(0),N, cfg)
+	k_initmLLBJH_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),TempJH.DevPtr(0),TCurie.DevPtr(0), TCurie.Mul(0),N, Langevin,cfg)
 }
