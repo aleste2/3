@@ -67,8 +67,12 @@ LLBtorque2(float* __restrict__  tx, float* __restrict__  ty, float* __restrict__
          }
          else        //T>Tc
          {
-         xpar=(1.4f*MUB*MU0/kB)*1.0f/(temp-TCurie);
-	 if (xpar==0) xpar=0.00001;
+         xpar=0.2f*(1.4f*MUB*MU0/kB)*1.0f/(temp-TCurie);
+
+//	 if (xpar==0) xpar=0.00001;
+	 if (xpar>1e-6) xpar=1e-6;
+	 if (xpar<8e-11) xpar=8e-11;
+
          alphaperp=alphapar;
          Bint=MU0*(-1.0f/xpar*(1.0f+3.0f/5.0f*m2*(TCurie/(temp-TCurie))))*m;
 	 //Bint=MU0*TCurie*kB/(1.4f*MU0*MUB)*(1.0f-temp/TCurie-3.0/5.0*m2)*m;
