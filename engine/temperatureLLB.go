@@ -117,7 +117,7 @@ func (b *thermField) LLBupdate() {
 	}
 
 	// keep constant during time step
-	if NSteps == b.step && Dt_si == b.dt && solvertype<6 {
+	if NSteps == b.step && Dt_si == b.dt {
 		return
 	}
 
@@ -141,25 +141,21 @@ func (b *thermField) LLBupdate() {
 	defer alpha.Recycle()
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
-		if (solvertype<27) {
-                               cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt, ms, temp, alpha)
-                               } else{
-				if (solvertype==27){
+		if (solvertype==27){
 			       		TempJH.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha)
-				}else
-				 if (solvertype==28){
+		}
+		if (solvertype==28){
 			       		Te.update()
 			       		Tl.update()
 			       		Ts.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Ts.temp, alpha)
-				}else
-				 if (solvertype==29){
+		}
+		if (solvertype==29){
 			       		Te.update()
 			       		Tl.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Te.temp, alpha)
-				}
-                               }
+		}
 	}
 
 	b.step = NSteps
