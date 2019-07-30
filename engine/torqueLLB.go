@@ -61,7 +61,7 @@ func SetLLBTorqueJH(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
   cuda.Zero(hth2)       
   B_therm.LLBAddTo(hth2)
 	if Precess {
-		cuda.LLBTorqueJH(dst, M.Buffer(), dst, TempJH.temp,alpha,TCurie,Msat,hth1,hth2,Langevin) // overwrite dst with torque
+		cuda.LLBTorqueJH(dst, M.Buffer(), dst, TempJH.temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}
@@ -91,7 +91,7 @@ func SetLLBTorque3T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
   cuda.Zero(hth2)       
   B_therm.LLBAddTo(hth2)
 	if Precess {
-		cuda.LLBTorqueJH(dst, M.Buffer(), dst, Ts.temp,alpha,TCurie,Msat,hth1,hth2,Langevin) // overwrite dst with torque
+		cuda.LLBTorqueJH(dst, M.Buffer(), dst, TempJH.temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}
@@ -121,7 +121,7 @@ func SetLLBTorque2T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
   cuda.Zero(hth2)       
   B_therm.LLBAddTo(hth2)
 	if Precess {
-		cuda.LLBTorqueJH(dst, M.Buffer(), dst, Te.temp,alpha,TCurie,Msat,hth1,hth2,Langevin) // overwrite dst with torque
+		cuda.LLBTorqueJH(dst, M.Buffer(), dst, TempJH.temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}
