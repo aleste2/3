@@ -27,9 +27,9 @@ func SetLLBTorque(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	defer Temp.Recycle()
 
   cuda.Zero(hth1)       
-  B_therm.AddTo(hth1)
+  if (JHThermalnoise==true) {B_therm.AddTo(hth1)}
   cuda.Zero(hth2)       
-  B_therm.AddTo(hth2)
+  if (JHThermalnoise==true) {B_therm.AddTo(hth2)}
 	if Precess {
 		cuda.LLBTorque(dst, M.Buffer(), dst, Temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
