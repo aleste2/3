@@ -31,7 +31,7 @@ func SetLLBTorque(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
   cuda.Zero(hth2)       
   B_therm.AddTo(hth2)
 	if Precess {
-		cuda.LLBTorque(dst, M.Buffer(), dst, Temp,alpha,TCurie,Msat,hth1,hth2) // overwrite dst with torque
+		cuda.LLBTorque(dst, M.Buffer(), dst, Temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}
