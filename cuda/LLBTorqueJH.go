@@ -24,6 +24,7 @@ func LLBTorqueJH(torque, m, B *data.Slice, tempJH *data.Slice,alpha,TCurie,Msat 
 		hth1.DevPtr(X), hth1.DevPtr(Y), hth1.DevPtr(Z),
 		hth2.DevPtr(X), hth2.DevPtr(Y), hth2.DevPtr(Z),
                 tempJH.DevPtr(0),
+		a1.DevPtr(0), a1.Mul(0),	     
                 N,cfg)
 	} else {
 	k_LLBtorque2JH_async(torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
