@@ -26,6 +26,7 @@ var (
 	Density     = NewScalarParam("Density", "Kg/m3", "Mass density")
 	TSubs       = NewScalarParam("TSubs", "K", "Substrate Temperature")
 	TauSubs     = NewScalarParam("TauSubs", "s", "Substrate difussion time")
+	a1=NewScalarParam("a1", "a.u.", "Exponent Langevin (T/Tc)^a1")  // 0.2-1.4
 
 	// For 3T Model
 	Te      LocalTemp   // Electron temperature
