@@ -56,17 +56,22 @@ LLBtorque4JH(float* __restrict__  tx, float* __restrict__  ty, float* __restrict
  	        
 	 if (temp<=TCurie)  // T<Tc
          {
-          me=pow(1.0f-pow(temp/TCurie,1.23329f),0.43392f);
-	  //me=1.0f-pow(temp/TCurie,1.5f);
+	  if (a1==0) a1=1.0f;
+	  float t_Tc=pow(temp/TCurie,a1);
+          //me=pow(1.0f-pow(temp/TCurie,1.23329f),0.43392f);
+	  me=pow(1.0f-pow(t_Tc,1.23329f),0.43392f);
           if (me<0.001) me=0.001; //avoid zero division and numerical inestabilities close to Tc
           float beta=1.0f/(kB*(temp));
-          float argdB=3*TCurie/temp*me;   // me not Ms
+          //float argdB=3*TCurie/temp*me;   // me not Ms
+          float argdB=3/t_Tc*me;   // me not Ms
           float dB=1.0f/(argdB*argdB)-1.0f/(sinh(argdB)*sinh(argdB));
-          xpar=(1.4f*MUB*MU0*beta)*(dB/(1.0f-3.0f*TCurie/(temp)*dB));
+          //xpar=(1.4f*MUB*MU0*beta)*(dB/(1.0f-3.0f*TCurie/(temp)*dB));
+          xpar=(1.4f*MUB*MU0*beta)*(dB/(1.0f-3.0f/t_Tc*dB));
 
           if (xpar>1e-6) xpar=1e-6;
           if (xpar<8e-11) xpar=8e-11f;
-          alphaperp=alpha*(1.0f-temp/(3.0f*TCurie));
+          //alphaperp=alpha*(1.0f-temp/(3.0f*TCurie));
+          alphaperp=alpha*(1.0f-t_Tc/3.0f);
           Bint=MU0*(1.0f/(2.0f*xpar)*(1.0f-m2/(me*me)))*m;
          }
          else        //T>Tc
