@@ -17,7 +17,7 @@ func NormalizeAF(m0,m1,m2 *data.Slice, Ms0,Ms1,Ms2 MSlice) {
 	Ms2.DevPtr(0), Ms2.Mul(0), N, cfg)
 }
 
-func AddExchangeAFCell(dst1,dst2,m1,m2 *data.Slice,Ms1,Ms2,bex MSlice) {
+func AddExchangeAFCell(dst1,dst2,m1,m2 *data.Slice,Ms1,Ms2,bex12,bex21 MSlice) {
 	N := m1.Len()
 	cfg := make1DConf(N)
 	k_addExchangeAFCell_async(dst1.DevPtr(X), dst1.DevPtr(Y), dst1.DevPtr(Z),
@@ -26,7 +26,8 @@ func AddExchangeAFCell(dst1,dst2,m1,m2 *data.Slice,Ms1,Ms2,bex MSlice) {
 	m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),
 	Ms1.DevPtr(0), Ms1.Mul(0),
 	Ms2.DevPtr(0), Ms2.Mul(0),
-	bex.DevPtr(0), bex.Mul(0),
+	bex12.DevPtr(0), bex12.Mul(0),
+	bex21.DevPtr(0), bex21.Mul(0),
 	N, cfg)
 }
 
