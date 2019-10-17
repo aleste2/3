@@ -17,3 +17,9 @@ inline __device__ float DBrillouin(float x,float J)
  // }
 }
 
+// Langevin derivative function (de verdad)
+inline __device__ float Lder(float x)
+{
+	return (1.0f/(x*x)-pow(1.0f/sinh(x),2.0f));
+}
+
