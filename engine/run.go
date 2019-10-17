@@ -75,7 +75,10 @@ const (
 	LLB2T          = 29
 
 	ANTIFERRORK4   =100
-	ANTIFERRORK23  =101	
+	ANTIFERRORK23  =101
+	
+	ANTIFERROLLBPRB=127
+	LLBAF2T        =129
 	
 	HEUNJHONLY     =207	
 )
@@ -134,6 +137,15 @@ func SetSolver(typ int) {
 	case ANTIFERRORK23:
                 stepper = new(AntiferroRK23)
 		AFf=true
+	case ANTIFERROLLBPRB:
+        	stepper = new(HeunAFLLBPRB054401)
+		AFf=true
+		LLBeq=true
+	case LLBAF2T:
+        	stepper = new(HeunLLBAF2T)
+		LLBeq=true
+		AFf=true
+		LLB2Tf= true
 		
 // Thermal only solvers	
 	case HEUNJHONLY:
