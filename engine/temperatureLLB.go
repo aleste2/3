@@ -18,7 +18,7 @@ var (
 	RenormLLB   =false
 	TSubsteps=3
 	TOversteps=1
-	TOverstepsCounter=1
+	TOverstepsCounter=0
 	TempJH      LocalTemp   // Local temperature
 	Kthermal    = NewScalarParam("Kthermal", "W/(m·K)", "Thermal conductivity")
 	Cthermal    = NewScalarParam("Cthermal", "J/(Kg·K)", "Specific heat capacity")
@@ -141,17 +141,17 @@ func (b *thermField) LLBupdate() {
 	defer alpha.Recycle()
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
-		if (solvertype==27){
+		if (LLBJHf==true){
 			       		TempJH.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha)
 		}
-		if (solvertype==28){
+		if (LLB3Tf==true){
 			       		Te.update()
 			       		Tl.update()
 			       		Ts.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Ts.temp, alpha)
 		}
-		if (solvertype==29){
+		if (LLB2Tf==true){
 			       		Te.update()
 			       		Tl.update()
                                		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Te.temp, alpha)
