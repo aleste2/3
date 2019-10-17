@@ -39,7 +39,19 @@ var (
 	Pol1          = NewScalarParam("Pol1", "", "Electrical current polarization Zhang-Li Lattice 1")
 	Pol2          = NewScalarParam("Pol2", "", "Electrical current polarization Zhang-Li Lattice 2")
 	isolatedlattices  bool = false // Debug only
+	Alpha1        = NewScalarParam("alpha1", "", "Landau-Lifshitz damping constant")
+	Alpha2        = NewScalarParam("alpha2", "", "Landau-Lifshitz damping constant")
+	// For AF PRB 054401
+	x_TM        = NewScalarParam("x_TM", "a.u.", "TM ratio")
+	nv          = NewScalarParam("nv", "a.u.", "Number of neighbours")
+	mu1	    = NewScalarParam("mu1", "J/T.", "Bohr magnetons lattice 1")
+	mu2	    = NewScalarParam("mu2", "J/T.", "Bohr magnetons lattice 2")
+	J0aa	    = NewScalarParam("J0aa", "T.", "Exchange lattice 1")
+	J0bb	    = NewScalarParam("J0bb", "T.", "Exchange lattice 2")
+	J0ab	    = NewScalarParam("J0ab", "T.", "Exchange lattice 1-2")
 
+	EpsilonPrime1                     = NewScalarParam("EpsilonPrime1", "", "Slonczewski secondairy STT term ε' Lattice 1")
+	EpsilonPrime2                     = NewScalarParam("EpsilonPrime2", "", "Slonczewski secondairy STT term ε' Lattice 2")
 )
 
 
@@ -139,11 +151,13 @@ func torqueFnAF(dst1,dst2 *data.Slice) {
 	AddCustomField(dst2)
 	
 	// Add to sublattice 1 and 2
-	alpha := Alpha.MSlice()
-	defer alpha.Recycle()
+	alpha1 := Alpha1.MSlice()
+	defer alpha1.Recycle()
+	alpha2 := Alpha2.MSlice()
+	defer alpha2.Recycle()
 	if Precess {
-		cuda.LLTorque(dst1, M1.Buffer(), dst1, alpha) // overwrite dst with torque
-		cuda.LLTorque(dst2, M2.Buffer(), dst2, alpha) 
+		cuda.LLTorque(dst1, M1.Buffer(), dst1, alpha1) // overwrite dst with torque
+		cuda.LLTorque(dst2, M2.Buffer(), dst2, alpha2) 
 	} else {
 		cuda.LLNoPrecess(dst1, M1.Buffer(), dst1)
 		cuda.LLNoPrecess(dst2, M2.Buffer(), dst2)
@@ -181,49 +195,57 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 		defer msat2.Recycle()
 		j := J.MSlice()
 		defer j.Recycle()
-		alpha := Alpha.MSlice()
-		defer alpha.Recycle()
+		alpha1 := Alpha1.MSlice()
+		defer alpha1.Recycle()
+		alpha2 := Alpha2.MSlice()
+		defer alpha2.Recycle()
 		xi := Xi.MSlice()
 		defer xi.Recycle()
 		pol := Pol.MSlice()
 		defer pol.Recycle()
-		cuda.AddZhangLiTorque(dst1, M1.Buffer(), msat1, j, alpha, xi, pol, Mesh())
-		cuda.AddZhangLiTorque(dst2, M2.Buffer(), msat2, j, alpha, xi, pol, Mesh())
+		cuda.AddZhangLiTorque(dst1, M1.Buffer(), msat1, j, alpha1, xi, pol, Mesh())
+		cuda.AddZhangLiTorque(dst2, M2.Buffer(), msat2, j, alpha2, xi, pol, Mesh())
 	}
 	if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
 
-			msat := Msat.MSlice()
-			defer msat.Recycle()
-			msat1 := Msat1.MSlice()
-			defer msat1.Recycle()
-			msat2 := Msat2.MSlice()
-			defer msat2.Recycle()
-			j := J.MSlice()
-			defer j.Recycle()
-			fixedP := FixedLayer.MSlice()
-			defer fixedP.Recycle()
-			alpha := Alpha.MSlice()
-			defer alpha.Recycle()
-			pol1 := Pol1.MSlice()
-			defer pol1.Recycle()
-			pol2 := Pol2.MSlice()
-			defer pol2.Recycle()
-			lambda := Lambda.MSlice()
-			defer lambda.Recycle()
-			epsPrime := EpsilonPrime.MSlice()
-			defer epsPrime.Recycle()
-			cuda.AddSlonczewskiTorque2(dst1, M1.Buffer(),
-				msat1, j, fixedP, alpha, pol1, lambda, epsPrime, 
+
+		msat := Msat.MSlice()
+		defer msat.Recycle()
+		msat1 := Msat1.MSlice()
+		defer msat1.Recycle()
+		msat2 := Msat2.MSlice()
+		defer msat2.Recycle()
+		j := J.MSlice()
+		defer j.Recycle()
+		fixedP := FixedLayer.MSlice()
+		defer fixedP.Recycle()
+		alpha1 := Alpha1.MSlice()
+		defer alpha1.Recycle()
+		alpha2 := Alpha2.MSlice()
+		defer alpha2.Recycle()
+		pol1 := Pol1.MSlice()
+		defer pol1.Recycle()
+		pol2 := Pol2.MSlice()
+		defer pol2.Recycle()
+		lambda := Lambda.MSlice()
+		defer lambda.Recycle()
+		epsPrime := EpsilonPrime.MSlice()
+		defer epsPrime.Recycle()
+		epsPrime1 := EpsilonPrime1.MSlice()
+		defer epsPrime1.Recycle()
+		epsPrime2 := EpsilonPrime2.MSlice()
+		defer epsPrime2.Recycle()
+		cuda.AddSlonczewskiTorque2(dst1, M1.Buffer(),
+				msat1, j, fixedP, alpha1, pol1, lambda, epsPrime1, 
 				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
 				Mesh())
-			cuda.AddSlonczewskiTorque2(dst2, M2.Buffer(),
-				msat2, j, fixedP, alpha, pol2, lambda, epsPrime,
+		cuda.AddSlonczewskiTorque2(dst2, M2.Buffer(),
+				msat2, j, fixedP, alpha2, pol2, lambda, epsPrime2,
 				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
 				Mesh())
+
 	}
 }
-
-
 
 // Thermal field
 func (b *thermField) AddToAF(dst1, dst2 *data.Slice) {
@@ -281,19 +303,23 @@ func (b *thermField) updateAF(i int) {
 	
 	ms:=Msat1.MSlice()
 	defer ms.Recycle()
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
 	if (i==1) {
 		ms = Msat1.MSlice()
-		defer ms.Recycle()
+		//defer ms.Recycle()
+		alpha = Alpha1.MSlice()
 		}
 	if (i==2) {
 		ms = Msat2.MSlice()
-		defer ms.Recycle()
+		//defer ms.Recycle()
+		alpha = Alpha2.MSlice()
 		}
 	
 	temp := Temp.MSlice()
 	defer temp.Recycle()
-	alpha := Alpha.MSlice()
-	defer alpha.Recycle()
+	alpha0 := Alpha.MSlice()
+	defer alpha0.Recycle()
 	Noise_scale:=1.0
 	if (JHThermalnoise==false){
 	Noise_scale=0.0} else {
@@ -301,7 +327,7 @@ func (b *thermField) updateAF(i int) {
 	}  // To cancel themal noise if needed
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
-		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha)
+		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha0)
 	}
 	b.step = NSteps
 	b.dt = Dt_si
