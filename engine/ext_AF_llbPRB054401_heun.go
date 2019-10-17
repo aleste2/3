@@ -179,4 +179,84 @@ func torqueFnAFLLBPRB(dst1,dst2 *data.Slice,hth1a,hth2a,hth1b,hth2b *data.Slice)
 	NEvals++
 }
 
+// Torques for antiferro
+
+// write torque to dst and increment NEvals
+// Now everything here to use 2 lattices at the same time
+func torqueFnAFLLB(dst1,dst2 *data.Slice,hth1,hth2 *data.Slice) {
+
+	// Set Effective field
+
+	if (!isolatedlattices) {
+	UpdateM()
+	SetDemagField(dst1)
+	data.Copy(dst2, dst1)
+	} else {   // Just for code debug
+	data.Copy(M.Buffer(), M1.Buffer())
+	*Msat=*Msat1
+	SetDemagField(dst1)
+	data.Copy(M.Buffer(), M2.Buffer())
+	*Msat=*Msat2
+	SetDemagField(dst2)
+	}
+	AddExchangeFieldAF(dst1,dst2)
+	AddAnisotropyFieldAF(dst1,dst2)
+	//AddAFMExchangeField(dst)  // AFM Exchange non adjacent layers
+	B_ext.AddTo(dst1)
+	B_ext.AddTo(dst2)
+	if !relaxing {
+                if LLBeq!=true {
+                  B_therm.AddToAF(dst1,dst2)
+                 }
+	}
+	AddCustomField(dst1)
+	AddCustomField(dst2)
+
+  cuda.Zero(hth1)       
+  //B_therm.LLBAddTo(hth1)
+  B_therm.AddTo(hth1)
+  cuda.Zero(hth2)       
+  //B_therm.LLBAddTo(hth2)
+  B_therm.AddTo(hth2)
+	
+	// STT
+	AddSTTorqueAF(dst1,dst2)
+	
+	// Add to sublattice 1 and 2
+	alpha1 := Alpha1.MSlice()
+	defer alpha1.Recycle()
+	alpha2 := Alpha2.MSlice()
+	defer alpha2.Recycle()
+
+	Tcurie := TCurie.MSlice()
+	defer Tcurie.Recycle()
+	Msat1 := Msat1.MSlice()
+	defer Msat1.Recycle()
+	Msat2 := Msat2.MSlice()
+	defer Msat2.Recycle()
+	temp := Temp.MSlice()
+	defer temp.Recycle()
+
+	A1 := a1.MSlice()
+	defer A1.Recycle()
+
+	A2 := a2.MSlice()
+	defer A2.Recycle()
+
+	if Precess {
+		cuda.LLBTorque(dst1, M1.Buffer(), dst1, temp,alpha1,Tcurie,Msat1,hth1,hth2,Langevin,A1) // overwrite dst with torque
+		cuda.LLBTorque(dst2, M2.Buffer(), dst2, temp,alpha2,Tcurie,Msat2,hth1,hth2,Langevin,A2) // overwrite dst with torque
+	}  else {
+		cuda.LLNoPrecess(dst1, M1.Buffer(), dst1)
+		cuda.LLNoPrecess(dst2, M2.Buffer(), dst2)
+	}
+
+	FreezeSpins(dst1)
+	FreezeSpins(dst2)
+
+	NEvals++
+}
+
+
+
 
