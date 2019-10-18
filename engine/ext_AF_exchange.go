@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	Bex    = NewScalarParam("Bex", "J/m", "Exchange stiffness interlattice same cell")
+	Bex12    = NewScalarParam("Bex12", "J/m", "Exchange stiffness interlattice same cell 1-2")
+	Bex21    = NewScalarParam("Bex21", "J/m", "Exchange stiffness interlattice same cell 2-1")
 
 	Aexll   = NewScalarParam("Aexll", "J/m", "Exchange stiffness interlattice different cell", &lexll)
 
@@ -79,9 +80,14 @@ func AddExchangeFieldAF(dst1,dst2 *data.Slice) {
 	case inter && bulk:
 		util.Fatal("Cannot have induced and interfacial DMI at the same time")
 	}
+
 	
-	bex := Bex.MSlice()
-	defer bex.Recycle()
-	cuda.AddExchangeAFCell(dst1,dst2,M1.Buffer(),M2.Buffer(),ms1,ms2,bex)
+	//bex := Bex.MSlice()
+	//defer bex.Recycle()
+	bex12 := Bex12.MSlice()
+	defer bex12.Recycle()
+	bex21 := Bex21.MSlice()
+	defer bex21.Recycle()
+	cuda.AddExchangeAFCell(dst1,dst2,M1.Buffer(),M2.Buffer(),ms1,ms2,bex12,bex21)
 	cuda.AddExchangeAFll(dst1,dst2,M1.Buffer(),M2.Buffer(),ms1,ms2,lexll.Gpu(), regions.Gpu(), M.Mesh())
 }
