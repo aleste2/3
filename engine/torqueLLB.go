@@ -25,6 +25,9 @@ func SetLLBTorque(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	defer Msat.Recycle()
 	Temp := Temp.MSlice()
 	defer Temp.Recycle()
+	
+	A1 := a1.MSlice()
+	defer A1.Recycle()
 
   cuda.Zero(hth1)       
   if (JHThermalnoise==true) {B_therm.AddTo(hth1)}
@@ -55,6 +58,9 @@ func SetLLBTorqueJH(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	defer TCurie.Recycle()
 	Msat := Msat.MSlice()
 	defer Msat.Recycle()
+	
+	A1 := a1.MSlice()
+	defer A1.Recycle()
 
   cuda.Zero(hth1)       
   B_therm.LLBAddTo(hth1)
@@ -85,6 +91,9 @@ func SetLLBTorque3T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	defer TCurie.Recycle()
 	Msat := Msat.MSlice()
 	defer Msat.Recycle()
+	
+	A1 := a1.MSlice()
+	defer A1.Recycle()
 
   cuda.Zero(hth1)       
   B_therm.LLBAddTo(hth1)
@@ -115,6 +124,9 @@ func SetLLBTorque2T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	defer TCurie.Recycle()
 	Msat := Msat.MSlice()
 	defer Msat.Recycle()
+	
+	A1 := a1.MSlice()
+	defer A1.Recycle()
 
   cuda.Zero(hth1)       
   B_therm.LLBAddTo(hth1)
