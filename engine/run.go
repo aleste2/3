@@ -30,6 +30,7 @@ var (
 	LLBeq			= false
 	LLBJHf			= false
 	LLB3Tf			= false
+	LLB2Tf			= false
 	AFf			= false
 )
 
@@ -127,7 +128,7 @@ func SetSolver(typ int) {
 	case LLB2T:
                 stepper = new(HeunLLB2T)
 		LLBeq=true 
-		LLB3Tf= true
+		LLB2Tf= true
 
 // Antiferro solvers
 		
