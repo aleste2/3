@@ -32,6 +32,7 @@ LLBtorque4JH(float* __restrict__  tx, float* __restrict__  ty, float* __restrict
         float alpha = amul(alpha_, alpha_mul, i);    // Do not understand what is this but seems to work this way
         float TCurie = amul(TCurie_, TCurie_mul, i);
         float Msat = amul(Msat_, Msat_mul, i);
+	float a1 = amul(a1_, a1_mul, i);
         float temp = tempJH[i]; 
         if (temp==0) temp=0.0001; // to avoid zero division...
         if (temp>2.0*TCurie) temp=2.0*TCurie; // To avoid numerical problems much above TC
