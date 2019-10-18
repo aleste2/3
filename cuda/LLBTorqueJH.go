@@ -11,7 +11,7 @@ import (
 // 	m normalized
 // 	B in Tesla
 // see lltorque.cu
-func LLBTorqueJH(torque, m, B *data.Slice, tempJH *data.Slice,alpha,TCurie,Msat MSlice,hth1 *data.Slice,hth2 *data.Slice,Langevin int) {
+func LLBTorqueJH(torque, m, B *data.Slice, tempJH *data.Slice,alpha,TCurie,Msat MSlice,hth1 *data.Slice,hth2 *data.Slice,Langevin int,a1 MSlice) {
 	N := torque.Len()
 	cfg := make1DConf(N)
         if (Langevin==1){
