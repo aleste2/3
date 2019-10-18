@@ -16,6 +16,7 @@ LLBtorque4JH(float* __restrict__  tx, float* __restrict__  ty, float* __restrict
 	  float* __restrict__  hth1x, float* __restrict__  hth1y, float* __restrict__  hth1z,
 	  float* __restrict__  hth2x, float* __restrict__  hth2y, float* __restrict__  hth2z,
           float* __restrict__  tempJH,
+	  float* __restrict__  a1_, float a1_mul,
           int N) {
 
     const float MU0=1.2566370614e-6;
