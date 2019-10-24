@@ -118,9 +118,11 @@ func (b *thermField) LLBupdate() {
 	}
 
 	// keep constant during time step
-	if NSteps == b.step && Dt_si == b.dt {
+	if NSteps == b.step && Dt_si == b.dt && solvertype<6 {
+	//if NSteps == b.step && Dt_si == b.dt {
 		return
 	}
+
 
 	if FixDt == 0 {
 		//util.Fatal("Finite temperature requires fixed time step. Set FixDt != 0.")
