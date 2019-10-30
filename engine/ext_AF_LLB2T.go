@@ -80,14 +80,8 @@ func (_ *HeunLLBAF2T) Step() {
 		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt1, -0.5*dt1) //****
 		cuda.Madd3(y2, y2, dy12, dy2, 1, 0.5*dt2, -0.5*dt2) //****
 		// Good step, then evolve Temperatures with rk4. Equation is numericaly complicated, better to divide time step
-		TOverstepsCounter++
-		if (TOverstepsCounter>=TOversteps) {
-			substeps:=TSubsteps
-			for iter:=0;iter<substeps; iter++{
-				rk4Step2T(dt*float32(TOversteps)/float32(substeps)/float32(GammaLL))
-				//heunStep2T(dt*float32(TOversteps)/float32(substeps)/float32(GammaLL))
-			}
-			TOverstepsCounter=0
+		for iter:=0;iter<TSubsteps; iter++{
+			NewtonStep2T(float32(Dt_si)/float32(TSubsteps))
 		}
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
