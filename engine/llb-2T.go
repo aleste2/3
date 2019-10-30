@@ -20,6 +20,11 @@ func (_ *HeunLLB2T) Step() {
 	defer cuda.Recycle(Hth1)
 	Hth2 := cuda.Buffer(VECTOR, y.Size())
 	defer cuda.Recycle(Hth2)
+	
+	cuda.Zero(Hth1)       
+	B_therm.LLBAddTo(Hth1)
+	cuda.Zero(Hth2)       
+	B_therm.LLBAddTo(Hth2)
 
 	if FixDt != 0 {
 		Dt_si = FixDt
