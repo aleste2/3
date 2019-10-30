@@ -21,6 +21,13 @@ func (_ *HeunLLB) Step() {
 	Hth2 := cuda.Buffer(VECTOR, y.Size())
 	defer cuda.Recycle(Hth2)
 
+	cuda.Zero(Hth1)       
+	cuda.Zero(Hth2)  
+	if (JHThermalnoise==true) {
+		B_therm.AddTo(Hth1)
+		B_therm.AddTo(Hth2)
+	}
+
 	if FixDt != 0 {
 		Dt_si = FixDt
 	}
