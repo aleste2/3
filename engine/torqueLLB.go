@@ -29,10 +29,10 @@ func SetLLBTorque(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	A1 := a1.MSlice()
 	defer A1.Recycle()
 
-  cuda.Zero(hth1)       
-  if (JHThermalnoise==true) {B_therm.AddTo(hth1)}
-  cuda.Zero(hth2)       
-  if (JHThermalnoise==true) {B_therm.AddTo(hth2)}
+  //cuda.Zero(hth1)       
+  //if (JHThermalnoise==true) {B_therm.AddTo(hth1)}
+  //cuda.Zero(hth2)       
+  //if (JHThermalnoise==true) {B_therm.AddTo(hth2)}
 	if Precess {
 		cuda.LLBTorque(dst, M.Buffer(), dst, Temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
@@ -62,10 +62,10 @@ func SetLLBTorqueJH(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	A1 := a1.MSlice()
 	defer A1.Recycle()
 
-  cuda.Zero(hth1)       
-  B_therm.LLBAddTo(hth1)
-  cuda.Zero(hth2)       
-  B_therm.LLBAddTo(hth2)
+  //cuda.Zero(hth1)       
+  //B_therm.LLBAddTo(hth1)
+  //cuda.Zero(hth2)       
+  //B_therm.LLBAddTo(hth2)
 	if Precess {
 		cuda.LLBTorqueJH(dst, M.Buffer(), dst, TempJH.temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
@@ -95,10 +95,10 @@ func SetLLBTorque3T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	A1 := a1.MSlice()
 	defer A1.Recycle()
 
-  cuda.Zero(hth1)       
-  B_therm.LLBAddTo(hth1)
-  cuda.Zero(hth2)       
-  B_therm.LLBAddTo(hth2)
+  //cuda.Zero(hth1)       
+  //B_therm.LLBAddTo(hth1)
+  //cuda.Zero(hth2)       
+  //B_therm.LLBAddTo(hth2)
 	if Precess {
 		cuda.LLBTorqueJH(dst, M.Buffer(), dst, Ts.temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
@@ -128,10 +128,10 @@ func SetLLBTorque2T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
 	A1 := a1.MSlice()
 	defer A1.Recycle()
 
-  cuda.Zero(hth1)       
-  B_therm.LLBAddTo(hth1)
-  cuda.Zero(hth2)       
-  B_therm.LLBAddTo(hth2)
+  //cuda.Zero(hth1)       
+  //B_therm.LLBAddTo(hth1)
+  //cuda.Zero(hth2)       
+  //B_therm.LLBAddTo(hth2)
 	if Precess {
 		cuda.LLBTorqueJH(dst, M.Buffer(), dst, Te.temp,alpha,TCurie,Msat,hth1,hth2,Langevin,A1) // overwrite dst with torque
 	} else {
