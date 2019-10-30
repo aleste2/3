@@ -40,6 +40,7 @@ func (_ *HeunAFLLBPRB054401) Step() {
 		B_therm.AddTo(Hth2a)
 		B_therm.AddTo(Hth1b)
 		B_therm.AddTo(Hth2b)
+	}
 
 	if FixDt != 0 {
 		Dt_si = FixDt
