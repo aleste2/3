@@ -20,6 +20,11 @@ func (_ *HeunLLBJH) Step() {
 	defer cuda.Recycle(Hth1)
 	Hth2 := cuda.Buffer(VECTOR, y.Size())
 	defer cuda.Recycle(Hth2)
+		
+	cuda.Zero(Hth1)       
+	B_therm.LLBAddTo(Hth1)
+	cuda.Zero(Hth2)       
+	B_therm.LLBAddTo(Hth2)
 
 	// Parameter for JH
 	temp0 := TempJH.temp
