@@ -58,9 +58,8 @@ func (_ *HeunLLB2T) Step() {
 
 		// Good step, then evolve Temperatures with rk4. Equation is numericaly complicated, better to divide time step
 		
-		substeps:=TSubsteps
-		for iter:=0;iter<substeps; iter++{
-			rk4Step2T(dt/float32(substeps)/float32(GammaLL))
+		for iter:=0;iter<TSubsteps; iter++{
+			NewtonStep2T(float32(Dt_si)/float32(TSubsteps))
 		}
 
 		NSteps++
