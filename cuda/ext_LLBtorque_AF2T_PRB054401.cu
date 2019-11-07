@@ -6,11 +6,11 @@
 
 // Landau-Lifshitz torque for AF implementation PRB 100 054401 (2019)
 // Uses me derived from eq. (9) of PRB 104413 (2012)
+// Other equations from LowTempPhys 41 (9) 2015 due to better numerical stability
  
 extern "C" 
 
 // New parameters
-// c31,c32 Ms vs T dependence (1-T/Tc)^c3i
 // mua,mub magnetic moment
 // J0aa, J0bb, J0ab exchanges
 
@@ -42,10 +42,7 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 	float* __restrict__  J0ab_, float J0ab_mul,
 	int N) {
 
-//    const float MU0=1.2566370614e-6;
-//    const float MUB=9.27400949e-24;
     const float kB=1.38064852e-23;
-//    const float GammaLL=1.7595e11;
   
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
 
@@ -70,9 +67,11 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         float J0ab = amul(J0ab_, J0ab_mul, i)*(1.0f-x)*nv;
         float J0ba = amul(J0ab_, J0ab_mul, i)*x*nv;
         float temp = temp_[i]; 
+
         if (temp==0) temp=0.0001; // to avoid zero division...
         if (temp>2.0*TCurie) temp=2.0*TCurie; // To avoid numerical problems much above TC
-		if (temp==TCurie) temp=TCurie-0.01;  // To avoid xpar and Bint divergence at T=Tc
+		if (temp==TCurie) temp=TCurie-0.1;  // To avoid xpar and Bint divergence at T=Tc
+
         float3 hth1a = {hth11x[i], hth11y[i],hth11z[i]};
         float3 hth2a = {hth21x[i], hth21y[i],hth21z[i]};
         float3 hth1b = {hth12x[i], hth12y[i],hth12z[i]};
@@ -87,32 +86,14 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         if ((ma==0)||(mb==0))	{
 			torquea = 0.0f*m1;
          	torqueb = 0.0f*m2;
-		} else {
- 		float chiA=(J0aa*ma+fabs(J0ab)*mb)/(kB*temp);  // Arguments of Langevin functions
-		float chiB=(J0bb*mb+fabs(J0ba)*ma)/(kB*temp);
-
-		float xpara;
-		float xparb;
+ 		} else {
 
 		float J01 = J0aa;
 		float J02 = J0bb;
 		float J012 = J0ab;
 		float J021 = J0ba;
-
 		TCurie = (J01+J02+pow(pow(J01-J02,2.0f)+4.0f*J012*J021,0.5f))/(6.0f*kB); // Eq (9) LowTempPhys 41 (9) 2015 
-
-		// Multiplico por 1e21 para evitar que float se anule por valor <1e-38
-		if (temp<TCurie) {
-			xpara=((mub*1.0e21)*Lder(chiA)*fabs(J0ab*1.0e21)*Lder(chiB)+(mua*1.0e21)*Lder(chiA)*((kB*1.0e21)*temp-(J0bb*1.0e21)*Lder(chiB)))/(((kB*1.0e21)*temp-(J0aa*1.0e21)*Lder(chiA))*((kB*1.0e21)*temp-(J0bb*1.0e21)*Lder(chiB))-fabs(J0ba*1.0e21)*Lder(chiA)*fabs(J0ab*1.0e21)*Lder(chiB));
-			xparb=((mua*1.0e21)*Lder(chiB)*fabs(J0ba*1.0e21)*Lder(chiA)+(mub*1.0e21)*Lder(chiB)*((kB*1.0e21)*temp-(J0aa*1.0e21)*Lder(chiA)))/(((kB*1.0e21)*temp-(J0bb*1.0e21)*Lder(chiB))*((kB*1.0e21)*temp-(J0aa*1.0e21)*Lder(chiA))-fabs(J0ab*1.0e21)*Lder(chiB)*fabs(J0ba*1.0e21)*Lder(chiA));
-		} else { // T>Tc Lder=1/3
-			xpara=((mub*1.0e21)*0.3333333f*fabs(J0ab*1.0e21)*0.3333333f+(mua*1.0e21)*0.3333333f*((kB*1.0e21)*temp-(J0bb*1.0e21)*0.3333333f))/(((kB*1.0e21)*temp-(J0aa*1.0e21)*0.3333333f)*((kB*1.0e21)*temp-(J0bb*1.0e21)*0.3333333f)-fabs(J0ba*1.0e21)*0.3333333f*fabs(J0ab*1.0e21)*0.3333333f);
-			xparb=((mua*1.0e21)*0.3333333f*fabs(J0ba*1.0e21)*0.3333333f+(mub*1.0e21)*0.3333333f*((kB*1.0e21)*temp-(J0aa*1.0e21)*0.3333333f))/(((kB*1.0e21)*temp-(J0bb*1.0e21)*0.3333333f)*((kB*1.0e21)*temp-(J0aa*1.0e21)*0.3333333f)-fabs(J0ab*1.0e21)*0.3333333f*fabs(J0ba*1.0e21)*0.3333333f);
-		}
-
-
-		float3 hexa = -J0ab/(mua*ma*ma)*cross(m1, cross(m1, m2));
-		float3 hexb = -J0ba/(mub*mb*mb)*cross(m2, cross(m2, m1));
+		if ((fabs(temp-TCurie)<0.007*TCurie)&&(temp<TCurie)) {temp=0.993f*TCurie;}  // To avoid errors arround T=Tc
 
 		float mea;
 		float meb;
@@ -128,6 +109,14 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 			lin=true;
 			temp=TCurie/10.0f;
 		}
+		bool lin2=false;   // Linear dependence at close to Tc due to numerical inestabilities
+		if (temp>TCurie*0.995) {
+			Told=temp;
+			lin2=true;
+			temp=TCurie*0.995;
+		}
+
+		// Calculo de m_e1,m_e2
 		float A11, A12, A21, A22;
 	 	float x10, x20;
 		float x1, x2, y1, y2;
@@ -138,19 +127,16 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float m_e1,m_e2;
 		float tolsq=1e-4;
 		float tol=1e-4;
-		// Calculo de m_e1,m_e2
 		float kB_T=kB*temp;
 		float beta = 1.0/kB_T;
 		if(kB_T == 0) {
 	    	m_e1=1.0;
 	    	m_e2=1.0;
 		}
-
 		A11 = beta*J01;
 		A12 = beta*fabs(J012);
 		A21 = beta*fabs(J021);
 		A22 = beta*J02;
-
 		x1 = 0.9; x2 = 0.9;
 		y1 = Langevin(A11*x1+A12*x2)-x1;
 		y2 = Langevin(A21*x1+A22*x2)-x2;
@@ -178,7 +164,6 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		} while( dx1*dx1>tolsq || dx2*dx2>tolsq );
 		m_e1 = x1>tol ? x1 : 0.001;
 		m_e2 = x2>tol ? x2 : 0.001;
-		
 		mea=m_e1;
 		meb=m_e2;
 		if (lin==true) {
@@ -186,18 +171,50 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 			meb=1.0f-(meb-1.0f)/(-temp)*(Told);
 			temp=Told;
 		}
-		} else	{
-			mea=0.001f;
-			meb=0.001f;
+		if (lin2==1) {
+			mea=mea*(TCurie-Told)/(0.005f*TCurie);
+			meb=meb*(TCurie-Told)/(0.005f*TCurie);
+			temp=Told;
 		}
+		} else	{
+			mea=0.02f;
+			meb=0.02f;
+		}
+		if (mea<0.02f) {mea=0.02f;}
+		if (meb<0.02f) {meb=0.02f;}
+
+		float chiA=(J0aa*mea+fabs(J0ab)*meb)/(kB*temp);  // Arguments of Langevin functions Error in PRB 054401 using Low Temp Phys
+		float chiB=(J0bb*meb+fabs(J0ba)*mea)/(kB*temp);
+
+		float xpara;
+		float xparb;
+
+//		Following notation of LowTemp Phys (eq 13), to avoid numerical errors float<1e-38	
+		if (temp<TCurie) {
+//			xpara=((mub*1.0e21)*Lder(chiA)*fabs(J0ab*1.0e21)*Lder(chiB)+(mua*1.0e21)*Lder(chiA)*((kB*1.0e21)*temp-(J0bb*1.0e21)*Lder(chiB)))/(((kB*1.0e21)*temp-(J0aa*1.0e21)*Lder(chiA))*((kB*1.0e21)*temp-(J0bb*1.0e21)*Lder(chiB))-fabs(J0ba*1.0e21)*Lder(chiA)*fabs(J0ab*1.0e21)*Lder(chiB));
+//			xparb=((mua*1.0e21)*Lder(chiB)*fabs(J0ba*1.0e21)*Lder(chiA)+(mub*1.0e21)*Lder(chiB)*((kB*1.0e21)*temp-(J0aa*1.0e21)*Lder(chiA)))/(((kB*1.0e21)*temp-(J0bb*1.0e21)*Lder(chiB))*((kB*1.0e21)*temp-(J0aa*1.0e21)*Lder(chiA))-fabs(J0ab*1.0e21)*Lder(chiB)*fabs(J0ba*1.0e21)*Lder(chiA));
+			xpara=(mub/(kB*temp)*Lder(chiA)*fabs(J0ab)/(kB*temp)*Lder(chiB)+mua/(kB*temp)*Lder(chiA)*(1.0f-J0bb/(kB*temp)*Lder(chiB)))/((1.0f-J0aa/(kB*temp)*Lder(chiA))*(1.0f-J0bb/(kB*temp)*Lder(chiB))-fabs(J0ba)/(kB*temp)*Lder(chiA)*fabs(J0ab)/(kB*temp)*Lder(chiB));
+			xparb=(mua/(kB*temp)*Lder(chiB)*fabs(J0ba)/(kB*temp)*Lder(chiA)+mub/(kB*temp)*Lder(chiB)*(1.0f-J0aa/(kB*temp)*Lder(chiA)))/((1.0f-J0bb/(kB*temp)*Lder(chiB))*(1.0f-J0aa/(kB*temp)*Lder(chiA))-fabs(J0ab)/(kB*temp)*Lder(chiB)*fabs(J0ba)/(kB*temp)*Lder(chiA));
+		} else { // T>Tc Lder=1/3
+//			xpara=((mub*1.0e21)*0.3333333f*fabs(J0ab*1.0e21)*0.3333333f+(mua*1.0e21)*0.3333333f*((kB*1.0e21)*temp-(J0bb*1.0e21)*0.3333333f))/(((kB*1.0e21)*temp-(J0aa*1.0e21)*0.3333333f)*((kB*1.0e21)*temp-(J0bb*1.0e21)*0.3333333f)-fabs(J0ba*1.0e21)*0.3333333f*fabs(J0ab*1.0e21)*0.3333333f);
+//			xparb=((mua*1.0e21)*0.3333333f*fabs(J0ba*1.0e21)*0.3333333f+(mub*1.0e21)*0.3333333f*((kB*1.0e21)*temp-(J0aa*1.0e21)*0.3333333f))/(((kB*1.0e21)*temp-(J0bb*1.0e21)*0.3333333f)*((kB*1.0e21)*temp-(J0aa*1.0e21)*0.3333333f)-fabs(J0ab*1.0e21)*0.3333333f*fabs(J0ba*1.0e21)*0.3333333f);
+			xpara=(mub/(kB*temp)/3.0f*fabs(J0ab)/(kB*temp)/3.0f+mua/(kB*temp)/3.0f*(1.0f-J0bb/(kB*temp)/3.0f))/((1.0f-J0aa/(kB*temp)/3.0f)*(1.0f-J0bb/(kB*temp)/3.0f)-fabs(J0ba)/(kB*temp)/3.0f*fabs(J0ab)/(kB*temp)/3.0f);
+			xparb=(mua/(kB*temp)/3.0f*fabs(J0ba)/(kB*temp)/3.0f+mub/(kB*temp)/3.0f*(1.0f-J0aa/(kB*temp)/3.0f))/((1.0f-J0bb/(kB*temp)/3.0f)*(1.0f-J0aa/(kB*temp)/3.0f)-fabs(J0ab)/(kB*temp)/3.0f*fabs(J0ba)/(kB*temp)/3.0f);
+		}
+	
+		float3 hexa = -J0ab/(mua*ma*ma)*cross(m1, cross(m1, m2));
+		float3 hexb = -J0ba/(mub*mb*mb)*cross(m2, cross(m2, m1));
 
 		float tauA=fabs(dot(m2,m1))/mb;
 		float tauB=fabs(dot(m1,m2))/ma;
 		float taueA=tauA*mea/ma;
 		float taueB=tauB*meb/mb;
 
-		float3 heffa = -(1.0f/xpara+fabs(J0ab)/mua*xparb/xpara)*((ma-mea)/mea)*m1+fabs(J0ab)/mua*(tauB-taueB)/mea*m1;
-		float3 heffb = -(1.0f/xparb+fabs(J0ba)/mub*xpara/xparb)*((mb-meb)/meb)*m2+fabs(J0ba)/mub*(tauA-taueA)/meb*m2;
+		float lambdaA=(1.0f/xpara+fabs(J0ab)/mua*xparb/xpara);
+		float lambdaB=(1.0f/xparb+fabs(J0ba)/mub*xpara/xparb);
+
+		float3 heffa = -lambdaA*((ma-mea)/mea)*m1+fabs(J0ab)/mua*(tauB-taueB)/mea*m1;
+		float3 heffb = -lambdaB*((mb-meb)/meb)*m2+fabs(J0ba)/mub*(tauA-taueA)/meb*m2;
 
 		float alphaparA;
 		float alphaparB;
@@ -235,10 +252,11 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         float3 m2xm2xHtot2 = cross(m2, m2xHtot2);
         float gillba = 1.0f / (1.0f + alphaa * alphaa);
         float gillbb = 1.0f / (1.0f + alphab * alphab);
- 
+
         torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a;
         torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b;
 	}
+
     t1x[i] = torquea.x;
     t1y[i] = torquea.y;
     t1z[i] = torquea.z;
