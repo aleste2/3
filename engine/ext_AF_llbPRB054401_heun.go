@@ -127,7 +127,7 @@ func torqueFnAFLLBPRB(dst1,dst2 *data.Slice,hth1a,hth2a,hth1b,hth2b *data.Slice)
 	AddCustomField(dst1)
 	AddCustomField(dst2)
 
-	cuda.Zero(hth1a)       
+	/*cuda.Zero(hth1a)       
 	cuda.Zero(hth2a)       
 	cuda.Zero(hth1b)       
 	cuda.Zero(hth2b)       
@@ -136,7 +136,7 @@ func torqueFnAFLLBPRB(dst1,dst2 *data.Slice,hth1a,hth2a,hth1b,hth2b *data.Slice)
 		B_therm.AddTo(hth2a)
 		B_therm.AddTo(hth1b)
 		B_therm.AddTo(hth2b)
-	}
+	}*/
 	
 	// STT
 	AddSTTorqueAF(dst1,dst2)
