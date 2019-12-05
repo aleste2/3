@@ -41,6 +41,10 @@ var (
 	isolatedlattices  bool = false // Debug only
 	Alpha1        = NewScalarParam("alpha1", "", "Landau-Lifshitz damping constant")
 	Alpha2        = NewScalarParam("alpha2", "", "Landau-Lifshitz damping constant")
+	Xi1                               = NewScalarParam("xi1", "", "Non-adiabaticity of spin-transfer-torque STT lattice 1")
+	Xi2                               = NewScalarParam("xi2", "", "Non-adiabaticity of spin-transfer-torque STT lattice 2")
+	PolSTT1                              = NewScalarParam("PolSTT1", "", "Electrical current polarization STT lattice 1")
+	PolSTT2                              = NewScalarParam("PolSTT2", "", "Electrical current polarization STT lattice 2")
 	// For AF PRB 054401
 	x_TM        = NewScalarParam("x_TM", "a.u.", "TM ratio")
 	nv          = NewScalarParam("nv", "a.u.", "Number of neighbours")
@@ -178,7 +182,7 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 	if J.isZero() {
 		return
 	}
-	util.AssertMsg(!Pol.isZero(), "spin polarization should not be 0")
+	//util.AssertMsg(!Pol.isZero(), "spin polarization should not be 0")
 	jspin, rec := J.Slice()
 	if rec {
 		defer cuda.Recycle(jspin)
@@ -199,12 +203,16 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 		defer alpha1.Recycle()
 		alpha2 := Alpha2.MSlice()
 		defer alpha2.Recycle()
-		xi := Xi.MSlice()
-		defer xi.Recycle()
-		pol := Pol.MSlice()
-		defer pol.Recycle()
-		cuda.AddZhangLiTorque(dst1, M1.Buffer(), msat1, j, alpha1, xi, pol, Mesh())
-		cuda.AddZhangLiTorque(dst2, M2.Buffer(), msat2, j, alpha2, xi, pol, Mesh())
+		xi1 := Xi1.MSlice()
+		defer xi1.Recycle()
+		xi2 := Xi2.MSlice()
+		defer xi2.Recycle()
+		polstt1 := PolSTT1.MSlice()
+		defer polstt1.Recycle()
+		polstt2 := PolSTT2.MSlice()
+		defer polstt2.Recycle()
+		cuda.AddZhangLiTorque(dst1, M1.Buffer(), msat1, j, alpha1, xi1, polstt1, Mesh())
+		cuda.AddZhangLiTorque(dst2, M2.Buffer(), msat2, j, alpha2, xi2, polstt2, Mesh())
 	}
 	if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
 
