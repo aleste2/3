@@ -82,7 +82,11 @@ const (
 	LLBAF2T        =129
 	
 	HEUNJHONLY     =207
-	ONLY2T         =208	
+	ONLY2T         =208
+	
+	// Atomistic solvers
+	ATOHEUN		= 150
+	ATOHEUN2T		= 151
 )
 
 func SetSolver(typ int) {
@@ -154,6 +158,13 @@ func SetSolver(typ int) {
                 stepper = new(HeunJH)
 	case ONLY2T:
 		stepper = new(Only2T)
+		
+//      atomistic Solvers		
+	case ATOHEUN:
+		stepper = new(HeunAto)
+	case ATOHEUN2T:
+		stepper = new(HeunAto2T)
+		LLB2Tf=true
 		
 	}
 	solvertype = typ
