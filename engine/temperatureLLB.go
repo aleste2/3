@@ -15,6 +15,7 @@ var (
   // For Joule heating
 	Langevin = 0
 	JHThermalnoise = true
+	ScaleNoiseLLB                 float64  = 1.0              // reduce noise in LLB
 	RenormLLB   =false
 	TSubsteps=3
 	TOversteps=1
@@ -73,6 +74,7 @@ func init() {
 	DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
 	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
 	DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
+	DeclVar("ScaleNoiseLLB", &ScaleNoiseLLB, "Thermal noise scale")
 }
 
 // LocalTemp definitions and Functions for JH
@@ -146,18 +148,18 @@ func (b *thermField) LLBupdate() {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
 		if (LLBJHf==true){
 			       		TempJH.update()
-                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha)
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha, ScaleNoiseLLB)
 		}
 		if (LLB3Tf==true){
 			       		Te.update()
 			       		Tl.update()
 			       		Ts.update()
-                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Ts.temp, alpha)
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Ts.temp, alpha, ScaleNoiseLLB)
 		}
 		if (LLB2Tf==true){
 			       		Te.update()
 			       		Tl.update()
-                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Te.temp, alpha)
+                               		cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Te.temp, alpha, ScaleNoiseLLB)
 		}
 	}
 
