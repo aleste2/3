@@ -335,7 +335,7 @@ func (b *thermField) updateAF(i int) {
 	}  // To cancel themal noise if needed
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
-		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha0)
+		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha0,ScaleNoiseLLB)
 	}
 	b.step = NSteps
 	b.dt = Dt_si
