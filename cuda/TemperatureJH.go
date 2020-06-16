@@ -5,8 +5,9 @@ import (
 	"github.com/mumax/3/util"
 )
 
-func SetTemperatureJH(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Msat MSlice, TempJH *data.Slice, Alpha MSlice) {
+func SetTemperatureJH(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Msat MSlice, TempJH *data.Slice, Alpha MSlice,ScaleNoiseLLB float64) {
 	util.Argument(Bth.NComp() == 1 && noise.NComp() == 1)
+
 
 	N := Bth.Len()
 	cfg := make1DConf(N)
@@ -15,6 +16,7 @@ func SetTemperatureJH(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Msat MS
 		Msat.DevPtr(0), Msat.Mul(0),
 		TempJH.DevPtr(0),
 		Alpha.DevPtr(0), Alpha.Mul(0),
+		float32(ScaleNoiseLLB),
 		N, cfg)
 }
 
