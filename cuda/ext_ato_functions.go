@@ -87,6 +87,7 @@ func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol
 	N := torque.Len()
 	cfg := make1DConf(N)
 	c := mesh.CellSize()
+	meshThickness := mesh.WorldSize()[Z]
 	volume:=(c[X]*c[Y]*c[Z])
 	if (celltype==1) {
 		volume=volume*0.68*8
@@ -109,6 +110,8 @@ func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol
 		pol.DevPtr(0), pol.Mul(0),
 		λ.DevPtr(0), λ.Mul(0),
 		ε_prime.DevPtr(0), ε_prime.Mul(0),
-		unsafe.Pointer(uintptr(0)), flt,
+		thickness.DevPtr(0), thickness.Mul(0),
+		float32(meshThickness),
+		float32(flt),
 		N, cfg)
 }
