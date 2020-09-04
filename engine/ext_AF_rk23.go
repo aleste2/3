@@ -89,9 +89,9 @@ func (rk *AntiferroRK23) Step() {
 	torqueFnAF(k13,k23)
 
 	// 3rd order solution
-	madd4(m1, m10, rk.k11, k12, k13, 1, (2./9.)*h1, (1./3.)*h1, (4./9.)*h1)
+	cuda.Madd4(m1, m10, rk.k11, k12, k13, 1, (2./9.)*h1, (1./3.)*h1, (4./9.)*h1)
 	M1.normalize()
-	madd4(m2, m20, rk.k21, k22, k23, 1, (2./9.)*h2, (1./3.)*h2, (4./9.)*h2)
+	cuda.Madd4(m2, m20, rk.k21, k22, k23, 1, (2./9.)*h2, (1./3.)*h2, (4./9.)*h2)
 	M2.normalize()
 
 	// error estimate
@@ -100,8 +100,8 @@ func (rk *AntiferroRK23) Step() {
 	Err1 := k12 // re-use k2 as error
 	Err2 := k22 // re-use k2 as error
 	// difference of 3rd and 2nd order torque without explicitly storing them first
-	madd4(Err1, rk.k11, k12, k13, k14, (7./24.)-(2./9.), (1./4.)-(1./3.), (1./3.)-(4./9.), (1. / 8.))
-	madd4(Err2, rk.k21, k22, k23, k24, (7./24.)-(2./9.), (1./4.)-(1./3.), (1./3.)-(4./9.), (1. / 8.))
+	cuda.Madd4(Err1, rk.k11, k12, k13, k14, (7./24.)-(2./9.), (1./4.)-(1./3.), (1./3.)-(4./9.), (1. / 8.))
+	cuda.Madd4(Err2, rk.k21, k22, k23, k24, (7./24.)-(2./9.), (1./4.)-(1./3.), (1./3.)-(4./9.), (1. / 8.))
 
 	// determine error
 	err1 := cuda.MaxVecNorm(Err1) * float64(h)
