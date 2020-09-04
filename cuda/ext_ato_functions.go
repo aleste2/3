@@ -83,7 +83,7 @@ func MultiplyVolume(B *data.Slice,mesh *data.Mesh,celltype int) {
 		N, cfg)
 }
 
-func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol, λ, ε_prime MSlice, flp float64, mesh *data.Mesh,celltype int) {
+func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol, λ, ε_prime MSlice, thickness MSlice,flp float64, mesh *data.Mesh,celltype int) {
 	N := torque.Len()
 	cfg := make1DConf(N)
 	c := mesh.CellSize()
