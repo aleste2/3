@@ -397,8 +397,11 @@ func AddSTTorqueAto(dst *data.Slice) {
 		defer lambda.Recycle()
 		epsPrime := EpsilonPrime.MSlice()
 		defer epsPrime.Recycle()
+		thickness := FreeLayerThickness.MSlice()
+		defer thickness.Recycle()
 		cuda.AddSlonczewskiTorque2Ato(dst, M.Buffer(),
 			msat, j, fixedP, alpha, pol, lambda, epsPrime,
+			thickness,
 			CurrentSignFromFixedLayerPosition[fixedLayerPosition],
 			Mesh(),celltype)
 	}
