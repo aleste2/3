@@ -5,6 +5,8 @@ package cu
 //#include <cuda.h>
 import "C"
 
+const CUDA_VERSION = C.CUDA_VERSION
+
 // Returns the CUDA driver version.
 func Version() int {
 	var version C.int
