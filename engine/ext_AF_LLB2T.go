@@ -15,6 +15,16 @@ func (_ *HeunLLBAF2T) Step() {
 
 	y1 := M1.Buffer()
 	y2 := M2.Buffer()
+	
+	// For renorm
+	y01 := cuda.Buffer(VECTOR, y1.Size())
+	defer cuda.Recycle(y01)
+	y02 := cuda.Buffer(VECTOR, y1.Size())
+	defer cuda.Recycle(y02)
+
+	cuda.Madd2(y01, y1, y01, 1, 0) // y = y + dt * dy
+	cuda.Madd2(y02, y2, y02, 1, 0) // y = y + dt * dy
+	//
 
 	dy1 := cuda.Buffer(VECTOR, y1.Size())
 	defer cuda.Recycle(dy1)
@@ -79,6 +89,8 @@ func (_ *HeunLLBAF2T) Step() {
 		// step OK
 		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt1, -0.5*dt1) //****
 		cuda.Madd3(y2, y2, dy12, dy2, 1, 0.5*dt2, -0.5*dt2) //****
+		// Renormalization
+		if (RenormLLB==true) {RenormAF2T(y01,y02,float32(Dt_si), float32(GammaLL1), float32(GammaLL2))}
 		// Good step, then evolve Temperatures with rk4. Equation is numericaly complicated, better to divide time step
 		for iter:=0;iter<TSubsteps; iter++{
 			NewtonStep2T(float32(Dt_si)/float32(TSubsteps))
