@@ -201,3 +201,44 @@ func torqueFnAFLLBPRB(dst1,dst2 *data.Slice,hth1a,hth2a,hth1b,hth2b *data.Slice)
 
 	NEvals++
 }
+
+func RenormAF(y01,y02 *data.Slice,dt, GammaLL1, GammaLL2 float32) {
+
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+	alpha1 := Alpha1.MSlice()
+	defer alpha1.Recycle()
+	alpha2 := Alpha2.MSlice()
+	defer alpha2.Recycle()
+
+	Tcurie := TCurie.MSlice()
+	defer Tcurie.Recycle()
+	Msat := Msat.MSlice()
+	defer Msat.Recycle()
+	Msat1 := Msat1.MSlice()
+	defer Msat1.Recycle()
+	Msat2 := Msat2.MSlice()
+	defer Msat2.Recycle()
+	temp := Temp.MSlice()
+	defer temp.Recycle()
+
+	X_TM := x_TM.MSlice()
+	defer X_TM.Recycle()
+	NV := nv.MSlice()
+	defer NV.Recycle()
+
+	MU1 := mu1.MSlice()
+	defer MU1.Recycle()
+	MU2 := mu2.MSlice()
+	defer MU2.Recycle()
+
+	J0AA := J0aa.MSlice()
+	defer J0AA.Recycle()
+	J0BB := J0bb.MSlice()
+	defer J0BB.Recycle()
+	J0AB := J0ab.MSlice()
+	defer J0AB.Recycle()
+
+	cuda.LLBRenormAF(y01,y02,M1.Buffer(), M2.Buffer(), temp,alpha,alpha1,alpha2,Tcurie,Msat,Msat1,Msat2,X_TM,NV,MU1,MU2,J0AA,J0BB,J0AB,dt, GammaLL1, GammaLL2)
+
+}
