@@ -16,6 +16,16 @@ func (_ *HeunAFLLBPRB054401) Step() {
 
 	y1 := M1.Buffer()
 	y2 := M2.Buffer()
+	
+	// For renorm
+	y01 := cuda.Buffer(VECTOR, y1.Size())
+	defer cuda.Recycle(y01)
+	y02 := cuda.Buffer(VECTOR, y1.Size())
+	defer cuda.Recycle(y02)
+
+	cuda.Madd2(y01, y1, y01, 1, 0) // y = y + dt * dy
+	cuda.Madd2(y02, y2, y02, 1, 0) // y = y + dt * dy
+	//
 
 	dy1 := cuda.Buffer(VECTOR, y1.Size())
 	defer cuda.Recycle(dy1)
@@ -67,7 +77,7 @@ func (_ *HeunAFLLBPRB054401) Step() {
 	defer cuda.Recycle(dy12)
 	Time += Dt_si
 
-  // Rewrite to calculate spep 2
+  // Rewrite to calculate step 2
 	torqueFnAFLLBPRB(dy11,dy12,Hth1a,Hth2a,Hth1b,Hth2b)
 
 	err1 := cuda.MaxVecDiff(dy1, dy11) * float64(dt1)
@@ -81,6 +91,8 @@ func (_ *HeunAFLLBPRB054401) Step() {
 		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt1, -0.5*dt1) //****
 		cuda.Madd3(y2, y2, dy12, dy2, 1, 0.5*dt2, -0.5*dt2) //****
 		// M is not normalized in LLB
+		// Renormalization
+		if (RenormLLB==true) {RenormAF(y01,y02,float32(Dt_si), float32(GammaLL1), float32(GammaLL2))}
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
 		setLastErr(err)
