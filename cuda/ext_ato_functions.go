@@ -6,6 +6,13 @@ import (
 	"unsafe"
 )
 
+func Alloypar(host,alloy int, percent float64, random *data.Slice,regions unsafe.Pointer ) {
+	N := random.Len()
+	cfg := make1DConf(N)
+	k_alloyparcuda_async(byte(host),byte(alloy), float32(percent), random.DevPtr(0) ,unsafe.Pointer(regions),
+		N, cfg)
+}
+
 // Set Bth to thermal noise (Brown).
 // see temperature.cu
 func SetTemperatureAto(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Mu, Temp, Alpha MSlice,ScaleNoiseLLB float64) {
