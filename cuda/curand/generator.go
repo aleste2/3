@@ -42,6 +42,18 @@ func (g Generator) GenerateNormal(output uintptr, n int64, mean, stddev float32)
 	}
 }
 
+// Addes for alloy in parallel
+func (g Generator) GenerateUniform(output uintptr, n int64) {
+	err := Status(C.curandGenerateUniform(
+		C.curandGenerator_t(unsafe.Pointer(uintptr(g))),
+		(*C.float)(unsafe.Pointer(output)),
+		C.size_t(n)))
+	if err != SUCCESS {
+		panic(err)
+	}
+}
+//
+
 func (g Generator) SetSeed(seed int64) {
 	err := Status(C.curandSetPseudoRandomGeneratorSeed(C.curandGenerator_t(unsafe.Pointer(uintptr(g))), C.ulonglong(seed)))
 	if err != SUCCESS {
