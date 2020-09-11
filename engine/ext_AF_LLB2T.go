@@ -146,10 +146,10 @@ func torqueFnAFLLB2TPRB(dst1,dst2 *data.Slice,hth1a,hth2a,hth1b,hth2b *data.Slic
 	cuda.Zero(hth1b)       
 	cuda.Zero(hth2b)       
 	if JHThermalnoise == true {
-		B_therm.AddTo(hth1a)
-		B_therm.AddTo(hth2a)
-		B_therm.AddTo(hth1b)
-		B_therm.AddTo(hth2b)
+		B_therm.LLBAddTo(hth1a)
+		B_therm.LLBAddTo(hth2a)
+		B_therm.LLBAddTo(hth1b)
+		B_therm.LLBAddTo(hth2b)
 	}*/
 	
 	// STT
