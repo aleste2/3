@@ -69,6 +69,12 @@ func alloyold(host,alloy int, percent float64) {
 	print(added," alloy atoms\n")
 }
 
+type alloyst struct {
+	seed      int64            // seed for generator
+	generator curand.Generator //
+	noise     *data.Slice      // noise buffer
+}
+
 func alloy(host,alloy int, percent float64) {
 	var ralloy     alloyst
 	ralloy.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
