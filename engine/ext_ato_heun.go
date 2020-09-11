@@ -43,7 +43,7 @@ func init() {
 	DeclFunc("ext_InterAtoDMI", InterAtoDMI, "Sets DMI coupling between two regions.")
 }
 
-func alloy(host,alloy int, percent float64) {
+func alloyold(host,alloy int, percent float64) {
 	count:=0.0
 	n := M.Mesh().Size()
 
@@ -67,6 +67,18 @@ func alloy(host,alloy int, percent float64) {
 		}
 	}
 	print(added," alloy atoms\n")
+}
+
+func alloy(host,alloy int, percent float64) {
+	var ralloy     alloyst
+	ralloy.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+	ralloy.seed=1
+	y := M.Buffer()
+	ralloy.noise=cuda.Buffer(1, y.Size())
+	defer cuda.Recycle(ralloy.noise)
+	N := Mesh().NCell()
+	ralloy.generator.GenerateUniform(uintptr(ralloy.noise.DevPtr(0)), int64(N))
+	cuda.Alloypar(host,alloy, percent,ralloy.noise,regions.gpuCache.Ptr)
 }
 
 
