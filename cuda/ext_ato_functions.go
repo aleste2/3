@@ -6,16 +6,16 @@ import (
 	"unsafe"
 )
 
-func Alloypar(host,alloy int, percent float64, random *data.Slice,regions unsafe.Pointer ) {
+func Alloypar(host, alloy int, percent float64, random *data.Slice, regions unsafe.Pointer) {
 	N := random.Len()
 	cfg := make1DConf(N)
-	k_alloyparcuda_async(byte(host),byte(alloy), float32(percent), random.DevPtr(0) ,unsafe.Pointer(regions),
+	k_alloyparcuda_async(byte(host), byte(alloy), float32(percent), random.DevPtr(0), unsafe.Pointer(regions),
 		N, cfg)
 }
 
 // Set Bth to thermal noise (Brown).
 // see temperature.cu
-func SetTemperatureAto(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Mu, Temp, Alpha MSlice,ScaleNoiseLLB float64) {
+func SetTemperatureAto(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Mu, Temp, Alpha MSlice, ScaleNoiseLLB float64) {
 	util.Argument(Bth.NComp() == 1 && noise.NComp() == 1)
 
 	N := Bth.Len()
@@ -52,7 +52,7 @@ func AddUniaxialAnisotropyAto(Beff, m *data.Slice, Mu, Dato, u MSlice) {
 
 // Add exchange field to Beff.
 // see exchangeato.cu
-func AddExchangeAto(B, m *data.Slice, Jato,Jdmi SymmLUT, Mu,Nv MSlice, regions *Bytes, mesh *data.Mesh) {
+func AddExchangeAto(B, m *data.Slice, Jato, Jdmi SymmLUT, Mu, Nv MSlice, regions *Bytes, mesh *data.Mesh) {
 	N := mesh.Size()
 	pbc := mesh.PBC_code()
 	cfg := make3DConf(N)
@@ -60,7 +60,7 @@ func AddExchangeAto(B, m *data.Slice, Jato,Jdmi SymmLUT, Mu,Nv MSlice, regions *
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
 		Mu.DevPtr(0), Mu.Mul(0),
 		Nv.DevPtr(0), Nv.Mul(0),
-		unsafe.Pointer(Jato),unsafe.Pointer(Jdmi), regions.Ptr,
+		unsafe.Pointer(Jato), unsafe.Pointer(Jdmi), regions.Ptr,
 		N[X], N[Y], N[Z], pbc, cfg)
 }
 
@@ -73,16 +73,16 @@ func MultiplyLandeFactor(B *data.Slice, lande MSlice) {
 		N, cfg)
 }
 
-func MultiplyVolume(B *data.Slice,mesh *data.Mesh,celltype int) {
+func MultiplyVolume(B *data.Slice, mesh *data.Mesh, celltype int) {
 	N := B.Len()
 	c := mesh.CellSize()
-	volume:=float32(c[X]*c[Y]*c[Z])
-	if (celltype==1) {
-		volume=volume*0.68*8
+	volume := float32(c[X] * c[Y] * c[Z])
+	if celltype == 1 {
+		volume = volume * 0.68 * 8
 	}
-	if (celltype==2) {
-		volume=volume*0.74*8
-	}	
+	if celltype == 2 {
+		volume = volume * 0.74 * 8
+	}
 	cfg := make1DConf(N)
 	print(volume)
 	k_MultiplyVolume_async(B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
@@ -90,19 +90,19 @@ func MultiplyVolume(B *data.Slice,mesh *data.Mesh,celltype int) {
 		N, cfg)
 }
 
-func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol, λ, ε_prime MSlice, thickness MSlice,flp float64, mesh *data.Mesh,celltype int) {
+func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol, λ, ε_prime MSlice, thickness MSlice, flp float64, mesh *data.Mesh, celltype int) {
 	N := torque.Len()
 	cfg := make1DConf(N)
 	c := mesh.CellSize()
 	meshThickness := mesh.WorldSize()[Z]
-	volume:=(c[X]*c[Y]*c[Z])
-	if (celltype==1) {
-		volume=volume*0.68*8
+	volume := (c[X] * c[Y] * c[Z])
+	if celltype == 1 {
+		volume = volume * 0.68 * 8
 	}
-	if (celltype==2) {
-		volume=volume*0.74*8
+	if celltype == 2 {
+		volume = volume * 0.74 * 8
 	}
-	flt := float32(flp * mesh.WorldSize()[Z]/volume)  // Put factor for conversion from mu to Msat in flt
+	flt := float32(flp * mesh.WorldSize()[Z] / volume) // Put factor for conversion from mu to Msat in flt
 	//if (celltype>0) {flt=flt/2.0}
 
 	k_addslonczewskitorque2_async(

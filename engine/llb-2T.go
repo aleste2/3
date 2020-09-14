@@ -20,10 +20,10 @@ func (_ *HeunLLB2T) Step() {
 	defer cuda.Recycle(Hth1)
 	Hth2 := cuda.Buffer(VECTOR, y.Size())
 	defer cuda.Recycle(Hth2)
-	
-	cuda.Zero(Hth1)       
+
+	cuda.Zero(Hth1)
 	B_therm.LLBAddTo(Hth1)
-	cuda.Zero(Hth2)       
+	cuda.Zero(Hth2)
 	B_therm.LLBAddTo(Hth2)
 
 	if FixDt != 0 {
@@ -35,11 +35,9 @@ func (_ *HeunLLB2T) Step() {
 
 	// stage 1
 
-        // Rewrite to calculate m step 1 
-	torqueFnLLB2T(dy0,Hth1,Hth2)
+	// Rewrite to calculate m step 1
+	torqueFnLLB2T(dy0, Hth1, Hth2)
 	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
-
-        
 
 	// stage 2
 	dy := cuda.Buffer(3, y.Size())
@@ -47,8 +45,8 @@ func (_ *HeunLLB2T) Step() {
 
 	Time += Dt_si
 
-        // Rewrite to calculate step 2
-	torqueFnLLB2T(dy,Hth1,Hth2)
+	// Rewrite to calculate step 2
+	torqueFnLLB2T(dy, Hth1, Hth2)
 
 	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
 	// adjust next time step
@@ -57,9 +55,9 @@ func (_ *HeunLLB2T) Step() {
 		cuda.Madd3(y, y, dy, dy0, 1, 0.5*dt, -0.5*dt) //****
 
 		// Good step, then evolve Temperatures with rk4. Equation is numericaly complicated, better to divide time step
-		
-		for iter:=0;iter<TSubsteps; iter++{
-			NewtonStep2T(float32(Dt_si)/float32(TSubsteps))
+
+		for iter := 0; iter < TSubsteps; iter++ {
+			NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
 		}
 
 		NSteps++
@@ -70,7 +68,7 @@ func (_ *HeunLLB2T) Step() {
 		// undo bad step
 		util.Assert(FixDt == 0)
 		Time -= Dt_si
-		cuda.Madd2(y, y, dy0, 1, -dt)  //****
+		cuda.Madd2(y, y, dy0, 1, -dt) //****
 		// nothing to do with temperatures now
 		NUndone++
 		adaptDt(math.Pow(MaxErr/err, 1./3.))
@@ -78,8 +76,6 @@ func (_ *HeunLLB2T) Step() {
 }
 
 func (_ *HeunLLB2T) Free() {}
-
-
 
 func rk4Step2T(dt float32) {
 	te := Te.temp
@@ -113,7 +109,7 @@ func rk4Step2T(dt float32) {
 	defer Qext.Recycle()
 	j := J.MSlice()
 	defer j.Recycle()
-	
+
 	CD := CD.MSlice()
 	defer CD.Recycle()
 
@@ -138,25 +134,25 @@ func rk4Step2T(dt float32) {
 	defer cuda.Recycle(k4l)
 
 	// stage 1
-        cuda.Evaldt02T(te,k1e,tl,k1l,y,Kel,Cel,Klat,Clat,Gellat,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt02T(te, k1e, tl, k1l, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	// stage 2
 	cuda.Madd2(te, te, k1e, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 	cuda.Madd2(tl, tl, k1l, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 
-        cuda.Evaldt02T(te,k2e,tl,k2l,y,Kel,Cel,Klat,Clat,Gellat,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt02T(te, k2e, tl, k2l, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	// stage 3
 	cuda.Madd2(te, t0e, k2e, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 	cuda.Madd2(tl, t0l, k2l, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 
-        cuda.Evaldt02T(te,k3e,tl,k3l,y,Kel,Cel,Klat,Clat,Gellat,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt02T(te, k3e, tl, k3l, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	// stage 4
 	cuda.Madd2(te, t0e, k3e, 1, 1.*dt) // m = m0*1 + k3*1
 	cuda.Madd2(tl, t0l, k3l, 1, 1.*dt) // m = m0*1 + k3*1
 
-        cuda.Evaldt02T(te,k4e,tl,k4l,y,Kel,Cel,Klat,Clat,Gellat,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt02T(te, k4e, tl, k4l, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	cuda.Madd5(te, t0e, k1e, k2e, k3e, k4e, 1, (1./6.)*dt, (1./3.)*dt, (1./3.)*dt, (1./6.)*dt)
 	cuda.Madd5(tl, t0l, k1l, k2l, k3l, k4l, 1, (1./6.)*dt, (1./3.)*dt, (1./3.)*dt, (1./6.)*dt)

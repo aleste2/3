@@ -11,7 +11,6 @@ func init() {
 	DeclFunc("RelaxAF", RelaxAF, "Try to minimize the total energy in antiferro")
 }
 
-
 func RelaxAF() {
 	SanityCheck()
 	pause = false
@@ -35,7 +34,7 @@ func RelaxAF() {
 	}()
 
 	// Set good solver for relax
-	SetSolver(ANTIFERRORK23)   // to do ANTIFERRORK23
+	SetSolver(ANTIFERRORK23) // to do ANTIFERRORK23
 	FixDt = 0
 	Precess = false
 	relaxing = true
@@ -55,8 +54,8 @@ func RelaxAF() {
 	// Now we are already close to equilibrium, but energy is too noisy to be used any further.
 	// So now we minimize the total torque which is less noisy and does not have to cross any
 	// bumps once we are close to equilibrium.
-	solver := stepper.(*AntiferroRK23)  // To do *AntiferroRK23
-	defer stepper.Free() // purge previous rk.k1 because FSAL will be dead wrong.
+	solver := stepper.(*AntiferroRK23) // To do *AntiferroRK23
+	defer stepper.Free()               // purge previous rk.k1 because FSAL will be dead wrong.
 	avgTorque := func() float32 {
 		return cuda.Dot(solver.k11, solver.k11)
 	}

@@ -6,16 +6,16 @@ import (
 
 // Thermal equation for 1T model
 
-func Evaldt0(temp0, dt0, m *data.Slice,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext ,J MSlice,mesh *data.Mesh){
+func Evaldt0(temp0, dt0, m *data.Slice, Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, J MSlice, mesh *data.Mesh) {
 	c := mesh.CellSize()
 	N := mesh.Size()
-//	pbc := mesh.PBC_code()
+	//	pbc := mesh.PBC_code()
 	cfg := make3DConf(N)
 
 	NN := mesh.Size()
 
 	k_evaldt0_async(
-		temp0.DevPtr(0),dt0.DevPtr(0),
+		temp0.DevPtr(0), dt0.DevPtr(0),
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
 		Kth.DevPtr(0), Kth.Mul(0),
 		Cth.DevPtr(0), Cth.Mul(0),
@@ -28,24 +28,23 @@ func Evaldt0(temp0, dt0, m *data.Slice,Kth,Cth,Dth,Tsubsth,Tausubsth,res,Qext ,J
 		J.DevPtr(Y), J.Mul(Y),
 		J.DevPtr(Z), J.Mul(Z),
 		float32(c[X]), float32(c[Y]), float32(c[Z]), NN[X], NN[Y], NN[Z],
-        	cfg)
+		cfg)
 }
-
 
 // Thermal equation for 3T model
 
-func Evaldt03T(temp0e, dt0e,temp0l, dt0l,temp0s, dt0s, m *data.Slice,Ke,Ce,Kl,Cl,Ks,Cs,Gel,Ges,Gls,Dth,Tsubsth,Tausubsth,res,Qext,CD ,J MSlice,mesh *data.Mesh){
+func Evaldt03T(temp0e, dt0e, temp0l, dt0l, temp0s, dt0s, m *data.Slice, Ke, Ce, Kl, Cl, Ks, Cs, Gel, Ges, Gls, Dth, Tsubsth, Tausubsth, res, Qext, CD, J MSlice, mesh *data.Mesh) {
 	c := mesh.CellSize()
 	N := mesh.Size()
-//	pbc := mesh.PBC_code()
+	//	pbc := mesh.PBC_code()
 	cfg := make3DConf(N)
 
 	NN := mesh.Size()
 
 	k_evaldt03T_async(
-		temp0e.DevPtr(0),dt0e.DevPtr(0),
-		temp0l.DevPtr(0),dt0l.DevPtr(0),
-		temp0s.DevPtr(0),dt0s.DevPtr(0),
+		temp0e.DevPtr(0), dt0e.DevPtr(0),
+		temp0l.DevPtr(0), dt0l.DevPtr(0),
+		temp0s.DevPtr(0), dt0s.DevPtr(0),
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
 		Ke.DevPtr(0), Ke.Mul(0),
 		Ce.DevPtr(0), Ce.Mul(0),
@@ -68,21 +67,22 @@ func Evaldt03T(temp0e, dt0e,temp0l, dt0l,temp0s, dt0s, m *data.Slice,Ke,Ce,Kl,Cl
 		J.DevPtr(Y), J.Mul(Y),
 		J.DevPtr(Z), J.Mul(Z),
 		float32(c[X]), float32(c[Y]), float32(c[Z]), NN[X], NN[Y], NN[Z],
-        	cfg)
+		cfg)
 }
+
 // Thermal equation for 2T model
 
-func Evaldt02T(temp0e, dt0e,temp0l, dt0l, m *data.Slice,Ke,Ce,Kl,Cl,Gel,Dth,Tsubsth,Tausubsth,res,Qext,CD ,J MSlice,mesh *data.Mesh){
+func Evaldt02T(temp0e, dt0e, temp0l, dt0l, m *data.Slice, Ke, Ce, Kl, Cl, Gel, Dth, Tsubsth, Tausubsth, res, Qext, CD, J MSlice, mesh *data.Mesh) {
 	c := mesh.CellSize()
 	N := mesh.Size()
-//	pbc := mesh.PBC_code()
+	//	pbc := mesh.PBC_code()
 	cfg := make3DConf(N)
 
 	NN := mesh.Size()
 
 	k_evaldt02T_async(
-		temp0e.DevPtr(0),dt0e.DevPtr(0),
-		temp0l.DevPtr(0),dt0l.DevPtr(0),
+		temp0e.DevPtr(0), dt0e.DevPtr(0),
+		temp0l.DevPtr(0), dt0l.DevPtr(0),
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
 		Ke.DevPtr(0), Ke.Mul(0),
 		Ce.DevPtr(0), Ce.Mul(0),
@@ -101,5 +101,5 @@ func Evaldt02T(temp0e, dt0e,temp0l, dt0l, m *data.Slice,Ke,Ce,Kl,Cl,Gel,Dth,Tsub
 		J.DevPtr(Y), J.Mul(Y),
 		J.DevPtr(Z), J.Mul(Z),
 		float32(c[X]), float32(c[Y]), float32(c[Z]), NN[X], NN[Y], NN[Z],
-        	cfg)
+		cfg)
 }

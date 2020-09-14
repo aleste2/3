@@ -39,11 +39,12 @@ func (rk *AntiferroRK23) Step() {
 	if rk.k11 == nil {
 		rk.k11 = cuda.NewSlice(3, size)
 		rk.k21 = cuda.NewSlice(3, size)
-		torqueFnAF(rk.k11,rk.k21)	}
+		torqueFnAF(rk.k11, rk.k21)
+	}
 
 	// FSAL cannot be used with temperature
 	if !Temp.isZero() {
-		torqueFnAF(rk.k11,rk.k21)
+		torqueFnAF(rk.k11, rk.k21)
 	}
 
 	t0 := Time
@@ -64,7 +65,7 @@ func (rk *AntiferroRK23) Step() {
 	defer cuda.Recycle(k23)
 	defer cuda.Recycle(k24)
 
-	h := float32(Dt_si * GammaLL) // internal time step = Dt * gammaLL
+	h := float32(Dt_si * GammaLL)   // internal time step = Dt * gammaLL
 	h1 := float32(Dt_si * GammaLL1) // internal time step = Dt * gammaLL
 	h2 := float32(Dt_si * GammaLL2) // internal time step = Dt * gammaLL
 
@@ -76,9 +77,7 @@ func (rk *AntiferroRK23) Step() {
 	M1.normalize()
 	cuda.Madd2(m2, m2, rk.k21, 1, (1./2.)*h2) // m = m*1 + k1*h/2
 	M2.normalize()
-	torqueFnAF(k12,k22)
-
-
+	torqueFnAF(k12, k22)
 
 	// stage 3
 	Time = t0 + (3./4.)*Dt_si
@@ -86,7 +85,7 @@ func (rk *AntiferroRK23) Step() {
 	M1.normalize()
 	cuda.Madd2(m2, m20, k22, 1, (3./4.)*h2) // m = m0*1 + k2*3/4
 	M2.normalize()
-	torqueFnAF(k13,k23)
+	torqueFnAF(k13, k23)
 
 	// 3rd order solution
 	cuda.Madd4(m1, m10, rk.k11, k12, k13, 1, (2./9.)*h1, (1./3.)*h1, (4./9.)*h1)
@@ -96,7 +95,7 @@ func (rk *AntiferroRK23) Step() {
 
 	// error estimate
 	Time = t0 + Dt_si
-	torqueFnAF(k14,k24)
+	torqueFnAF(k14, k24)
 	Err1 := k12 // re-use k2 as error
 	Err2 := k22 // re-use k2 as error
 	// difference of 3rd and 2nd order torque without explicitly storing them first
@@ -106,9 +105,12 @@ func (rk *AntiferroRK23) Step() {
 	// determine error
 	err1 := cuda.MaxVecNorm(Err1) * float64(h)
 	err2 := cuda.MaxVecNorm(Err2) * float64(h)
-	err:=-1.0
-	if err2>err1 {err=err2} else {err=err1}
-
+	err := -1.0
+	if err2 > err1 {
+		err = err2
+	} else {
+		err = err1
+	}
 
 	// adjust next time step
 	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
@@ -138,4 +140,3 @@ func (rk *AntiferroRK23) Free() {
 	rk.k21.Free()
 	rk.k21 = nil
 }
-

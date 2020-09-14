@@ -52,6 +52,7 @@ func (g Generator) GenerateUniform(output uintptr, n int64) {
 		panic(err)
 	}
 }
+
 //
 
 func (g Generator) SetSeed(seed int64) {

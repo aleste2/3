@@ -20,8 +20,8 @@ func init() {
 var relaxing = false
 
 func Relax() {
-	
-	if (AFf==true) {		// For AF solver
+
+	if AFf == true { // For AF solver
 		RelaxAF()
 		return
 	}

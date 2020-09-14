@@ -11,31 +11,31 @@ import (
 // 	m normalized
 // 	B in Tesla
 // see lltorque.cu
-func LLBTorque(torque, m, B *data.Slice, temp ,alpha,TCurie,Msat MSlice,hth1 *data.Slice,hth2 *data.Slice,Langevin int,a1 MSlice) {
+func LLBTorque(torque, m, B *data.Slice, temp, alpha, TCurie, Msat MSlice, hth1 *data.Slice, hth2 *data.Slice, Langevin int, a1 MSlice) {
 	N := torque.Len()
 	cfg := make1DConf(N)
-	if (Langevin==1){
-	k_LLBtorque4_async(torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
-		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
-		B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
-		alpha.DevPtr(0), alpha.Mul(0),
-                TCurie.DevPtr(0), TCurie.Mul(0),
-                Msat.DevPtr(0), Msat.Mul(0),
-		hth1.DevPtr(X), hth1.DevPtr(Y), hth1.DevPtr(Z),
-		hth2.DevPtr(X), hth2.DevPtr(Y), hth2.DevPtr(Z),
-                temp.DevPtr(0), temp.Mul(0),
-		a1.DevPtr(0), a1.Mul(0),
-                N,cfg)
+	if Langevin == 1 {
+		k_LLBtorque4_async(torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
+			m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
+			B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
+			alpha.DevPtr(0), alpha.Mul(0),
+			TCurie.DevPtr(0), TCurie.Mul(0),
+			Msat.DevPtr(0), Msat.Mul(0),
+			hth1.DevPtr(X), hth1.DevPtr(Y), hth1.DevPtr(Z),
+			hth2.DevPtr(X), hth2.DevPtr(Y), hth2.DevPtr(Z),
+			temp.DevPtr(0), temp.Mul(0),
+			a1.DevPtr(0), a1.Mul(0),
+			N, cfg)
 	} else {
-	k_LLBtorque2_async(torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
-		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
-		B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
-		alpha.DevPtr(0), alpha.Mul(0),
-                TCurie.DevPtr(0), TCurie.Mul(0),
-                Msat.DevPtr(0), Msat.Mul(0),
-		hth1.DevPtr(X), hth1.DevPtr(Y), hth1.DevPtr(Z),
-		hth2.DevPtr(X), hth2.DevPtr(Y), hth2.DevPtr(Z),
-                temp.DevPtr(0), temp.Mul(0),
-                N,cfg)
+		k_LLBtorque2_async(torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
+			m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
+			B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
+			alpha.DevPtr(0), alpha.Mul(0),
+			TCurie.DevPtr(0), TCurie.Mul(0),
+			Msat.DevPtr(0), Msat.Mul(0),
+			hth1.DevPtr(X), hth1.DevPtr(Y), hth1.DevPtr(Z),
+			hth2.DevPtr(X), hth2.DevPtr(Y), hth2.DevPtr(Z),
+			temp.DevPtr(0), temp.Mul(0),
+			N, cfg)
 	}
 }

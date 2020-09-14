@@ -28,11 +28,11 @@ var (
 	stepper                 Stepper                      // generic step, can be EulerStep, HeunStep, etc
 	solvertype              int
 	// Added flags for for LLB and AF solvers
-	LLBeq			= false
-	LLBJHf			= false
-	LLB3Tf			= false
-	LLB2Tf			= false
-	AFf			= false
+	LLBeq  = false
+	LLBJHf = false
+	LLB3Tf = false
+	LLB2Tf = false
+	AFf    = false
 )
 
 func init() {
@@ -70,24 +70,24 @@ const (
 	RUNGEKUTTA     = 4
 	DORMANDPRINCE  = 5
 	FEHLBERG       = 6
-	
-	LLB            = 26
-        LLBJH          = 27
-        LLB3T          = 28
-	LLB2T          = 29
 
-	ANTIFERRORK4   =100
-	ANTIFERRORK23  =101
-	
-	ANTIFERROLLBPRB=127
-	LLBAF2T        =129
-	
-	HEUNJHONLY     =207
-	ONLY2T         =208
-	
+	LLB   = 26
+	LLBJH = 27
+	LLB3T = 28
+	LLB2T = 29
+
+	ANTIFERRORK4  = 100
+	ANTIFERRORK23 = 101
+
+	ANTIFERROLLBPRB = 127
+	LLBAF2T         = 129
+
+	HEUNJHONLY = 207
+	ONLY2T     = 208
+
 	// Atomistic solvers
-	ATOHEUN		= 150
-	ATOHEUN2T		= 151
+	ATOHEUN   = 150
+	ATOHEUN2T = 151
 )
 
 func SetSolver(typ int) {
@@ -95,13 +95,13 @@ func SetSolver(typ int) {
 	if stepper != nil {
 		stepper.Free()
 	}
-	
+
 	// Flags for temperature
-	LLBeq= false
-	LLBJHf= false
-	LLB3Tf= false
-	AFf=false
-	
+	LLBeq = false
+	LLBJHf = false
+	LLB3Tf = false
+	AFf = false
+
 	switch typ {
 	default:
 		util.Fatalf("SetSolver: unknown solver type: %v", typ)
@@ -119,54 +119,54 @@ func SetSolver(typ int) {
 		stepper = new(RK45DP)
 	case FEHLBERG:
 		stepper = new(RK56)
-//      LLB Solvers		
+		//      LLB Solvers
 	case LLB:
 		stepper = new(HeunLLB)
-		LLBeq=true
+		LLBeq = true
 	case LLBJH:
-                stepper = new(HeunLLBJH)
-		LLBeq=true
-		LLBJHf= true
+		stepper = new(HeunLLBJH)
+		LLBeq = true
+		LLBJHf = true
 	case LLB3T:
-                stepper = new(HeunLLB3T)
-		LLBeq=true 
-		LLB3Tf= true
+		stepper = new(HeunLLB3T)
+		LLBeq = true
+		LLB3Tf = true
 	case LLB2T:
-                stepper = new(HeunLLB2T)
-		LLBeq=true 
-		LLB2Tf= true
+		stepper = new(HeunLLB2T)
+		LLBeq = true
+		LLB2Tf = true
 
-// Antiferro solvers
-		
+		// Antiferro solvers
+
 	case ANTIFERRORK4:
-                stepper = new(AntiferroRK4)
-		AFf=true
+		stepper = new(AntiferroRK4)
+		AFf = true
 	case ANTIFERRORK23:
-                stepper = new(AntiferroRK23)
-		AFf=true
+		stepper = new(AntiferroRK23)
+		AFf = true
 	case ANTIFERROLLBPRB:
-        	stepper = new(HeunAFLLBPRB054401)
-		AFf=true
-		LLBeq=true
+		stepper = new(HeunAFLLBPRB054401)
+		AFf = true
+		LLBeq = true
 	case LLBAF2T:
-        	stepper = new(HeunLLBAF2T)
-		LLBeq=true
-		AFf=true
-		LLB2Tf= true
-		
-// Thermal only solvers	
+		stepper = new(HeunLLBAF2T)
+		LLBeq = true
+		AFf = true
+		LLB2Tf = true
+
+		// Thermal only solvers
 	case HEUNJHONLY:
-                stepper = new(HeunJH)
+		stepper = new(HeunJH)
 	case ONLY2T:
 		stepper = new(Only2T)
-		
-//      atomistic Solvers		
+
+		//      atomistic Solvers
 	case ATOHEUN:
 		stepper = new(HeunAto)
 	case ATOHEUN2T:
 		stepper = new(HeunAto2T)
-		LLB2Tf=true
-		
+		LLB2Tf = true
+
 	}
 	solvertype = typ
 }
@@ -179,30 +179,29 @@ func torqueFn(dst *data.Slice) {
 
 ////////////////////////////////////   Added for LLB
 
-func torqueFnLLB(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
-	SetTorqueLLB(dst,hth1,hth2)
+func torqueFnLLB(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
+	SetTorqueLLB(dst, hth1, hth2)
 	NEvals++
 }
 
 ////////////////////////////////////   Added for LLBJH
 
-func torqueFnLLBJH(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
-	SetTorqueLLBJH(dst,hth1,hth2)
+func torqueFnLLBJH(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
+	SetTorqueLLBJH(dst, hth1, hth2)
 	NEvals++
 }
 
-
 ////////////////////////////////////   Added for LLB 3T
 
-func torqueFnLLB3T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
-	SetTorqueLLB3T(dst,hth1,hth2)
+func torqueFnLLB3T(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
+	SetTorqueLLB3T(dst, hth1, hth2)
 	NEvals++
 }
 
 ////////////////////////////////////   Added for LLB 2T
 
-func torqueFnLLB2T(dst *data.Slice,hth1 *data.Slice,hth2 *data.Slice) {
-	SetTorqueLLB2T(dst,hth1,hth2)
+func torqueFnLLB2T(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
+	SetTorqueLLB2T(dst, hth1, hth2)
 	NEvals++
 }
 

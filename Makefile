@@ -1,4 +1,4 @@
-
+export GOPATH=/home/vrf/Code/
 # Use the default go compiler
 GO_BUILDFLAGS=-compiler gc
 # Or uncomment the line below to use the gccgo compiler, which may 

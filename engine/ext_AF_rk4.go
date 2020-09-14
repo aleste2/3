@@ -47,15 +47,15 @@ func (_ *AntiferroRK4) Step() {
 	defer cuda.Recycle(k23)
 	defer cuda.Recycle(k24)
 
-	h := float32(Dt_si * GammaLL) // internal time step = Dt * gammaLL
+	h := float32(Dt_si * GammaLL)   // internal time step = Dt * gammaLL
 	h1 := float32(Dt_si * GammaLL1) // internal time step = Dt * gammaLL
 	h2 := float32(Dt_si * GammaLL2) // internal time step = Dt * gammaLL
 
 	// stage 1
-	
+
 	//data.Copy(m, m1)  // later to the effective magnetization to rewrite
 
-	torqueFnAF(k11,k21)
+	torqueFnAF(k11, k21)
 
 	// stage 2
 	Time = t0 + (1./2.)*Dt_si
@@ -63,14 +63,14 @@ func (_ *AntiferroRK4) Step() {
 	cuda.Madd2(m2, m2, k21, 1, (1./2.)*h2) // m = m*1 + k1*h/2
 	M1.normalize()
 	M2.normalize()
-	torqueFnAF(k12,k22)
+	torqueFnAF(k12, k22)
 
 	// stage 3
 	cuda.Madd2(m1, m10, k12, 1, (1./2.)*h1) // m = m0*1 + k2*1/2
 	cuda.Madd2(m2, m20, k22, 1, (1./2.)*h2) // m = m0*1 + k2*1/2
 	M1.normalize()
 	M2.normalize()
-	torqueFnAF(k13,k23)
+	torqueFnAF(k13, k23)
 
 	// stage 4
 	Time = t0 + Dt_si
@@ -78,13 +78,17 @@ func (_ *AntiferroRK4) Step() {
 	cuda.Madd2(m2, m20, k23, 1, 1.*h2) // m = m0*1 + k3*1
 	M1.normalize()
 	M2.normalize()
-	torqueFnAF(k14,k24)
+	torqueFnAF(k14, k24)
 
 	err1 := cuda.MaxVecDiff(k11, k14) * float64(h)
 	err2 := cuda.MaxVecDiff(k21, k24) * float64(h)
-	
-	err:=-1.0
-	if err2>err1 {err=err2} else {err=err1}
+
+	err := -1.0
+	if err2 > err1 {
+		err = err2
+	} else {
+		err = err1
+	}
 
 	// adjust next time step
 	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop

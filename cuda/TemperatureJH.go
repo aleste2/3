@@ -5,9 +5,8 @@ import (
 	"github.com/mumax/3/util"
 )
 
-func SetTemperatureJH(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Msat MSlice, TempJH *data.Slice, Alpha MSlice,ScaleNoiseLLB float64) {
+func SetTemperatureJH(Bth, noise *data.Slice, k2mu0_Mu0VgammaDt float64, Msat MSlice, TempJH *data.Slice, Alpha MSlice, ScaleNoiseLLB float64) {
 	util.Argument(Bth.NComp() == 1 && noise.NComp() == 1)
-
 
 	N := Bth.Len()
 	cfg := make1DConf(N)
@@ -24,18 +23,18 @@ func InitTemperatureJH(TempJH *data.Slice, TSubs MSlice) {
 
 	N := TempJH.Len()
 	cfg := make1DConf(N)
-	k_InittemperatureJH_async(TempJH.DevPtr(0),TSubs.DevPtr(0), TSubs.Mul(0),N, cfg)
+	k_InittemperatureJH_async(TempJH.DevPtr(0), TSubs.DevPtr(0), TSubs.Mul(0), N, cfg)
 
 }
 
-func InitmLLB(m *data.Slice,temp,TCurie MSlice,Langevin int) {
+func InitmLLB(m *data.Slice, temp, TCurie MSlice, Langevin int) {
 	N := m.Len()
 	cfg := make1DConf(N)
-	k_initmLLB_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),temp.DevPtr(0), temp.Mul(0),TCurie.DevPtr(0), TCurie.Mul(0),N, Langevin,cfg)
+	k_initmLLB_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z), temp.DevPtr(0), temp.Mul(0), TCurie.DevPtr(0), TCurie.Mul(0), N, Langevin, cfg)
 }
 
-func InitmLLBJH(m ,TempJH *data.Slice,TCurie MSlice,Langevin int) {
+func InitmLLBJH(m, TempJH *data.Slice, TCurie MSlice, Langevin int) {
 	N := m.Len()
 	cfg := make1DConf(N)
-	k_initmLLBJH_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),TempJH.DevPtr(0),TCurie.DevPtr(0), TCurie.Mul(0),N, Langevin,cfg)
+	k_initmLLBJH_async(m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z), TempJH.DevPtr(0), TCurie.DevPtr(0), TCurie.Mul(0), N, Langevin, cfg)
 }

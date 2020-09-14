@@ -20,11 +20,11 @@ func (_ *HeunLLB3T) Step() {
 	defer cuda.Recycle(Hth1)
 	Hth2 := cuda.Buffer(VECTOR, y.Size())
 	defer cuda.Recycle(Hth2)
-	
-	cuda.Zero(Hth1)       
+
+	cuda.Zero(Hth1)
 	B_therm.LLBAddTo(Hth1)
-	cuda.Zero(Hth2)       
-	B_therm.LLBAddTo(Hth2)	
+	cuda.Zero(Hth2)
+	B_therm.LLBAddTo(Hth2)
 
 	if FixDt != 0 {
 		Dt_si = FixDt
@@ -35,11 +35,9 @@ func (_ *HeunLLB3T) Step() {
 
 	// stage 1
 
-        // Rewrite to calculate m step 1 
-	torqueFnLLB3T(dy0,Hth1,Hth2)
+	// Rewrite to calculate m step 1
+	torqueFnLLB3T(dy0, Hth1, Hth2)
 	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
-
-        
 
 	// stage 2
 	dy := cuda.Buffer(3, y.Size())
@@ -47,8 +45,8 @@ func (_ *HeunLLB3T) Step() {
 
 	Time += Dt_si
 
-        // Rewrite to calculate step 2
-	torqueFnLLB3T(dy,Hth1,Hth2)
+	// Rewrite to calculate step 2
+	torqueFnLLB3T(dy, Hth1, Hth2)
 
 	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
 	// adjust next time step
@@ -57,10 +55,10 @@ func (_ *HeunLLB3T) Step() {
 		cuda.Madd3(y, y, dy, dy0, 1, 0.5*dt, -0.5*dt) //****
 
 		// Good step, then evolve Temperatures with rk4. Equation is numericaly complicated, better to divide time step
-		
-		substeps:=3
-		for iter:=0;iter<substeps; iter++{
-			rk4Step3T(dt/float32(substeps)/float32(GammaLL))
+
+		substeps := 3
+		for iter := 0; iter < substeps; iter++ {
+			rk4Step3T(dt / float32(substeps) / float32(GammaLL))
 		}
 
 		NSteps++
@@ -71,7 +69,7 @@ func (_ *HeunLLB3T) Step() {
 		// undo bad step
 		util.Assert(FixDt == 0)
 		Time -= Dt_si
-		cuda.Madd2(y, y, dy0, 1, -dt)  //****
+		cuda.Madd2(y, y, dy0, 1, -dt) //****
 		// nothing to do with temperatures now
 		NUndone++
 		adaptDt(math.Pow(MaxErr/err, 1./3.))
@@ -79,8 +77,6 @@ func (_ *HeunLLB3T) Step() {
 }
 
 func (_ *HeunLLB3T) Free() {}
-
-
 
 func rk4Step3T(dt float32) {
 	te := Te.temp
@@ -124,7 +120,7 @@ func rk4Step3T(dt float32) {
 	defer Qext.Recycle()
 	j := J.MSlice()
 	defer j.Recycle()
-	
+
 	CD := CD.MSlice()
 	defer CD.Recycle()
 
@@ -157,28 +153,28 @@ func rk4Step3T(dt float32) {
 	defer cuda.Recycle(k4s)
 
 	// stage 1
-        cuda.Evaldt03T(te,k1e,tl,k1l,ts,k1s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt03T(te, k1e, tl, k1l, ts, k1s, y, Kel, Cel, Klat, Clat, Ksp, Csp, Gellat, Gelsp, Glatsp, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	// stage 2
 	cuda.Madd2(te, te, k1e, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 	cuda.Madd2(tl, tl, k1l, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 	cuda.Madd2(ts, ts, k1s, 1, (1./2.)*dt) // m = m*1 + k1*h/2
 
-        cuda.Evaldt03T(te,k2e,tl,k2l,ts,k2s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt03T(te, k2e, tl, k2l, ts, k2s, y, Kel, Cel, Klat, Clat, Ksp, Csp, Gellat, Gelsp, Glatsp, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	// stage 3
 	cuda.Madd2(te, t0e, k2e, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 	cuda.Madd2(tl, t0l, k2l, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 	cuda.Madd2(ts, t0s, k2s, 1, (1./2.)*dt) // m = m0*1 + k2*1/2
 
-        cuda.Evaldt03T(te,k3e,tl,k3l,ts,k3s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt03T(te, k3e, tl, k3l, ts, k3s, y, Kel, Cel, Klat, Clat, Ksp, Csp, Gellat, Gelsp, Glatsp, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	// stage 4
 	cuda.Madd2(te, t0e, k3e, 1, 1.*dt) // m = m0*1 + k3*1
 	cuda.Madd2(tl, t0l, k3l, 1, 1.*dt) // m = m0*1 + k3*1
 	cuda.Madd2(ts, t0s, k3s, 1, 1.*dt) // m = m0*1 + k3*1
 
-        cuda.Evaldt03T(te,k4e,tl,k4l,ts,k4s,y,Kel,Cel,Klat,Clat,Ksp,Csp,Gellat,Gelsp,Glatsp,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt03T(te, k4e, tl, k4l, ts, k4s, y, Kel, Cel, Klat, Clat, Ksp, Csp, Gellat, Gelsp, Glatsp, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 
 	cuda.Madd5(te, t0e, k1e, k2e, k3e, k4e, 1, (1./6.)*dt, (1./3.)*dt, (1./3.)*dt, (1./6.)*dt)
 	cuda.Madd5(tl, t0l, k1l, k2l, k3l, k4l, 1, (1./6.)*dt, (1./3.)*dt, (1./3.)*dt, (1./6.)*dt)

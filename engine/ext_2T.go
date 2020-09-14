@@ -3,10 +3,9 @@ package engine
 import (
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/util"
-//	"github.com/mumax/3/data"
-//		"math"
+	//	"github.com/mumax/3/data"
+	//		"math"
 )
-
 
 // Heun solver joule heating only equation.
 type Only2T struct{}
@@ -14,22 +13,20 @@ type Only2T struct{}
 // Adaptive HeunJH method, can be used as solver.Step
 func (_ *Only2T) Step() {
 
-
 	if FixDt != 0 {
 		Dt_si = FixDt
 	}
 
-	dt := float32(Dt_si )
+	dt := float32(Dt_si)
 	util.Assert(dt > 0)
 
 	// stage 1
 
-    NewtonStep2T(dt)
-    Time += Dt_si
+	NewtonStep2T(dt)
+	Time += Dt_si
 }
 
 func (_ *Only2T) Free() {}
-
 
 func NewtonStep2T(dt float32) {
 	te := Te.temp
@@ -63,7 +60,7 @@ func NewtonStep2T(dt float32) {
 	defer Qext.Recycle()
 	j := J.MSlice()
 	defer j.Recycle()
-	
+
 	CD := CD.MSlice()
 	defer CD.Recycle()
 
@@ -73,20 +70,20 @@ func NewtonStep2T(dt float32) {
 	DeltaTl := cuda.Buffer(1, size)
 	defer cuda.Recycle(DeltaTl)
 
-	cuda.Evaldt02T(te,DeltaTe,tl,DeltaTl,y,Kel,Cel,Klat,Clat,Gellat,Dth,Tsubsth,Tausubsth,res,Qext,CD,j,M.Mesh())
+	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 	err := cuda.MaxAbs(DeltaTe)
-	if (err*dt<2e-4) {
+	if err*dt < 2e-4 {
 		TOverstepsCounter++
-		if (TOverstepsCounter>=100) {
-			cuda.Madd2(te,te, DeltaTe, 1, dt*100) // temp = temp + dt * dtemp0
-			cuda.Madd2(tl,tl, DeltaTl, 1, dt*100) // temp = temp + dt * dtemp0
-			TOverstepsCounter=0
+		if TOverstepsCounter >= 100 {
+			cuda.Madd2(te, te, DeltaTe, 1, dt*100) // temp = temp + dt * dtemp0
+			cuda.Madd2(tl, tl, DeltaTl, 1, dt*100) // temp = temp + dt * dtemp0
+			TOverstepsCounter = 0
 			//print("si\n")
 		}
 	} else {
-	    cuda.Madd2(te,te, DeltaTe, 1, dt) // temp = temp + dt * dtemp0
-		cuda.Madd2(tl,tl, DeltaTl, 1, dt) // temp = temp + dt * dtemp0
-		TOverstepsCounter=0
+		cuda.Madd2(te, te, DeltaTe, 1, dt) // temp = temp + dt * dtemp0
+		cuda.Madd2(tl, tl, DeltaTl, 1, dt) // temp = temp + dt * dtemp0
+		TOverstepsCounter = 0
 	}
 
 	//setLastErr(float64(err))
@@ -97,4 +94,3 @@ func NewtonStep2T(dt float32) {
 	//cuda.Madd3(tl, tl, t0l, t0l, 1, 0.5*dt, -0.5*dt) //****
 
 }
-

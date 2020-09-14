@@ -4,68 +4,67 @@ package engine
 
 import (
 	"github.com/mumax/3/cuda"
-	"github.com/mumax/3/data"
-	"github.com/mumax/3/util"
-	"github.com/mumax/3/mag"
 	"github.com/mumax/3/cuda/curand"
+	"github.com/mumax/3/data"
+	"github.com/mumax/3/mag"
+	"github.com/mumax/3/util"
 )
 
 // Anisotropy, magnetization, exchange... variables and magenetization for sublattices
 var (
-	Ku11        = NewScalarParam("Ku11", "J/m3", "1st order uniaxial anisotropy constant")
-	Ku21        = NewScalarParam("Ku21", "J/m3", "1st order uniaxial anisotropy constant")
-	Ku12        = NewScalarParam("Ku12", "J/m3", "1st order uniaxial anisotropy constant")
-	Ku22        = NewScalarParam("Ku22", "J/m3", "1st order uniaxial anisotropy constant")
-	Kc11        = NewScalarParam("Kc11", "J/m3", "1st order cubic anisotropy constant")
-	Kc21        = NewScalarParam("Kc21", "J/m3", "2nd order cubic anisotropy constant")
-	Kc31        = NewScalarParam("Kc31", "J/m3", "3rd order cubic anisotropy constant")
-	Kc12        = NewScalarParam("Kc12", "J/m3", "1st order cubic anisotropy constant")
-	Kc22        = NewScalarParam("Kc22", "J/m3", "2nd order cubic anisotropy constant")
-	Kc32        = NewScalarParam("Kc32", "J/m3", "3rd order cubic anisotropy constant")
-	AnisU1      = NewVectorParam("anisU1", "", "Uniaxial anisotropy direction")
-	AnisC11     = NewVectorParam("anisC11", "", "Cubic anisotropy direction #1")
-	AnisC21     = NewVectorParam("anisC21", "", "Cubic anisotorpy directon #2")
-	AnisU2      = NewVectorParam("anisU2", "", "Uniaxial anisotropy direction")
-	AnisC12     = NewVectorParam("anisC12", "", "Cubic anisotropy direction #1")
-	AnisC22     = NewVectorParam("anisC22", "", "Cubic anisotorpy directon #2")
-	M1 magnetization // reduced magnetization (unit length)
-	M2 magnetization // reduced magnetization (unit length)
-	Msat1        = NewScalarParam("Msat1", "A/m", "Saturation magnetization")
-	M_full1      = NewVectorField("m_full1", "A/m", "Unnormalized magnetization", SetMFull1)
-	Msat2        = NewScalarParam("Msat2", "A/m", "Saturation magnetization")
-	M_full2      = NewVectorField("m_full2", "A/m", "Unnormalized magnetization", SetMFull2)
-	GammaLL1                 float64 = 1.7595e11 // Gyromagnetic ratio of spins, in rad/Ts
-	GammaLL2                 float64 = 1.7595e11 // Gyromagnetic ratio of spins, in rad/Ts
-	Pol1          = NewScalarParam("Pol1", "", "Electrical current polarization Zhang-Li Lattice 1")
-	Pol2          = NewScalarParam("Pol2", "", "Electrical current polarization Zhang-Li Lattice 2")
-	isolatedlattices  bool = false // Debug only
-	Alpha1        = NewScalarParam("alpha1", "", "Landau-Lifshitz damping constant")
-	Alpha2        = NewScalarParam("alpha2", "", "Landau-Lifshitz damping constant")
-	Xi1                               = NewScalarParam("xi1", "", "Non-adiabaticity of spin-transfer-torque STT lattice 1")
-	Xi2                               = NewScalarParam("xi2", "", "Non-adiabaticity of spin-transfer-torque STT lattice 2")
-	PolSTT1                              = NewScalarParam("PolSTT1", "", "Electrical current polarization STT lattice 1")
-	PolSTT2                              = NewScalarParam("PolSTT2", "", "Electrical current polarization STT lattice 2")
+	Ku11             = NewScalarParam("Ku11", "J/m3", "1st order uniaxial anisotropy constant")
+	Ku21             = NewScalarParam("Ku21", "J/m3", "1st order uniaxial anisotropy constant")
+	Ku12             = NewScalarParam("Ku12", "J/m3", "1st order uniaxial anisotropy constant")
+	Ku22             = NewScalarParam("Ku22", "J/m3", "1st order uniaxial anisotropy constant")
+	Kc11             = NewScalarParam("Kc11", "J/m3", "1st order cubic anisotropy constant")
+	Kc21             = NewScalarParam("Kc21", "J/m3", "2nd order cubic anisotropy constant")
+	Kc31             = NewScalarParam("Kc31", "J/m3", "3rd order cubic anisotropy constant")
+	Kc12             = NewScalarParam("Kc12", "J/m3", "1st order cubic anisotropy constant")
+	Kc22             = NewScalarParam("Kc22", "J/m3", "2nd order cubic anisotropy constant")
+	Kc32             = NewScalarParam("Kc32", "J/m3", "3rd order cubic anisotropy constant")
+	AnisU1           = NewVectorParam("anisU1", "", "Uniaxial anisotropy direction")
+	AnisC11          = NewVectorParam("anisC11", "", "Cubic anisotropy direction #1")
+	AnisC21          = NewVectorParam("anisC21", "", "Cubic anisotorpy directon #2")
+	AnisU2           = NewVectorParam("anisU2", "", "Uniaxial anisotropy direction")
+	AnisC12          = NewVectorParam("anisC12", "", "Cubic anisotropy direction #1")
+	AnisC22          = NewVectorParam("anisC22", "", "Cubic anisotorpy directon #2")
+	M1               magnetization // reduced magnetization (unit length)
+	M2               magnetization // reduced magnetization (unit length)
+	Msat1                          = NewScalarParam("Msat1", "A/m", "Saturation magnetization")
+	M_full1                        = NewVectorField("m_full1", "A/m", "Unnormalized magnetization", SetMFull1)
+	Msat2                          = NewScalarParam("Msat2", "A/m", "Saturation magnetization")
+	M_full2                        = NewVectorField("m_full2", "A/m", "Unnormalized magnetization", SetMFull2)
+	GammaLL1         float64       = 1.7595e11 // Gyromagnetic ratio of spins, in rad/Ts
+	GammaLL2         float64       = 1.7595e11 // Gyromagnetic ratio of spins, in rad/Ts
+	Pol1                           = NewScalarParam("Pol1", "", "Electrical current polarization Zhang-Li Lattice 1")
+	Pol2                           = NewScalarParam("Pol2", "", "Electrical current polarization Zhang-Li Lattice 2")
+	isolatedlattices bool          = false // Debug only
+	Alpha1                         = NewScalarParam("alpha1", "", "Landau-Lifshitz damping constant")
+	Alpha2                         = NewScalarParam("alpha2", "", "Landau-Lifshitz damping constant")
+	Xi1                            = NewScalarParam("xi1", "", "Non-adiabaticity of spin-transfer-torque STT lattice 1")
+	Xi2                            = NewScalarParam("xi2", "", "Non-adiabaticity of spin-transfer-torque STT lattice 2")
+	PolSTT1                        = NewScalarParam("PolSTT1", "", "Electrical current polarization STT lattice 1")
+	PolSTT2                        = NewScalarParam("PolSTT2", "", "Electrical current polarization STT lattice 2")
 	// For AF PRB 054401
-	x_TM        = NewScalarParam("x_TM", "a.u.", "TM ratio")
-	nv          = NewScalarParam("nv", "a.u.", "Number of neighbours")
-	mu1	    = NewScalarParam("mu1", "J/T.", "Bohr magnetons lattice 1")
-	mu2	    = NewScalarParam("mu2", "J/T.", "Bohr magnetons lattice 2")
-	J0aa	    = NewScalarParam("J0aa", "T.", "Exchange lattice 1")
-	J0bb	    = NewScalarParam("J0bb", "T.", "Exchange lattice 2")
-	J0ab	    = NewScalarParam("J0ab", "T.", "Exchange lattice 1-2")
+	x_TM = NewScalarParam("x_TM", "a.u.", "TM ratio")
+	nv   = NewScalarParam("nv", "a.u.", "Number of neighbours")
+	mu1  = NewScalarParam("mu1", "J/T.", "Bohr magnetons lattice 1")
+	mu2  = NewScalarParam("mu2", "J/T.", "Bohr magnetons lattice 2")
+	J0aa = NewScalarParam("J0aa", "T.", "Exchange lattice 1")
+	J0bb = NewScalarParam("J0bb", "T.", "Exchange lattice 2")
+	J0ab = NewScalarParam("J0ab", "T.", "Exchange lattice 1-2")
 
-	EpsilonPrime1                     = NewScalarParam("EpsilonPrime1", "", "Slonczewski secondairy STT term ε' Lattice 1")
-	EpsilonPrime2                     = NewScalarParam("EpsilonPrime2", "", "Slonczewski secondairy STT term ε' Lattice 2")
+	EpsilonPrime1 = NewScalarParam("EpsilonPrime1", "", "Slonczewski secondairy STT term ε' Lattice 1")
+	EpsilonPrime2 = NewScalarParam("EpsilonPrime2", "", "Slonczewski secondairy STT term ε' Lattice 2")
 )
-
 
 func init() {
 	DeclFunc("UpdateM", UpdateM, "UpdateM")
 	DeclFunc("InitAntiferro", InitAntiferro, "InitAntiferro")
 	DeclLValue("m1", &M1, `Reduced magnetization sublattice 1 (unit length)`)
 	DeclLValue("m2", &M2, `Reduced magnetization sublattice 2 (unit length)`)
-	M1.name="m1_"
-	M2.name="m2_"
+	M1.name = "m1_"
+	M2.name = "m2_"
 	DeclVar("GammaLL1", &GammaLL1, "Gyromagnetic ratio in rad/Ts Lattice 1")
 	DeclVar("GammaLL2", &GammaLL2, "Gyromagnetic ratio in rad/Ts Lattice 2")
 	DeclVar("isolatedlattices", &isolatedlattices, "Isolate AF lattices")
@@ -125,35 +124,35 @@ func SetMFull2(dst *data.Slice) {
 
 // write torque to dst and increment NEvals
 // Now everything here to use 2 lattices at the same time
-func torqueFnAF(dst1,dst2 *data.Slice) {
+func torqueFnAF(dst1, dst2 *data.Slice) {
 
 	// Set Effective field
 
-	if (!isolatedlattices) {
-	UpdateM()
-	SetDemagField(dst1)
-	data.Copy(dst2, dst1)
-	} else {   // Just for code debug
-	data.Copy(M.Buffer(), M1.Buffer())
-	*Msat=*Msat1
-	SetDemagField(dst1)
-	data.Copy(M.Buffer(), M2.Buffer())
-	*Msat=*Msat2
-	SetDemagField(dst2)
+	if !isolatedlattices {
+		UpdateM()
+		SetDemagField(dst1)
+		data.Copy(dst2, dst1)
+	} else { // Just for code debug
+		data.Copy(M.Buffer(), M1.Buffer())
+		*Msat = *Msat1
+		SetDemagField(dst1)
+		data.Copy(M.Buffer(), M2.Buffer())
+		*Msat = *Msat2
+		SetDemagField(dst2)
 	}
-	AddExchangeFieldAF(dst1,dst2)
-	AddAnisotropyFieldAF(dst1,dst2)
+	AddExchangeFieldAF(dst1, dst2)
+	AddAnisotropyFieldAF(dst1, dst2)
 	//AddAFMExchangeField(dst)  // AFM Exchange non adjacent layers
 	B_ext.AddTo(dst1)
 	B_ext.AddTo(dst2)
 	if !relaxing {
-                if LLBeq!=true {
-                  B_therm.AddToAF(dst1,dst2)
-                 }
+		if LLBeq != true {
+			B_therm.AddToAF(dst1, dst2)
+		}
 	}
 	AddCustomField(dst1)
 	AddCustomField(dst2)
-	
+
 	// Add to sublattice 1 and 2
 	alpha1 := Alpha1.MSlice()
 	defer alpha1.Recycle()
@@ -161,14 +160,14 @@ func torqueFnAF(dst1,dst2 *data.Slice) {
 	defer alpha2.Recycle()
 	if Precess {
 		cuda.LLTorque(dst1, M1.Buffer(), dst1, alpha1) // overwrite dst with torque
-		cuda.LLTorque(dst2, M2.Buffer(), dst2, alpha2) 
+		cuda.LLTorque(dst2, M2.Buffer(), dst2, alpha2)
 	} else {
 		cuda.LLNoPrecess(dst1, M1.Buffer(), dst1)
 		cuda.LLNoPrecess(dst2, M2.Buffer(), dst2)
 	}
-	
+
 	// STT
-	AddSTTorqueAF(dst1,dst2)
+	AddSTTorqueAF(dst1, dst2)
 
 	FreezeSpins(dst1)
 	FreezeSpins(dst2)
@@ -176,8 +175,7 @@ func torqueFnAF(dst1,dst2 *data.Slice) {
 	NEvals++
 }
 
-
-func AddSTTorqueAF(dst1,dst2 *data.Slice) {
+func AddSTTorqueAF(dst1, dst2 *data.Slice) {
 
 	if J.isZero() {
 		return
@@ -216,7 +214,6 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 	}
 	if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
 
-
 		msat := Msat.MSlice()
 		defer msat.Recycle()
 		msat1 := Msat1.MSlice()
@@ -246,15 +243,15 @@ func AddSTTorqueAF(dst1,dst2 *data.Slice) {
 		thickness := FreeLayerThickness.MSlice()
 		defer thickness.Recycle()
 		cuda.AddSlonczewskiTorque2(dst1, M1.Buffer(),
-				msat1, j, fixedP, alpha1, pol1, lambda, epsPrime1, 
-				thickness,
-				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
-				Mesh())
+			msat1, j, fixedP, alpha1, pol1, lambda, epsPrime1,
+			thickness,
+			CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+			Mesh())
 		cuda.AddSlonczewskiTorque2(dst2, M2.Buffer(),
-				msat2, j, fixedP, alpha2, pol2, lambda, epsPrime2,
-				thickness,
-				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
-				Mesh())
+			msat2, j, fixedP, alpha2, pol2, lambda, epsPrime2,
+			thickness,
+			CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+			Mesh())
 
 	}
 }
@@ -296,7 +293,7 @@ func (b *thermField) updateAF(i int) {
 	}
 
 	// keep constant during time step
-	if NSteps == b.step && Dt_si == b.dt && solvertype<6 {
+	if NSteps == b.step && Dt_si == b.dt && solvertype < 6 {
 		return
 	}
 
@@ -312,40 +309,41 @@ func (b *thermField) updateAF(i int) {
 	const mean = 0
 	const stddev = 1
 	dst := b.noise
-	
-	ms:=Msat1.MSlice()
+
+	ms := Msat1.MSlice()
 	defer ms.Recycle()
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
-	if (i==1) {
+	if i == 1 {
 		ms = Msat1.MSlice()
 		//defer ms.Recycle()
 		alpha = Alpha1.MSlice()
-		}
-	if (i==2) {
+	}
+	if i == 2 {
 		ms = Msat2.MSlice()
 		//defer ms.Recycle()
 		alpha = Alpha2.MSlice()
-		}
-	
+	}
+
 	temp := Temp.MSlice()
 	defer temp.Recycle()
 	alpha0 := Alpha.MSlice()
 	defer alpha0.Recycle()
-	Noise_scale:=1.0
-	if (JHThermalnoise==false){
-	Noise_scale=0.0} else {
-	Noise_scale=1.0
-	}  // To cancel themal noise if needed
+	Noise_scale := 1.0
+	if JHThermalnoise == false {
+		Noise_scale = 0.0
+	} else {
+		Noise_scale = 1.0
+	} // To cancel themal noise if needed
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
-		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha0,ScaleNoiseLLB)
+		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha0, ScaleNoiseLLB)
 	}
 	b.step = NSteps
 	b.dt = Dt_si
 }
 
-func AddAnisotropyFieldAF(dst1,dst2 *data.Slice) {
+func AddAnisotropyFieldAF(dst1, dst2 *data.Slice) {
 	addUniaxialAnisotropyFrom(dst1, M1, Msat1, Ku11, Ku21, AnisU1)
 	addUniaxialAnisotropyFrom(dst2, M2, Msat2, Ku12, Ku22, AnisU2)
 	addCubicAnisotropyFrom(dst1, M1, Msat1, Kc11, Kc21, Kc31, AnisC11, AnisC21)
@@ -359,5 +357,5 @@ func UpdateM() {
 	defer ms1.Recycle()
 	ms2 := Msat2.MSlice()
 	defer ms2.Recycle()
-	cuda.NormalizeAF(M.Buffer(),M1.Buffer(),M2.Buffer(), ms0,ms1,ms2)
+	cuda.NormalizeAF(M.Buffer(), M1.Buffer(), M2.Buffer(), ms0, ms1, ms2)
 }

@@ -2,26 +2,26 @@ package engine
 
 import (
 	"github.com/mumax/3/cuda"
-	"github.com/mumax/3/util"
+	"github.com/mumax/3/cuda/curand"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/mag"
-	"github.com/mumax/3/cuda/curand"
+	"github.com/mumax/3/util"
 	"math"
 	"math/rand"
 )
 
 var (
-	Jato    = NewScalarParam("Jato", "J", "AtomisticsExchange", &Jexato)
-	Jdmi    = NewScalarParam("Jdmi", "J", "AtomisticsDMIExchange", &Jdmiato)
-	Dato    = NewScalarParam("Dato", "J", "Atomistic uniaxial anisotropy constant")
-	mu      = NewScalarParam("mu", "J/T", "Atomistic magnetic moment")
-	g       = NewScalarParam("g", "a.u.", "Lande Factor")
+	Jato = NewScalarParam("Jato", "J", "AtomisticsExchange", &Jexato)
+	Jdmi = NewScalarParam("Jdmi", "J", "AtomisticsDMIExchange", &Jdmiato)
+	Dato = NewScalarParam("Dato", "J", "Atomistic uniaxial anisotropy constant")
+	mu   = NewScalarParam("mu", "J/T", "Atomistic magnetic moment")
+	g    = NewScalarParam("g", "a.u.", "Lande Factor")
 
-	Jexato      exchParam // inter-cell exchange
-	Jdmiato      exchParam // inter-cell exchange
+	Jexato  exchParam // inter-cell exchange
+	Jdmiato exchParam // inter-cell exchange
 
-	B_ato = NewVectorField("B_ato", "T", "Effective Atomistic field", SetEffectiveFieldAto)
-	celltype=0
+	B_ato    = NewVectorField("B_ato", "T", "Effective Atomistic field", SetEffectiveFieldAto)
+	celltype = 0
 )
 
 // Sets the exchange interaction between region 1 and 2.
@@ -43,30 +43,32 @@ func init() {
 	DeclFunc("ext_InterAtoDMI", InterAtoDMI, "Sets DMI coupling between two regions.")
 }
 
-func alloyold(host,alloy int, percent float64) {
-	count:=0.0
+func alloyold(host, alloy int, percent float64) {
+	count := 0.0
 	n := M.Mesh().Size()
 
-	for i:=0;i<n[X];i++{
-		for j:=0;j<n[Y];j++{
-			for k:=0;k<n[Z];k++{
+	for i := 0; i < n[X]; i++ {
+		for j := 0; j < n[Y]; j++ {
+			for k := 0; k < n[Z]; k++ {
 				//dp:=DotProduct(M.GetCell(i,j,k),M.GetCell(i,j,k))
-				if ((M.GetCell(i,j,k)[0]*M.GetCell(i,j,k)[0]+M.GetCell(i,j,k)[1]*M.GetCell(i,j,k)[1]+M.GetCell(i,j,k)[2]*M.GetCell(i,j,k)[2]!=0)&&(regions.GetCell(i,j,k)==host)) {count++}
+				if (M.GetCell(i, j, k)[0]*M.GetCell(i, j, k)[0]+M.GetCell(i, j, k)[1]*M.GetCell(i, j, k)[1]+M.GetCell(i, j, k)[2]*M.GetCell(i, j, k)[2] != 0) && (regions.GetCell(i, j, k) == host) {
+					count++
+				}
 			}
 		}
 	}
-	print(count," host atoms\n")
-	added:=0.0
-	for added<percent*count {
-		i:=rand.Intn(n[X])
-		j:=rand.Intn(n[Y])
-		k:=rand.Intn(n[Z])
-		if ((M.GetCell(i,j,k)[0]*M.GetCell(i,j,k)[0]+M.GetCell(i,j,k)[1]*M.GetCell(i,j,k)[1]+M.GetCell(i,j,k)[2]*M.GetCell(i,j,k)[2]!=0)&&(regions.GetCell(i,j,k)==host)) {
-			regions.SetCell(i,j,k,alloy)
+	print(count, " host atoms\n")
+	added := 0.0
+	for added < percent*count {
+		i := rand.Intn(n[X])
+		j := rand.Intn(n[Y])
+		k := rand.Intn(n[Z])
+		if (M.GetCell(i, j, k)[0]*M.GetCell(i, j, k)[0]+M.GetCell(i, j, k)[1]*M.GetCell(i, j, k)[1]+M.GetCell(i, j, k)[2]*M.GetCell(i, j, k)[2] != 0) && (regions.GetCell(i, j, k) == host) {
+			regions.SetCell(i, j, k, alloy)
 			added++
 		}
 	}
-	print(added," alloy atoms\n")
+	print(added, " alloy atoms\n")
 }
 
 type alloyst struct {
@@ -75,129 +77,125 @@ type alloyst struct {
 	noise     *data.Slice      // noise buffer
 }
 
-func alloy(host,alloy int, percent float64) {
-	var ralloy     alloyst
+func alloy(host, alloy int, percent float64) {
+	var ralloy alloyst
 	ralloy.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
-	ralloy.seed=1
+	ralloy.seed = 1
 	y := M.Buffer()
-	ralloy.noise=cuda.Buffer(1, y.Size())
+	ralloy.noise = cuda.Buffer(1, y.Size())
 	defer cuda.Recycle(ralloy.noise)
 	N := Mesh().NCell()
 	ralloy.generator.GenerateUniform(uintptr(ralloy.noise.DevPtr(0)), int64(N))
-	cuda.Alloypar(host,alloy, percent,ralloy.noise,regions.gpuCache.Ptr)
+	cuda.Alloypar(host, alloy, percent, ralloy.noise, regions.gpuCache.Ptr)
 }
 
-
 func sc_init() {
-nv.Set(6)
-celltype=0
-print("Cellsize must be given in unit cells\n")	
+	nv.Set(6)
+	celltype = 0
+	print("Cellsize must be given in unit cells\n")
 }
 
 func bcc_init() {
-print("Cellsize must be given in half of unit cells\n")		
-celltype=1
-ii:=0
-jj:=0
-kk:=0
-n := M.Mesh().Size()
-nv.Set(27)
-print("Region 255 used for empty atomic positions\n")
-for i:=0;i<n[X]/2+1;i+=1{
-	for j:=0;j<n[Y]/2+1;j+=1{
-		for k:=0;k<n[Z]/2+1;k+=1{
-			ii=i*2+1
-			jj=j*2
-			kk=k*2
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			}
-			ii=i*2
-			jj=j*2+1
-			kk=k*2
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			}
-			ii=i*2+1
-			jj=j*2+1
-			kk=k*2
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			}
-			ii=i*2
-			jj=j*2
-			kk=k*2+1
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			}
-			ii=i*2+1
-			jj=j*2
-			kk=k*2+1
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			}
-			ii=i*2
-			jj=j*2+1
-			kk=k*2+1
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
+	print("Cellsize must be given in half of unit cells\n")
+	celltype = 1
+	ii := 0
+	jj := 0
+	kk := 0
+	n := M.Mesh().Size()
+	nv.Set(27)
+	print("Region 255 used for empty atomic positions\n")
+	for i := 0; i < n[X]/2+1; i += 1 {
+		for j := 0; j < n[Y]/2+1; j += 1 {
+			for k := 0; k < n[Z]/2+1; k += 1 {
+				ii = i*2 + 1
+				jj = j * 2
+				kk = k * 2
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+				}
+				ii = i * 2
+				jj = j*2 + 1
+				kk = k * 2
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+				}
+				ii = i*2 + 1
+				jj = j*2 + 1
+				kk = k * 2
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+				}
+				ii = i * 2
+				jj = j * 2
+				kk = k*2 + 1
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+				}
+				ii = i*2 + 1
+				jj = j * 2
+				kk = k*2 + 1
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+				}
+				ii = i * 2
+				jj = j*2 + 1
+				kk = k*2 + 1
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+				}
 			}
 		}
 	}
+	M.SetRegion(255, Uniform(0, 0, 0))
 }
-M.SetRegion(255,Uniform(0,0,0))
-}
-
 
 func fcc_init() {
-print("Cellsize must be given in half of unit cells\n")	
-celltype=2
-ii:=0
-jj:=0
-kk:=0
-n := M.Mesh().Size()
-nv.Set(27)
-print("Region 255 used for empty atomic positions\n")
-//SetGeom(Xrange(-Inf,Inf))
-//SetGeom(Rect(1,1))
-for i:=0;i<n[X]/2+1;i+=1{
-	for j:=0;j<n[Y]/2+1;j+=1{
-		for k:=0;k<n[Z]/2+1;k+=1{
-			ii=i*2+1
-			jj=j*2
-			kk=k*2
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
-			}
-			ii=i*2
-			jj=j*2+1
-			kk=k*2
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
-			}
-			ii=i*2
-			jj=j*2
-			kk=k*2+1
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
-			}
-			ii=i*2+1
-			jj=j*2+1
-			kk=k*2+1
-			if ((ii<n[X])&&(jj<n[Y])&&(kk<n[Z])){
-			regions.SetCell(ii,jj,kk,255)
-			//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+	print("Cellsize must be given in half of unit cells\n")
+	celltype = 2
+	ii := 0
+	jj := 0
+	kk := 0
+	n := M.Mesh().Size()
+	nv.Set(27)
+	print("Region 255 used for empty atomic positions\n")
+	//SetGeom(Xrange(-Inf,Inf))
+	//SetGeom(Rect(1,1))
+	for i := 0; i < n[X]/2+1; i += 1 {
+		for j := 0; j < n[Y]/2+1; j += 1 {
+			for k := 0; k < n[Z]/2+1; k += 1 {
+				ii = i*2 + 1
+				jj = j * 2
+				kk = k * 2
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+				}
+				ii = i * 2
+				jj = j*2 + 1
+				kk = k * 2
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+				}
+				ii = i * 2
+				jj = j * 2
+				kk = k*2 + 1
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+				}
+				ii = i*2 + 1
+				jj = j*2 + 1
+				kk = k*2 + 1
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, 255)
+					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+				}
 			}
 		}
 	}
+	M.SetRegion(255, Uniform(0, 0, 0))
 }
-M.SetRegion(255,Uniform(0,0,0))
-}
-
-
 
 // Adaptive Heun solver.
 type HeunAto struct{}
@@ -216,7 +214,9 @@ func (_ *HeunAto) Step() {
 	util.Assert(dt > 0)
 
 	// Temperature giving problems
-	if ((!Temp.isZero())||(LLB2Tf==true)) {B_therm.updateAto()}
+	if (!Temp.isZero()) || (LLB2Tf == true) {
+		B_therm.updateAto()
+	}
 
 	// stage 1
 	torqueAto(dy0)
@@ -268,7 +268,9 @@ func (_ *HeunAto2T) Step() {
 	util.Assert(dt > 0)
 
 	// Temperature giving problems
-	if ((!Temp.isZero())||(LLB2Tf==true)) {B_therm.updateAto()}
+	if (!Temp.isZero()) || (LLB2Tf == true) {
+		B_therm.updateAto()
+	}
 
 	// stage 1
 	torqueAto(dy0)
@@ -291,8 +293,8 @@ func (_ *HeunAto2T) Step() {
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
 		setLastErr(err)
 		setMaxTorque(dy)
-		for iter:=0;iter<TSubsteps; iter++{
-			NewtonStep2T(float32(Dt_si)/float32(TSubsteps))
+		for iter := 0; iter < TSubsteps; iter++ {
+			NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
 		}
 	} else {
 		// undo bad step
@@ -301,12 +303,11 @@ func (_ *HeunAto2T) Step() {
 		cuda.Madd2(y, y, dy0, 1, -dt)
 		NUndone++
 		adaptDt(math.Pow(MaxErr/err, 1./3.))
-//		print("No debo entrar aqui\n")
+		//		print("No debo entrar aqui\n")
 	}
 }
 
 func (_ *HeunAto2T) Free() {}
-
 
 // write torque to dst and increment NEvals
 func torqueAto(dst *data.Slice) {
@@ -326,16 +327,16 @@ func SetLLTorqueAto(dst *data.Slice) {
 	SetEffectiveFieldAto(dst) // calc and store B_eff
 	AddSTTorqueAto(dst)
 	multiplyLandeFactor(dst)
-/// Remember to add lande factor and multiply
+	/// Remember to add lande factor and multiply
 }
 
 func SetEffectiveFieldAto(dst *data.Slice) {
 	cuda.Zero(dst)
-//	AddSTTorqueAto(dst)
-//	SetDemagField(dst)    // set to B_demag...
-    B_therm.AddToAto(dst)
+	//	AddSTTorqueAto(dst)
+	//	SetDemagField(dst)    // set to B_demag...
+	B_therm.AddToAto(dst)
 	AddExchangeFieldAto(dst) // ...then add other terms
-	AddAnisotropyFieldAto(dst, M,mu, Dato, AnisU)
+	AddAnisotropyFieldAto(dst, M, mu, Dato, AnisU)
 	B_ext.AddTo(dst)
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
@@ -355,7 +356,7 @@ func AddExchangeFieldAto(dst *data.Slice) {
 	defer Mu.Recycle()
 	Nv := nv.MSlice()
 	defer Nv.Recycle()
-	cuda.AddExchangeAto(dst, M.Buffer(), Jexato.Gpu(),Jdmiato.Gpu(), Mu, Nv,regions.Gpu(), M.Mesh())
+	cuda.AddExchangeAto(dst, M.Buffer(), Jexato.Gpu(), Jdmiato.Gpu(), Mu, Nv, regions.Gpu(), M.Mesh())
 }
 
 // Adds the current uniaxial anisotropy
@@ -374,55 +375,55 @@ func AddAnisotropyFieldAto(dst *data.Slice, M magnetization, mu, Dato *Regionwis
 
 // Adds the current spin transfer torque to dst
 func AddSTTorqueAto(dst *data.Slice) {
-	if (!J.isZero()) {
-	util.AssertMsg(!Pol.isZero(), "spin polarization should not be 0")
-	jspin, rec := J.Slice()
-	if rec {
-		defer cuda.Recycle(jspin)
-	}
-	fl, rec := FixedLayer.Slice()
-	if rec {
-		defer cuda.Recycle(fl)
-	}
-	if !DisableZhangLiTorque {
-		msat := mu.MSlice()
-		//msat := Msat.MSlice()
-		defer msat.Recycle()
-		j := J.MSlice()
-		defer j.Recycle()
-		alpha := Alpha.MSlice()
-		defer alpha.Recycle()
-		xi := Xi.MSlice()
-		defer xi.Recycle()
-		pol := Pol.MSlice()
-		defer pol.Recycle()
-		cuda.AddZhangLiTorque(dst, M.Buffer(), msat, j, alpha, xi, pol, Mesh())
-		multiplyVolume(dst) // Rewrite STT in cuda!!!!
-	}
-	if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
-		msat := mu.MSlice()
-//		msat := Msat.MSlice()
-		defer msat.Recycle()
-		j := J.MSlice()
-		defer j.Recycle()
-		fixedP := FixedLayer.MSlice()
-		defer fixedP.Recycle()
-		alpha := Alpha.MSlice()
-		defer alpha.Recycle()
-		pol := Pol.MSlice()
-		defer pol.Recycle()
-		lambda := Lambda.MSlice()
-		defer lambda.Recycle()
-		epsPrime := EpsilonPrime.MSlice()
-		defer epsPrime.Recycle()
-		thickness := FreeLayerThickness.MSlice()
-		defer thickness.Recycle()
-		cuda.AddSlonczewskiTorque2Ato(dst, M.Buffer(),
-			msat, j, fixedP, alpha, pol, lambda, epsPrime,
-			thickness,
-			CurrentSignFromFixedLayerPosition[fixedLayerPosition],
-			Mesh(),celltype)
-	}
+	if !J.isZero() {
+		util.AssertMsg(!Pol.isZero(), "spin polarization should not be 0")
+		jspin, rec := J.Slice()
+		if rec {
+			defer cuda.Recycle(jspin)
+		}
+		fl, rec := FixedLayer.Slice()
+		if rec {
+			defer cuda.Recycle(fl)
+		}
+		if !DisableZhangLiTorque {
+			msat := mu.MSlice()
+			//msat := Msat.MSlice()
+			defer msat.Recycle()
+			j := J.MSlice()
+			defer j.Recycle()
+			alpha := Alpha.MSlice()
+			defer alpha.Recycle()
+			xi := Xi.MSlice()
+			defer xi.Recycle()
+			pol := Pol.MSlice()
+			defer pol.Recycle()
+			cuda.AddZhangLiTorque(dst, M.Buffer(), msat, j, alpha, xi, pol, Mesh())
+			multiplyVolume(dst) // Rewrite STT in cuda!!!!
+		}
+		if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
+			msat := mu.MSlice()
+			//		msat := Msat.MSlice()
+			defer msat.Recycle()
+			j := J.MSlice()
+			defer j.Recycle()
+			fixedP := FixedLayer.MSlice()
+			defer fixedP.Recycle()
+			alpha := Alpha.MSlice()
+			defer alpha.Recycle()
+			pol := Pol.MSlice()
+			defer pol.Recycle()
+			lambda := Lambda.MSlice()
+			defer lambda.Recycle()
+			epsPrime := EpsilonPrime.MSlice()
+			defer epsPrime.Recycle()
+			thickness := FreeLayerThickness.MSlice()
+			defer thickness.Recycle()
+			cuda.AddSlonczewskiTorque2Ato(dst, M.Buffer(),
+				msat, j, fixedP, alpha, pol, lambda, epsPrime,
+				thickness,
+				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+				Mesh(), celltype)
+		}
 	}
 }
 
@@ -433,12 +434,11 @@ func multiplyLandeFactor(dst *data.Slice) {
 }
 
 func multiplyVolume(dst *data.Slice) {
-	cuda.MultiplyVolume(dst,Mesh(),celltype)
+	cuda.MultiplyVolume(dst, Mesh(), celltype)
 }
 
-
 func (b *thermField) AddToAto(dst *data.Slice) {
-	if ((!Temp.isZero())||(LLB2Tf==true)) {
+	if (!Temp.isZero()) || (LLB2Tf == true) {
 		//b.updateAto()
 		cuda.Add(dst, dst, b.noise)
 	}
@@ -466,14 +466,14 @@ func (b *thermField) updateAto() {
 		cuda.Memset(b.noise, 0, 0, 0)
 		b.step = NSteps
 		b.dt = Dt_si
-		if (!LLB2Tf==true) {
+		if !LLB2Tf == true {
 			return
 		}
 	}
 	//		print("2T-0\n")
 	// keep constant during time step
 	if NSteps == b.step && Dt_si == b.dt {
-		if (!LLB2Tf==true) {
+		if !LLB2Tf == true {
 			return
 		}
 	}
@@ -494,7 +494,7 @@ func (b *thermField) updateAto() {
 	}
 	//		print("2T-1\n")
 	N := Mesh().NCell()
-	k2_VgammaDt := 2 * mag.Kb / (GammaLL *  Dt_si)
+	k2_VgammaDt := 2 * mag.Kb / (GammaLL * Dt_si)
 	noise := cuda.Buffer(1, Mesh().Size())
 	defer cuda.Recycle(noise)
 
@@ -509,26 +509,20 @@ func (b *thermField) updateAto() {
 	//scaleNoise := ScaleNoiseLLB.MSlice()
 	//defer scaleNoise.Recycle()
 
-
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
 
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
-		if (LLB2Tf==true) {
+		if LLB2Tf == true {
 			Te.update()
 			//print("2T\n")
-			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, Mu, Te.temp, alpha,scaleNoise)
+			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, Mu, Te.temp, alpha, scaleNoise)
 		} else {
-			cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt, Mu, temp, alpha,scaleNoise)
+			cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt, Mu, temp, alpha, scaleNoise)
 		}
 	}
-
-
-
 
 	b.step = NSteps
 	b.dt = Dt_si
 }
-
-

@@ -6,7 +6,6 @@ import (
 	"math"
 )
 
-
 // Heun solver for LLB equation.
 type HeunLLB struct{}
 
@@ -21,9 +20,9 @@ func (_ *HeunLLB) Step() {
 	Hth2 := cuda.Buffer(VECTOR, y.Size())
 	defer cuda.Recycle(Hth2)
 
-	cuda.Zero(Hth1)       
-	cuda.Zero(Hth2)  
-	if (JHThermalnoise==true) {
+	cuda.Zero(Hth1)
+	cuda.Zero(Hth2)
+	if JHThermalnoise == true {
 		B_therm.AddTo(Hth1)
 		B_therm.AddTo(Hth2)
 	}
@@ -37,8 +36,8 @@ func (_ *HeunLLB) Step() {
 
 	// stage 1
 
-  // Rewrite to calculate m step 1 
-	torqueFnLLB(dy0,Hth1,Hth2)
+	// Rewrite to calculate m step 1
+	torqueFnLLB(dy0, Hth1, Hth2)
 	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
 
 	// stage 2
@@ -46,8 +45,8 @@ func (_ *HeunLLB) Step() {
 	defer cuda.Recycle(dy)
 	Time += Dt_si
 
-  // Rewrite to calculate spep 2
-	torqueFnLLB(dy,Hth1,Hth2)
+	// Rewrite to calculate spep 2
+	torqueFnLLB(dy, Hth1, Hth2)
 
 	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
 
@@ -64,7 +63,7 @@ func (_ *HeunLLB) Step() {
 		// undo bad step
 		util.Assert(FixDt == 0)
 		Time -= Dt_si
-		cuda.Madd2(y, y, dy0, 1, -dt)  //****
+		cuda.Madd2(y, y, dy0, 1, -dt) //****
 		NUndone++
 		adaptDt(math.Pow(MaxErr/err, 1./3.))
 	}
