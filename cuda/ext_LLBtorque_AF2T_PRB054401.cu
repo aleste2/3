@@ -253,8 +253,8 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         float3 m2xHtot2 = cross(m2, htot2);
         float3 m1xm1xHtot1 = cross(m1, m1xHtot1);
         float3 m2xm2xHtot2 = cross(m2, m2xHtot2);
-        float gillba = 1.0f / (1.0f + alphaa * alphaa);
-        float gillbb = 1.0f / (1.0f + alphab * alphab);
+        float gillba = 1.0f / (1.0f + alphaperpA * alphaperpA);
+        float gillbb = 1.0f / (1.0f + alphaperpB * alphaperpB);
 
         torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a;
         torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b;
