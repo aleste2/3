@@ -45,10 +45,10 @@ func (_ *HeunLLBAF2T) Step() {
 	cuda.Zero(Hth1b)
 	cuda.Zero(Hth2b)
 	if JHThermalnoise == true {
-		B_therm.AddTo(Hth1a)
-		B_therm.AddTo(Hth2a)
-		B_therm.AddTo(Hth1b)
-		B_therm.AddTo(Hth2b)
+		B_therm.LLBAddTo(Hth1a)
+		B_therm.LLBAddTo(Hth2a)
+		B_therm.LLBAddTo(Hth1b)
+		B_therm.LLBAddTo(Hth2b)
 	}
 
 	if FixDt != 0 {
