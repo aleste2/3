@@ -124,7 +124,7 @@ func sc_AF(alloy int) {
 					regions.SetCell(ii, jj, kk, alloy)
 				}
 				ii = i*2 + 1
-				jj = j * 2+1
+				jj = j*2 + 1
 				kk = k*2 + 1
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, alloy)
