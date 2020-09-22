@@ -37,6 +37,7 @@ func init() {
 	Jdmiato.init(Jdmi)
 	DeclFunc("BCC", bcc_init, "Initialize BCC lattice")
 	DeclFunc("SC", sc_init, "Initialize SC lattice")
+	DeclFunc("sc_AF", sc_AF, "Initialize AF in checkboard")
 	DeclFunc("FCC", fcc_init, "Initialize FCC lattice")
 	DeclFunc("alloy", alloy, "Set alloy percent")
 	DeclFunc("ext_InterAtoExchange", InterAtoExchange, "Sets exchange coupling between two regions.")
@@ -93,6 +94,44 @@ func sc_init() {
 	nv.Set(6)
 	celltype = 0
 	print("Cellsize must be given in unit cells\n")
+}
+
+func sc_AF(alloy int) {
+	ii := 0
+	jj := 0
+	kk := 0
+	n := M.Mesh().Size()
+	nv.Set(6)
+	for i := 0; i < n[X]/2+1; i += 1 {
+		for j := 0; j < n[Y]/2+1; j += 1 {
+			for k := 0; k < n[Z]/2+1; k += 1 {
+				ii = i*2 + 1
+				jj = j * 2
+				kk = k * 2
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, alloy)
+				}
+				ii = i * 2
+				jj = j*2 + 1
+				kk = k * 2
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, alloy)
+				}
+				ii = i * 2
+				jj = j * 2
+				kk = k*2 + 1
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, alloy)
+				}
+				ii = i*2 + 1
+				jj = j * 2+1
+				kk = k*2 + 1
+				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
+					regions.SetCell(ii, jj, kk, alloy)
+				}
+			}
+		}
+	}
 }
 
 func bcc_init() {
