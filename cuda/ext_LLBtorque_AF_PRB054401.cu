@@ -39,6 +39,7 @@ LLBtorqueAFPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float* 
 	float* __restrict__  J0aa_, float J0aa_mul,
 	float* __restrict__  J0bb_, float J0bb_mul,
 	float* __restrict__  J0ab_, float J0ab_mul,
+	float* __restrict__  lambda0_, float lambda0_mul,
 	int N) {
 
 	const float kB=1.38064852e-23;
@@ -66,6 +67,7 @@ LLBtorqueAFPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float* 
         float J0ab = amul(J0ab_, J0ab_mul, i)*(1.0f-x)*nv;
         float J0ba = amul(J0ab_, J0ab_mul, i)*x*nv;
         float temp = amul(temp_, temp_mul, i);
+				float lambda0 = amul(lambda0_, lambda0_mul, i)*x*nv;
 
         if (temp==0) temp=0.0001; // to avoid zero division...
         if (temp>2.0*TCurie) temp=2.0*TCurie; // To avoid numerical problems much above TC
@@ -218,6 +220,10 @@ LLBtorqueAFPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float* 
       heffb = -lambdaB*((mb-meb)/meb)*m2+fabs(J0ba)/mub*(tauA-taueA)/meb*m2;
     }
 
+		float3 h0=lambda0*(ma+(1-x)*mub/x/mua*mb)/ma/mb*((mua/mub)*heffa-heffb);
+		float3 hab = h0;
+		float3 hba = -1.0f*h0;
+
 		float alphaparA;
 		float alphaparB;
 		float alphaperpA;
@@ -239,8 +245,9 @@ LLBtorqueAFPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float* 
 		float h_par_scalea=sqrt(Msat/Msata*alphaparA/alpha);
 		float h_par_scaleb=sqrt(Msat/Msatb*alphaparB/alpha);
 
-        H1=H1+heffa+hexa;
-        H2=H2+heffb+hexb;
+		H1=H1+heffa+hexa+hab;
+		H2=H2+heffb+hexb+hba;
+		
         float3 htot1=H1+h_perp_scalea*hth1a;
         float3 htot2=H2+h_perp_scaleb*hth1b;
 

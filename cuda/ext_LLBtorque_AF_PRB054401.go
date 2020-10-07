@@ -5,7 +5,7 @@ import (
 )
 
 // Landau-Lifshitz torque for AF implementation PRB 100 054401 (2019)
-func LLBTorqueAFPRB(torque1, m1, torque2, m2, B1, B2 *data.Slice, temp MSlice, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, hth1a *data.Slice, hth2a *data.Slice, hth1b *data.Slice, hth2b *data.Slice, x, nv, mua, mub, J0aa, J0bb, J0ab MSlice) {
+func LLBTorqueAFPRB(torque1, m1, torque2, m2, B1, B2 *data.Slice, temp MSlice, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, hth1a *data.Slice, hth2a *data.Slice, hth1b *data.Slice, hth2b *data.Slice, x, nv, mua, mub, J0aa, J0bb, J0ab,lambda0 MSlice) {
 	N := torque1.Len()
 	cfg := make1DConf(N)
 	k_LLBtorqueAFPRB054401_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
@@ -33,5 +33,6 @@ func LLBTorqueAFPRB(torque1, m1, torque2, m2, B1, B2 *data.Slice, temp MSlice, a
 		J0aa.DevPtr(0), J0aa.Mul(0),
 		J0bb.DevPtr(0), J0bb.Mul(0),
 		J0ab.DevPtr(0), J0ab.Mul(0),
+		lambda0.DevPtr(0), lambda0.Mul(0),
 		N, cfg)
 }

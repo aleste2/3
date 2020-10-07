@@ -196,8 +196,12 @@ func torqueFnAFLLB2TPRB(dst1, dst2 *data.Slice, hth1a, hth2a, hth1b, hth2b *data
 	J0AB := J0ab.MSlice()
 	defer J0AB.Recycle()
 
+	// Unai Extension
+	Lambda0 := lambda0.MSlice()
+	defer Lambda0.Recycle()
+
 	if Precess {
-		cuda.LLBTorqueAF2TPRB(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB) // overwrite dst with torque
+		cuda.LLBTorqueAF2TPRB(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB,Lambda0) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst1, M1.Buffer(), dst1)
 		cuda.LLNoPrecess(dst2, M2.Buffer(), dst2)

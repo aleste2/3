@@ -7,8 +7,8 @@
 // Landau-Lifshitz torque for AF implementation PRB 100 054401 (2019)
 // Uses me derived from eq. (9) of PRB 104413 (2012)
 // Other equations from LowTempPhys 41 (9) 2015 due to better numerical stability
- 
-extern "C" 
+
+extern "C"
 
 // New parameters
 // mua,mub magnetic moment
@@ -38,7 +38,7 @@ float* __restrict__  mx1, float* __restrict__  my1, float* __restrict__  mz1,
 	int N) {
 
     const float kB=1.38064852e-23;
-  
+
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
 
     if (i < N) {
@@ -61,7 +61,7 @@ float* __restrict__  mx1, float* __restrict__  my1, float* __restrict__  mz1,
         float J0bb = amul(J0bb_, J0bb_mul, i)*nv*(1.0f-x);
         float J0ab = amul(J0ab_, J0ab_mul, i)*(1.0f-x)*nv;
         float J0ba = amul(J0ab_, J0ab_mul, i)*x*nv;
-        float temp = temp_[i]; 
+        float temp = temp_[i];
 
         if (temp==0) temp=0.0001; // to avoid zero division...
         if (temp>2.0*TCurie) temp=2.0*TCurie; // To avoid numerical problems much above TC
@@ -80,13 +80,13 @@ float* __restrict__  mx1, float* __restrict__  my1, float* __restrict__  mz1,
 		float J02 = J0bb;
 		float J012 = J0ab;
 		float J021 = J0ba;
-		TCurie = (J01+J02+pow(pow(J01-J02,2.0f)+4.0f*J012*J021,0.5f))/(6.0f*kB); // Eq (9) LowTempPhys 41 (9) 2015 
+		TCurie = (J01+J02+pow(pow(J01-J02,2.0f)+4.0f*J012*J021,0.5f))/(6.0f*kB); // Eq (9) LowTempPhys 41 (9) 2015
 		if ((fabs(temp-TCurie)<0.007*TCurie)&&(temp<TCurie)) {temp=0.993f*TCurie;}  // To avoid errors arround T=Tc
 
 		float mea;
 		float meb;
 
-		if (temp<TCurie) {	
+		if (temp<TCurie) {
 
 		// Parametros de LLB y calculo de m_e1,2
 
@@ -177,7 +177,7 @@ float* __restrict__  mx1, float* __restrict__  my1, float* __restrict__  mz1,
 		float xpara;
 		float xparb;
 
-//		Following notation of LowTemp Phys (eq 13), to avoid numerical errors float<1e-38	
+//		Following notation of LowTemp Phys (eq 13), to avoid numerical errors float<1e-38
 		if (temp<TCurie) {
 			xpara=(mub/(kB*temp)*Lder(chiA)*fabs(J0ab)/(kB*temp)*Lder(chiB)+mua/(kB*temp)*Lder(chiA)*(1.0f-J0bb/(kB*temp)*Lder(chiB)))/((1.0f-J0aa/(kB*temp)*Lder(chiA))*(1.0f-J0bb/(kB*temp)*Lder(chiB))-fabs(J0ba)/(kB*temp)*Lder(chiA)*fabs(J0ab)/(kB*temp)*Lder(chiB));
 			xparb=(mua/(kB*temp)*Lder(chiB)*fabs(J0ba)/(kB*temp)*Lder(chiA)+mub/(kB*temp)*Lder(chiB)*(1.0f-J0aa/(kB*temp)*Lder(chiA)))/((1.0f-J0bb/(kB*temp)*Lder(chiB))*(1.0f-J0aa/(kB*temp)*Lder(chiA))-fabs(J0ab)/(kB*temp)*Lder(chiB)*fabs(J0ba)/(kB*temp)*Lder(chiA));
@@ -195,7 +195,7 @@ float* __restrict__  mx1, float* __restrict__  my1, float* __restrict__  mz1,
 		float alphaparA;
 		float alphaparB;
 
-		if (temp<TCurie) {	
+		if (temp<TCurie) {
 			alphaparA=2.0f*alphaa*kB*temp*mea/(J0aa*mea+fabs(J0ab)*meb);
 			alphaparB=2.0f*alphab*kB*temp*meb/(J0bb*meb+fabs(J0ba)*mea);
 		} else {

@@ -56,6 +56,10 @@ var (
 
 	EpsilonPrime1 = NewScalarParam("EpsilonPrime1", "", "Slonczewski secondairy STT term ε' Lattice 1")
 	EpsilonPrime2 = NewScalarParam("EpsilonPrime2", "", "Slonczewski secondairy STT term ε' Lattice 2")
+
+	// For LLB AF Angular momentum exchange (Unai)
+	lambda0                           = NewScalarParam("lambda0", "", "Moment exchange between sublattices")
+
 )
 
 func init() {
