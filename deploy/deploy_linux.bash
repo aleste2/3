@@ -31,6 +31,8 @@ for CUDAVERSION in 7.0 7.5 8.0 9.0 9.1 9.2 10.0 10.1 10.2 11.0; do
         "10.1") export CUDA_CC="   30 32 35 37 50 52 53 60 61 62 70 72 75";;
         "10.2") export CUDA_CC="   30 32 35 37 50 52 53 60 61 62 70 72 75";;
         "11.0") export CUDA_CC="   30 32 35 37 50 52 53 60 61 62 70 72 75 80";;
+        "11.1") export CUDA_CC="      32 35 37 50 52 53 60 61 62 70 72 75 80";;
+        "11.2") export CUDA_CC="      32 35 37 50 52 53 60 61 62 70 72 75 80";;
     esac
 
     # The path for shared libraries (relative to the build directory)

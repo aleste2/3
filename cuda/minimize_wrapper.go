@@ -87,13 +87,13 @@ func k_minimize_async(mx unsafe.Pointer, my unsafe.Pointer, mz unsafe.Pointer, m
 
 // maps compute capability on PTX code for minimize kernel.
 var minimize_map = map[int]string{0: "",
-	30: minimize_ptx_30}
+	70: minimize_ptx_70}
 
 // minimize PTX code for various compute capabilities.
 const (
-	minimize_ptx_30 = `
-.version 6.5
-.target sm_30
+	minimize_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	minimize
@@ -132,12 +132,12 @@ const (
 	mov.u32 	%r3, %ctaid.y;
 	mov.u32 	%r4, %nctaid.x;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_2;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_2;
 
 	cvta.to.global.u64 	%rd10, %rd4;
 	mul.wide.s32 	%rd11, %r1, 4;
@@ -152,21 +152,21 @@ const (
 	add.s64 	%rd20, %rd19, %rd11;
 	cvta.to.global.u64 	%rd21, %rd9;
 	add.s64 	%rd22, %rd21, %rd11;
-	ld.global.f32 	%f2, [%rd18];
-	ld.global.f32 	%f3, [%rd20];
+	ld.global.nc.f32 	%f2, [%rd18];
+	ld.global.nc.f32 	%f3, [%rd20];
 	mul.f32 	%f4, %f3, %f3;
 	fma.rn.f32 	%f5, %f2, %f2, %f4;
-	ld.global.f32 	%f6, [%rd22];
+	ld.global.nc.f32 	%f6, [%rd22];
 	fma.rn.f32 	%f7, %f6, %f6, %f5;
 	mul.f32 	%f8, %f1, %f1;
 	mul.f32 	%f9, %f8, %f7;
 	mov.f32 	%f10, 0f40800000;
 	sub.f32 	%f11, %f10, %f9;
-	ld.global.f32 	%f12, [%rd12];
+	ld.global.nc.f32 	%f12, [%rd12];
 	mul.f32 	%f13, %f12, %f11;
-	ld.global.f32 	%f14, [%rd14];
+	ld.global.nc.f32 	%f14, [%rd14];
 	mul.f32 	%f15, %f14, %f11;
-	ld.global.f32 	%f16, [%rd16];
+	ld.global.nc.f32 	%f16, [%rd16];
 	mul.f32 	%f17, %f16, %f11;
 	mul.f32 	%f18, %f1, 0f40800000;
 	fma.rn.f32 	%f19, %f18, %f2, %f13;
@@ -186,10 +186,10 @@ const (
 	add.s64 	%rd28, %rd27, %rd11;
 	st.global.f32 	[%rd28], %f25;
 
-BB0_2:
+LBB0_2:
 	ret;
-}
 
+}
 
 `
 )

@@ -90,13 +90,13 @@ func k_lltorque2_async(tx unsafe.Pointer, ty unsafe.Pointer, tz unsafe.Pointer, 
 
 // maps compute capability on PTX code for lltorque2 kernel.
 var lltorque2_map = map[int]string{0: "",
-	30: lltorque2_ptx_30}
+	70: lltorque2_ptx_70}
 
 // lltorque2 PTX code for various compute capabilities.
 const (
-	lltorque2_ptx_30 = `
-.version 6.5
-.target sm_30
+	lltorque2_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	lltorque2
@@ -137,43 +137,41 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r3, %r4, %r5;
+	mad.lo.s32 	%r6, %r4, %r3, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_4;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_4;
 
 	cvta.to.global.u64 	%rd11, %rd4;
 	mul.wide.s32 	%rd12, %r1, 4;
 	add.s64 	%rd13, %rd11, %rd12;
-	ld.global.f32 	%f1, [%rd13];
+	ld.global.nc.f32 	%f1, [%rd13];
 	cvta.to.global.u64 	%rd14, %rd5;
 	add.s64 	%rd15, %rd14, %rd12;
-	ld.global.f32 	%f2, [%rd15];
+	ld.global.nc.f32 	%f2, [%rd15];
 	cvta.to.global.u64 	%rd16, %rd6;
 	add.s64 	%rd17, %rd16, %rd12;
-	ld.global.f32 	%f3, [%rd17];
+	ld.global.nc.f32 	%f3, [%rd17];
 	cvta.to.global.u64 	%rd18, %rd7;
 	add.s64 	%rd19, %rd18, %rd12;
-	ld.global.f32 	%f4, [%rd19];
+	ld.global.nc.f32 	%f4, [%rd19];
 	cvta.to.global.u64 	%rd20, %rd8;
 	add.s64 	%rd21, %rd20, %rd12;
-	ld.global.f32 	%f5, [%rd21];
+	ld.global.nc.f32 	%f5, [%rd21];
 	cvta.to.global.u64 	%rd22, %rd9;
 	add.s64 	%rd23, %rd22, %rd12;
-	ld.global.f32 	%f6, [%rd23];
-	setp.eq.s64	%p2, %rd10, 0;
-	@%p2 bra 	BB0_3;
+	ld.global.nc.f32 	%f6, [%rd23];
+	setp.eq.s64 	%p2, %rd10, 0;
+	@%p2 bra 	LBB0_3;
 
 	cvta.to.global.u64 	%rd24, %rd10;
 	add.s64 	%rd26, %rd24, %rd12;
-	ld.global.f32 	%f10, [%rd26];
+	ld.global.nc.f32 	%f10, [%rd26];
 	mul.f32 	%f38, %f10, %f38;
 
-BB0_3:
-	cvta.to.global.u64 	%rd27, %rd3;
-	cvta.to.global.u64 	%rd28, %rd2;
+LBB0_3:
 	mul.f32 	%f11, %f3, %f5;
 	mul.f32 	%f12, %f2, %f6;
 	sub.f32 	%f13, %f12, %f11;
@@ -198,21 +196,23 @@ BB0_3:
 	fma.rn.f32 	%f32, %f25, %f38, %f13;
 	fma.rn.f32 	%f33, %f28, %f38, %f16;
 	fma.rn.f32 	%f34, %f31, %f38, %f19;
-	mul.f32 	%f35, %f22, %f32;
-	mul.f32 	%f36, %f22, %f33;
-	mul.f32 	%f37, %f22, %f34;
-	cvta.to.global.u64 	%rd29, %rd1;
-	add.s64 	%rd31, %rd29, %rd12;
-	st.global.f32 	[%rd31], %f35;
-	add.s64 	%rd32, %rd28, %rd12;
-	st.global.f32 	[%rd32], %f36;
-	add.s64 	%rd33, %rd27, %rd12;
+	mul.f32 	%f35, %f32, %f22;
+	mul.f32 	%f36, %f33, %f22;
+	mul.f32 	%f37, %f34, %f22;
+	cvta.to.global.u64 	%rd27, %rd1;
+	add.s64 	%rd29, %rd27, %rd12;
+	st.global.f32 	[%rd29], %f35;
+	cvta.to.global.u64 	%rd30, %rd2;
+	add.s64 	%rd31, %rd30, %rd12;
+	st.global.f32 	[%rd31], %f36;
+	cvta.to.global.u64 	%rd32, %rd3;
+	add.s64 	%rd33, %rd32, %rd12;
 	st.global.f32 	[%rd33], %f37;
 
-BB0_4:
+LBB0_4:
 	ret;
-}
 
+}
 
 `
 )

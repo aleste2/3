@@ -5,11 +5,11 @@ import (
 )
 
 // Landau-Lifshitz torque for AF implementation PRB 100 054401 (2019)
-func LLBTorqueAFPRB(torque1, m1, torque2, m2, B1, B2 *data.Slice, temp MSlice, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, hth1a *data.Slice, hth2a *data.Slice, hth1b *data.Slice, hth2b *data.Slice, x, nv, mua, mub, J0aa, J0bb, J0ab, lambda0 MSlice) {
+func LLBTorqueAFMFA(torque1, m1, torque2, m2, B1, B2 *data.Slice, temp MSlice, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, hth1a *data.Slice, hth2a *data.Slice, hth1b *data.Slice, hth2b *data.Slice, x, nv, mua, mub, J0aa, J0bb, J0ab, lambda0 MSlice) {
 	N := torque1.Len()
 	cfg := make1DConf(N)
-	k_LLBtorqueAFPRB054401_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
-		//	k_LLBtorqueAFMFA_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
+	k_LLBtorqueAFMFA_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
+		//k_LLBtorqueAFMFA_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
 		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
 		torque2.DevPtr(X), torque2.DevPtr(Y), torque2.DevPtr(Z),
 		m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),

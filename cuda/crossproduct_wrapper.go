@@ -84,13 +84,13 @@ func k_crossproduct_async(dstx unsafe.Pointer, dsty unsafe.Pointer, dstz unsafe.
 
 // maps compute capability on PTX code for crossproduct kernel.
 var crossproduct_map = map[int]string{0: "",
-	30: crossproduct_ptx_30}
+	70: crossproduct_ptx_70}
 
 // crossproduct PTX code for various compute capabilities.
 const (
-	crossproduct_ptx_30 = `
-.version 6.5
-.target sm_30
+	crossproduct_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	crossproduct
@@ -127,12 +127,12 @@ const (
 	mov.u32 	%r3, %ctaid.y;
 	mov.u32 	%r4, %nctaid.x;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_2;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_2;
 
 	cvta.to.global.u64 	%rd10, %rd4;
 	mul.wide.s32 	%rd11, %r1, 4;
@@ -147,16 +147,16 @@ const (
 	add.s64 	%rd20, %rd19, %rd11;
 	cvta.to.global.u64 	%rd21, %rd9;
 	add.s64 	%rd22, %rd21, %rd11;
-	ld.global.f32 	%f1, [%rd22];
-	ld.global.f32 	%f2, [%rd14];
+	ld.global.nc.f32 	%f1, [%rd22];
+	ld.global.nc.f32 	%f2, [%rd14];
 	mul.f32 	%f3, %f2, %f1;
-	ld.global.f32 	%f4, [%rd20];
-	ld.global.f32 	%f5, [%rd16];
+	ld.global.nc.f32 	%f4, [%rd20];
+	ld.global.nc.f32 	%f5, [%rd16];
 	mul.f32 	%f6, %f5, %f4;
 	sub.f32 	%f7, %f3, %f6;
-	ld.global.f32 	%f8, [%rd18];
+	ld.global.nc.f32 	%f8, [%rd18];
 	mul.f32 	%f9, %f5, %f8;
-	ld.global.f32 	%f10, [%rd12];
+	ld.global.nc.f32 	%f10, [%rd12];
 	mul.f32 	%f11, %f10, %f1;
 	sub.f32 	%f12, %f9, %f11;
 	mul.f32 	%f13, %f10, %f4;
@@ -172,10 +172,10 @@ const (
 	add.s64 	%rd28, %rd27, %rd11;
 	st.global.f32 	[%rd28], %f15;
 
-BB0_2:
+LBB0_2:
 	ret;
-}
 
+}
 
 `
 )

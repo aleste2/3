@@ -78,13 +78,13 @@ func k_regionaddv_async(dstx unsafe.Pointer, dsty unsafe.Pointer, dstz unsafe.Po
 
 // maps compute capability on PTX code for regionaddv kernel.
 var regionaddv_map = map[int]string{0: "",
-	30: regionaddv_ptx_30}
+	70: regionaddv_ptx_70}
 
 // regionaddv PTX code for various compute capabilities.
 const (
-	regionaddv_ptx_30 = `
-.version 6.5
-.target sm_30
+	regionaddv_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	regionaddv
@@ -101,8 +101,9 @@ const (
 )
 {
 	.reg .pred 	%p<2>;
+	.reg .b16 	%rs<2>;
 	.reg .f32 	%f<10>;
-	.reg .b32 	%r<10>;
+	.reg .b32 	%r<11>;
 	.reg .b64 	%rd<25>;
 
 
@@ -117,25 +118,27 @@ const (
 	mov.u32 	%r3, %ctaid.y;
 	mov.u32 	%r4, %nctaid.x;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_2;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_2;
 
 	cvta.to.global.u64 	%rd8, %rd7;
-	cvt.s64.s32	%rd9, %r1;
+	cvt.s64.s32 	%rd9, %r1;
 	add.s64 	%rd10, %rd8, %rd9;
+	ld.global.nc.u8 	%rs1, [%rd10];
 	cvta.to.global.u64 	%rd11, %rd4;
-	ld.global.u8 	%r9, [%rd10];
-	mul.wide.u32 	%rd12, %r9, 4;
+	cvt.u32.u16 	%r9, %rs1;
+	and.b32  	%r10, %r9, 255;
+	mul.wide.u32 	%rd12, %r10, 4;
 	add.s64 	%rd13, %rd11, %rd12;
 	cvta.to.global.u64 	%rd14, %rd1;
 	mul.wide.s32 	%rd15, %r1, 4;
 	add.s64 	%rd16, %rd14, %rd15;
 	ld.global.f32 	%f1, [%rd16];
-	ld.global.f32 	%f2, [%rd13];
+	ld.global.nc.f32 	%f2, [%rd13];
 	add.f32 	%f3, %f2, %f1;
 	st.global.f32 	[%rd16], %f3;
 	cvta.to.global.u64 	%rd17, %rd5;
@@ -143,7 +146,7 @@ const (
 	cvta.to.global.u64 	%rd19, %rd2;
 	add.s64 	%rd20, %rd19, %rd15;
 	ld.global.f32 	%f4, [%rd20];
-	ld.global.f32 	%f5, [%rd18];
+	ld.global.nc.f32 	%f5, [%rd18];
 	add.f32 	%f6, %f5, %f4;
 	st.global.f32 	[%rd20], %f6;
 	cvta.to.global.u64 	%rd21, %rd6;
@@ -151,14 +154,14 @@ const (
 	cvta.to.global.u64 	%rd23, %rd3;
 	add.s64 	%rd24, %rd23, %rd15;
 	ld.global.f32 	%f7, [%rd24];
-	ld.global.f32 	%f8, [%rd22];
+	ld.global.nc.f32 	%f8, [%rd22];
 	add.f32 	%f9, %f8, %f7;
 	st.global.f32 	[%rd24], %f9;
 
-BB0_2:
+LBB0_2:
 	ret;
-}
 
+}
 
 `
 )

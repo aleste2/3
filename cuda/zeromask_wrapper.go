@@ -66,13 +66,13 @@ func k_zeromask_async(dst unsafe.Pointer, maskLUT unsafe.Pointer, regions unsafe
 
 // maps compute capability on PTX code for zeromask kernel.
 var zeromask_map = map[int]string{0: "",
-	30: zeromask_ptx_30}
+	70: zeromask_ptx_70}
 
 // zeromask PTX code for various compute capabilities.
 const (
-	zeromask_ptx_30 = `
-.version 6.5
-.target sm_30
+	zeromask_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	zeromask
@@ -85,8 +85,9 @@ const (
 )
 {
 	.reg .pred 	%p<3>;
+	.reg .b16 	%rs<2>;
 	.reg .f32 	%f<2>;
-	.reg .b32 	%r<11>;
+	.reg .b32 	%r<12>;
 	.reg .b64 	%rd<13>;
 
 
@@ -97,34 +98,36 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r3, %r4, %r5;
+	mad.lo.s32 	%r6, %r4, %r3, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_3;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_3;
 
 	cvta.to.global.u64 	%rd5, %rd4;
-	cvt.s64.s32	%rd1, %r1;
+	cvt.s64.s32 	%rd1, %r1;
 	add.s64 	%rd6, %rd5, %rd1;
+	ld.global.nc.u8 	%rs1, [%rd6];
 	cvta.to.global.u64 	%rd7, %rd3;
-	ld.global.u8 	%r9, [%rd6];
-	mul.wide.u32 	%rd8, %r9, 4;
+	cvt.u32.u16 	%r9, %rs1;
+	and.b32  	%r10, %r9, 255;
+	mul.wide.u32 	%rd8, %r10, 4;
 	add.s64 	%rd9, %rd7, %rd8;
-	ld.global.f32 	%f1, [%rd9];
-	setp.eq.f32	%p2, %f1, 0f00000000;
-	@%p2 bra 	BB0_3;
+	ld.global.nc.f32 	%f1, [%rd9];
+	setp.eq.f32 	%p2, %f1, 0f00000000;
+	@%p2 bra 	LBB0_3;
 
 	cvta.to.global.u64 	%rd10, %rd2;
 	shl.b64 	%rd11, %rd1, 2;
 	add.s64 	%rd12, %rd10, %rd11;
-	mov.u32 	%r10, 0;
-	st.global.u32 	[%rd12], %r10;
+	mov.u32 	%r11, 0;
+	st.global.u32 	[%rd12], %r11;
 
-BB0_3:
+LBB0_3:
 	ret;
-}
 
+}
 
 `
 )

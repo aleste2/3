@@ -81,13 +81,13 @@ func k_dotproduct_async(dst unsafe.Pointer, prefactor float32, ax unsafe.Pointer
 
 // maps compute capability on PTX code for dotproduct kernel.
 var dotproduct_map = map[int]string{0: "",
-	30: dotproduct_ptx_30}
+	70: dotproduct_ptx_70}
 
 // dotproduct PTX code for various compute capabilities.
 const (
-	dotproduct_ptx_30 = `
-.version 6.5
-.target sm_30
+	dotproduct_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	dotproduct
@@ -122,12 +122,12 @@ const (
 	mov.u32 	%r3, %ctaid.y;
 	mov.u32 	%r4, %nctaid.x;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_2;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_2;
 
 	cvta.to.global.u64 	%rd8, %rd2;
 	mul.wide.s32 	%rd9, %r1, 4;
@@ -142,14 +142,14 @@ const (
 	add.s64 	%rd18, %rd17, %rd9;
 	cvta.to.global.u64 	%rd19, %rd7;
 	add.s64 	%rd20, %rd19, %rd9;
-	ld.global.f32 	%f2, [%rd16];
-	ld.global.f32 	%f3, [%rd10];
-	ld.global.f32 	%f4, [%rd18];
-	ld.global.f32 	%f5, [%rd12];
+	ld.global.nc.f32 	%f2, [%rd16];
+	ld.global.nc.f32 	%f3, [%rd10];
+	ld.global.nc.f32 	%f4, [%rd18];
+	ld.global.nc.f32 	%f5, [%rd12];
 	mul.f32 	%f6, %f5, %f4;
 	fma.rn.f32 	%f7, %f3, %f2, %f6;
-	ld.global.f32 	%f8, [%rd20];
-	ld.global.f32 	%f9, [%rd14];
+	ld.global.nc.f32 	%f8, [%rd20];
+	ld.global.nc.f32 	%f9, [%rd14];
 	fma.rn.f32 	%f10, %f9, %f8, %f7;
 	cvta.to.global.u64 	%rd21, %rd1;
 	add.s64 	%rd22, %rd21, %rd9;
@@ -157,10 +157,10 @@ const (
 	fma.rn.f32 	%f12, %f10, %f1, %f11;
 	st.global.f32 	[%rd22], %f12;
 
-BB0_2:
+LBB0_2:
 	ret;
-}
 
+}
 
 `
 )

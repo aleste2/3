@@ -20,8 +20,9 @@ var (
 	Jexato  exchParam // inter-cell exchange
 	Jdmiato exchParam // inter-cell exchange
 
-	B_ato    = NewVectorField("B_ato", "T", "Effective Atomistic field", SetEffectiveFieldAto)
-	celltype = 0
+	B_ato      = NewVectorField("B_ato", "T", "Effective Atomistic field", SetEffectiveFieldAto)
+	M_full_ato = NewVectorField("m_full_ato", "A/m", "Unnormalized magnetization", SetMFullato)
+	celltype   = 0
 )
 
 // Sets the exchange interaction between region 1 and 2.
@@ -42,6 +43,45 @@ func init() {
 	DeclFunc("alloy", alloy, "Set alloy percent")
 	DeclFunc("ext_InterAtoExchange", InterAtoExchange, "Sets exchange coupling between two regions.")
 	DeclFunc("ext_InterAtoDMI", InterAtoDMI, "Sets DMI coupling between two regions.")
+	DeclFunc("ext_GetAtoEnergy", GetAtoEnergy, "Gets energy in atomistic calculations.")
+	DeclFunc("ext_GetAtoEnergy01", GetAtoEnergy01, "Gets 0 1 energy in atomistic calculations.")
+}
+
+func SetMFullato(dst *data.Slice) {
+	// scale m by Msat...
+	mu, rM := mu.Slice()
+	if rM {
+		defer cuda.Recycle(mu)
+	}
+	for c := 0; c < 3; c++ {
+		cuda.Mul(dst.Comp(c), M.Buffer().Comp(c), mu)
+	}
+}
+
+func GetAtoEnergy() float64 {
+	return -1.0 * dot(M_full_ato, B_ato)
+}
+
+func GetAtoEnergy01(r int) float64 {
+	oldBeff := B_ato
+
+	// Backup mu values
+	mu00 := mu.getRegion(0)
+	mu10 := mu.getRegion(1)
+	zero := []float64{0.0}
+
+	if r == 0 {
+		mu.setRegion(1, zero)
+	}
+	if r == 1 {
+		mu.setRegion(0, zero)
+	}
+	//en1:=-1.0* dot(M_full_ato,oldBeff)
+	en1 := -1.0 * dot(M_full_ato, oldBeff)
+	mu.setRegion(0, mu00)
+	mu.setRegion(1, mu10)
+
+	return en1
 }
 
 func alloyold(host, alloy int, percent float64) {
@@ -364,6 +404,17 @@ func SetTorqueAto(dst *data.Slice) {
 // Sets dst to the current Landau-Lifshitz torque
 func SetLLTorqueAto(dst *data.Slice) {
 	SetEffectiveFieldAto(dst) // calc and store B_eff
+
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+
+	//cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
+	if Precess {
+		cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
+	} else {
+		cuda.LLNoPrecess(dst, M.Buffer(), dst)
+	}
+
 	AddSTTorqueAto(dst)
 	multiplyLandeFactor(dst)
 	/// Remember to add lande factor and multiply
@@ -377,16 +428,6 @@ func SetEffectiveFieldAto(dst *data.Slice) {
 	AddExchangeFieldAto(dst) // ...then add other terms
 	AddAnisotropyFieldAto(dst, M, mu, Dato, AnisU)
 	B_ext.AddTo(dst)
-	alpha := Alpha.MSlice()
-	defer alpha.Recycle()
-
-	//cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
-	if Precess {
-		cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
-	} else {
-		cuda.LLNoPrecess(dst, M.Buffer(), dst)
-	}
-
 }
 
 // Adds the current exchange field to dst

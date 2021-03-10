@@ -66,13 +66,13 @@ func k_mul_async(dst unsafe.Pointer, a unsafe.Pointer, b unsafe.Pointer, N int, 
 
 // maps compute capability on PTX code for mul kernel.
 var mul_map = map[int]string{0: "",
-	30: mul_ptx_30}
+	70: mul_ptx_70}
 
 // mul PTX code for various compute capabilities.
 const (
-	mul_ptx_30 = `
-.version 6.5
-.target sm_30
+	mul_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	mul
@@ -97,29 +97,29 @@ const (
 	mov.u32 	%r3, %ctaid.y;
 	mov.u32 	%r4, %nctaid.x;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_2;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_2;
 
 	cvta.to.global.u64 	%rd4, %rd2;
 	mul.wide.s32 	%rd5, %r1, 4;
 	add.s64 	%rd6, %rd4, %rd5;
 	cvta.to.global.u64 	%rd7, %rd3;
 	add.s64 	%rd8, %rd7, %rd5;
-	ld.global.f32 	%f1, [%rd8];
-	ld.global.f32 	%f2, [%rd6];
+	ld.global.nc.f32 	%f1, [%rd8];
+	ld.global.nc.f32 	%f2, [%rd6];
 	mul.f32 	%f3, %f2, %f1;
 	cvta.to.global.u64 	%rd9, %rd1;
 	add.s64 	%rd10, %rd9, %rd5;
 	st.global.f32 	[%rd10], %f3;
 
-BB0_2:
+LBB0_2:
 	ret;
-}
 
+}
 
 `
 )

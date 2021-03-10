@@ -102,13 +102,13 @@ func k_normalizeAF_async(m0x unsafe.Pointer, m0y unsafe.Pointer, m0z unsafe.Poin
 
 // maps compute capability on PTX code for normalizeAF kernel.
 var normalizeAF_map = map[int]string{0: "",
-	30: normalizeAF_ptx_30}
+	70: normalizeAF_ptx_70}
 
 // normalizeAF PTX code for various compute capabilities.
 const (
-	normalizeAF_ptx_30 = `
-.version 6.5
-.target sm_30
+	normalizeAF_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	normalizeAF
@@ -157,92 +157,92 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r3, %r4, %r5;
+	mad.lo.s32 	%r6, %r4, %r3, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_10;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_10;
 
-	setp.eq.s64	%p2, %rd11, 0;
-	@%p2 bra 	BB0_3;
+	setp.eq.s64 	%p2, %rd11, 0;
+	@%p2 bra 	LBB0_3;
 
 	cvta.to.global.u64 	%rd13, %rd11;
 	mul.wide.s32 	%rd14, %r1, 4;
 	add.s64 	%rd15, %rd13, %rd14;
-	ld.global.f32 	%f12, [%rd15];
+	ld.global.nc.f32 	%f12, [%rd15];
 	mul.f32 	%f31, %f12, %f31;
 
-BB0_3:
-	setp.eq.s64	%p3, %rd12, 0;
-	@%p3 bra 	BB0_5;
+LBB0_3:
+	setp.eq.s64 	%p3, %rd12, 0;
+	@%p3 bra 	LBB0_5;
 
 	cvta.to.global.u64 	%rd16, %rd12;
 	mul.wide.s32 	%rd17, %r1, 4;
 	add.s64 	%rd18, %rd16, %rd17;
-	ld.global.f32 	%f13, [%rd18];
+	ld.global.nc.f32 	%f13, [%rd18];
 	mul.f32 	%f32, %f13, %f32;
 
-BB0_5:
-	setp.eq.s64	%p4, %rd10, 0;
-	@%p4 bra 	BB0_7;
+LBB0_5:
+	setp.eq.s64 	%p4, %rd10, 0;
+	@%p4 bra 	LBB0_7;
 
 	cvta.to.global.u64 	%rd19, %rd10;
 	mul.wide.s32 	%rd20, %r1, 4;
 	add.s64 	%rd21, %rd19, %rd20;
-	ld.global.f32 	%f14, [%rd21];
+	ld.global.nc.f32 	%f14, [%rd21];
 	mul.f32 	%f33, %f14, %f33;
 
-BB0_7:
-	setp.eq.f32	%p5, %f33, 0f00000000;
+LBB0_7:
+	setp.eq.f32 	%p5, %f33, 0f00000000;
 	mov.f32 	%f34, 0f00000000;
-	@%p5 bra 	BB0_9;
+	@%p5 bra 	LBB0_9;
 
 	rcp.rn.f32 	%f34, %f33;
 
-BB0_9:
-	cvta.to.global.u64 	%rd22, %rd3;
-	cvta.to.global.u64 	%rd23, %rd9;
-	cvta.to.global.u64 	%rd24, %rd6;
-	cvta.to.global.u64 	%rd25, %rd2;
-	cvta.to.global.u64 	%rd26, %rd8;
-	cvta.to.global.u64 	%rd27, %rd4;
-	mul.wide.s32 	%rd28, %r1, 4;
-	add.s64 	%rd29, %rd27, %rd28;
-	ld.global.f32 	%f16, [%rd29];
-	cvta.to.global.u64 	%rd30, %rd7;
-	add.s64 	%rd31, %rd30, %rd28;
-	ld.global.f32 	%f17, [%rd31];
+LBB0_9:
+	cvta.to.global.u64 	%rd22, %rd4;
+	mul.wide.s32 	%rd23, %r1, 4;
+	add.s64 	%rd24, %rd22, %rd23;
+	ld.global.nc.f32 	%f16, [%rd24];
+	cvta.to.global.u64 	%rd25, %rd7;
+	add.s64 	%rd26, %rd25, %rd23;
+	ld.global.nc.f32 	%f17, [%rd26];
 	mul.f32 	%f18, %f32, %f17;
 	fma.rn.f32 	%f19, %f31, %f16, %f18;
 	mul.f32 	%f20, %f34, %f19;
-	cvta.to.global.u64 	%rd32, %rd1;
-	add.s64 	%rd33, %rd32, %rd28;
-	st.global.f32 	[%rd33], %f20;
-	cvta.to.global.u64 	%rd34, %rd5;
-	add.s64 	%rd35, %rd34, %rd28;
-	ld.global.f32 	%f21, [%rd35];
-	add.s64 	%rd36, %rd26, %rd28;
-	ld.global.f32 	%f22, [%rd36];
+	cvta.to.global.u64 	%rd27, %rd1;
+	add.s64 	%rd28, %rd27, %rd23;
+	st.global.f32 	[%rd28], %f20;
+	cvta.to.global.u64 	%rd29, %rd5;
+	add.s64 	%rd30, %rd29, %rd23;
+	ld.global.nc.f32 	%f21, [%rd30];
+	cvta.to.global.u64 	%rd31, %rd8;
+	add.s64 	%rd32, %rd31, %rd23;
+	ld.global.nc.f32 	%f22, [%rd32];
 	mul.f32 	%f23, %f32, %f22;
 	fma.rn.f32 	%f24, %f31, %f21, %f23;
 	mul.f32 	%f25, %f34, %f24;
-	add.s64 	%rd37, %rd25, %rd28;
-	st.global.f32 	[%rd37], %f25;
-	add.s64 	%rd38, %rd24, %rd28;
-	ld.global.f32 	%f26, [%rd38];
-	add.s64 	%rd39, %rd23, %rd28;
-	ld.global.f32 	%f27, [%rd39];
+	cvta.to.global.u64 	%rd33, %rd2;
+	add.s64 	%rd34, %rd33, %rd23;
+	st.global.f32 	[%rd34], %f25;
+	cvta.to.global.u64 	%rd35, %rd6;
+	add.s64 	%rd36, %rd35, %rd23;
+	ld.global.nc.f32 	%f26, [%rd36];
+	cvta.to.global.u64 	%rd37, %rd9;
+	add.s64 	%rd38, %rd37, %rd23;
+	ld.global.nc.f32 	%f27, [%rd38];
 	mul.f32 	%f28, %f32, %f27;
 	fma.rn.f32 	%f29, %f31, %f26, %f28;
 	mul.f32 	%f30, %f34, %f29;
-	add.s64 	%rd40, %rd22, %rd28;
+	cvta.to.global.u64 	%rd39, %rd3;
+	add.s64 	%rd40, %rd39, %rd23;
 	st.global.f32 	[%rd40], %f30;
 
-BB0_10:
+LBB0_10:
 	ret;
-}
 
+}
 
 `
 )

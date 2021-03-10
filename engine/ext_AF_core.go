@@ -59,6 +59,7 @@ var (
 
 	// For LLB AF Angular momentum exchange (Unai)
 	lambda0 = NewScalarParam("lambda0", "", "Moment exchange between sublattices")
+	MFA     = false
 )
 
 func init() {
@@ -71,6 +72,7 @@ func init() {
 	DeclVar("GammaLL1", &GammaLL1, "Gyromagnetic ratio in rad/Ts Lattice 1")
 	DeclVar("GammaLL2", &GammaLL2, "Gyromagnetic ratio in rad/Ts Lattice 2")
 	DeclVar("isolatedlattices", &isolatedlattices, "Isolate AF lattices")
+	DeclVar("MFA", &MFA, "MFA model for AF LLB")
 }
 
 func InitAntiferro() {

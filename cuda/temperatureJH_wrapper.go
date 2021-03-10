@@ -84,13 +84,13 @@ func k_settemperatureJH_async(B unsafe.Pointer, noise unsafe.Pointer, kB2_Vgamma
 
 // maps compute capability on PTX code for settemperatureJH kernel.
 var settemperatureJH_map = map[int]string{0: "",
-	30: settemperatureJH_ptx_30}
+	70: settemperatureJH_ptx_70}
 
 // settemperatureJH PTX code for various compute capabilities.
 const (
-	settemperatureJH_ptx_30 = `
-.version 6.5
-.target sm_30
+	settemperatureJH_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	settemperatureJH
@@ -127,60 +127,60 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r3, %r4, %r5;
+	mad.lo.s32 	%r6, %r4, %r3, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_8;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_8;
 
-	setp.eq.s64	%p2, %rd3, 0;
-	@%p2 bra 	BB0_3;
+	setp.eq.s64 	%p2, %rd3, 0;
+	@%p2 bra 	LBB0_3;
 
 	cvta.to.global.u64 	%rd6, %rd3;
 	mul.wide.s32 	%rd7, %r1, 4;
 	add.s64 	%rd8, %rd6, %rd7;
-	ld.global.f32 	%f12, [%rd8];
+	ld.global.nc.f32 	%f12, [%rd8];
 	mul.f32 	%f22, %f12, %f22;
 
-BB0_3:
-	setp.eq.f32	%p3, %f22, 0f00000000;
+LBB0_3:
+	setp.eq.f32 	%p3, %f22, 0f00000000;
 	mov.f32 	%f23, 0f00000000;
-	@%p3 bra 	BB0_5;
+	@%p3 bra 	LBB0_5;
 
 	rcp.rn.f32 	%f23, %f22;
 
-BB0_5:
+LBB0_5:
 	cvta.to.global.u64 	%rd9, %rd4;
 	mul.wide.s32 	%rd10, %r1, 4;
 	add.s64 	%rd11, %rd9, %rd10;
-	ld.global.f32 	%f5, [%rd11];
-	setp.eq.s64	%p4, %rd5, 0;
-	@%p4 bra 	BB0_7;
+	ld.global.nc.f32 	%f5, [%rd11];
+	setp.eq.s64 	%p4, %rd5, 0;
+	@%p4 bra 	LBB0_7;
 
 	cvta.to.global.u64 	%rd12, %rd5;
 	add.s64 	%rd14, %rd12, %rd10;
-	ld.global.f32 	%f14, [%rd14];
+	ld.global.nc.f32 	%f14, [%rd14];
 	mul.f32 	%f24, %f14, %f24;
 
-BB0_7:
-	cvta.to.global.u64 	%rd15, %rd1;
-	cvta.to.global.u64 	%rd16, %rd2;
-	add.s64 	%rd18, %rd16, %rd10;
-	ld.global.f32 	%f15, [%rd18];
+LBB0_7:
+	cvta.to.global.u64 	%rd15, %rd2;
+	add.s64 	%rd17, %rd15, %rd10;
+	ld.global.nc.f32 	%f15, [%rd17];
 	mul.f32 	%f16, %f15, %f11;
 	mul.f32 	%f17, %f24, %f8;
 	mul.f32 	%f18, %f5, %f17;
 	mul.f32 	%f19, %f23, %f18;
 	sqrt.rn.f32 	%f20, %f19;
 	mul.f32 	%f21, %f16, %f20;
-	add.s64 	%rd19, %rd15, %rd10;
+	cvta.to.global.u64 	%rd18, %rd1;
+	add.s64 	%rd19, %rd18, %rd10;
 	st.global.f32 	[%rd19], %f21;
 
-BB0_8:
+LBB0_8:
 	ret;
-}
 
+}
 
 `
 )

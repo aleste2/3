@@ -5,6 +5,8 @@ GO_BUILDFLAGS=-compiler gc
 # or may not be faster than gc and which may or may not compile...
 # GO_BUILDFLAGS=-compiler gccgo -gccgoflags '-static-libgcc -O4 -Ofast -march=native'
 
+export CUDA_CC=70
+
 CGO_CFLAGS_ALLOW='(-fno-schedule-insns|-malign-double|-ffast-math)'
 
 

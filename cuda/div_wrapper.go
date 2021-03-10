@@ -66,13 +66,13 @@ func k_pointwise_div_async(dst unsafe.Pointer, a unsafe.Pointer, b unsafe.Pointe
 
 // maps compute capability on PTX code for pointwise_div kernel.
 var pointwise_div_map = map[int]string{0: "",
-	30: pointwise_div_ptx_30}
+	70: pointwise_div_ptx_70}
 
 // pointwise_div PTX code for various compute capabilities.
 const (
-	pointwise_div_ptx_30 = `
-.version 6.5
-.target sm_30
+	pointwise_div_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	pointwise_div
@@ -97,39 +97,39 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r3, %r4, %r5;
+	mad.lo.s32 	%r6, %r4, %r3, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_4;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_4;
 
 	cvta.to.global.u64 	%rd5, %rd4;
 	mul.wide.s32 	%rd6, %r1, 4;
 	add.s64 	%rd7, %rd5, %rd6;
-	ld.global.f32 	%f1, [%rd7];
-	setp.neu.f32	%p2, %f1, 0f00000000;
+	ld.global.nc.f32 	%f1, [%rd7];
+	setp.neu.f32 	%p2, %f1, 0f00000000;
 	cvta.to.global.u64 	%rd8, %rd2;
 	add.s64 	%rd1, %rd8, %rd6;
-	@%p2 bra 	BB0_3;
-	bra.uni 	BB0_2;
+	@%p2 bra 	LBB0_3;
+	bra.uni 	LBB0_2;
 
-BB0_3:
+LBB0_3:
 	cvta.to.global.u64 	%rd9, %rd3;
 	add.s64 	%rd11, %rd9, %rd6;
-	ld.global.f32 	%f2, [%rd11];
+	ld.global.nc.f32 	%f2, [%rd11];
 	div.rn.f32 	%f3, %f2, %f1;
 	st.global.f32 	[%rd1], %f3;
-	bra.uni 	BB0_4;
+	bra.uni 	LBB0_4;
 
-BB0_2:
+LBB0_2:
 	mov.u32 	%r9, 0;
 	st.global.u32 	[%rd1], %r9;
 
-BB0_4:
+LBB0_4:
 	ret;
-}
 
+}
 
 `
 )

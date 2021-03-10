@@ -69,13 +69,13 @@ func k_MultiplyVolume_async(Bx unsafe.Pointer, By unsafe.Pointer, Bz unsafe.Poin
 
 // maps compute capability on PTX code for MultiplyVolume kernel.
 var MultiplyVolume_map = map[int]string{0: "",
-	30: MultiplyVolume_ptx_30}
+	70: MultiplyVolume_ptx_70}
 
 // MultiplyVolume PTX code for various compute capabilities.
 const (
-	MultiplyVolume_ptx_30 = `
-.version 6.5
-.target sm_30
+	MultiplyVolume_ptx_70 = `
+.version 7.2
+.target sm_70
 .address_size 64
 
 	// .globl	MultiplyVolume
@@ -102,12 +102,12 @@ const (
 	mov.u32 	%r3, %ctaid.y;
 	mov.u32 	%r4, %nctaid.x;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB0_2;
+	setp.ge.s32 	%p1, %r1, %r2;
+	@%p1 bra 	LBB0_2;
 
 	cvta.to.global.u64 	%rd4, %rd1;
 	mul.wide.s32 	%rd5, %r1, 4;
@@ -126,10 +126,10 @@ const (
 	mul.f32 	%f7, %f6, %f1;
 	st.global.f32 	[%rd10], %f7;
 
-BB0_2:
+LBB0_2:
 	ret;
-}
 
+}
 
 `
 )
