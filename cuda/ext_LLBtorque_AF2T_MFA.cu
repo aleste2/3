@@ -203,6 +203,7 @@ LLBtorqueAF2TMFA(float* __restrict__  t1x, float* __restrict__  t1y, float* __re
 		H1=H1+J0aa/mua*m1+J0ab/mua*m2;
 		H2=H2+J0bb/mub*m2+J0ba/mub*m1;
 
+
 		float beta=1.0f/(kB*temp);
 		float3 chiA=beta*mua*H1;
 		float3 chiB=beta*mub*H2;
@@ -224,6 +225,19 @@ LLBtorqueAF2TMFA(float* __restrict__  t1x, float* __restrict__  t1y, float* __re
 		float GammaBpara;
 		float GammaAperp;
 		float GammaBperp;
+
+
+
+		// New Implementatiosn of Unai Non Equiibrium exchanges
+		float alphaex;
+		float alphaae=alphaa*2*dL(mchiA)/mchiA;
+		float alphabe=alphab*2*dL(mchiB)/mchiB;
+		alphaex=0.5f*(alphaae/nv/x/ma+alphabe/(1.0f-x)/nv/ma);
+		float3 Ha=1/(beta*mua*dLder(mchiA))*(m1-dL(mchiA)/ma*m1);
+		float3 Hb=1/(beta*mub*dLder(mchiB))*(m2-dL(mchiB)/mb*m2);
+		// end of new parameters
+
+
 		if (temp<TCurie/5){   // For Low Temp do not restict Langevin/Dlangevin small values
 		m0A=dL0(mchiA)/mchiA*chiA;
 		m0B=dL0(mchiB)/mchiB*chiB;
@@ -273,7 +287,20 @@ LLBtorqueAF2TMFA(float* __restrict__  t1x, float* __restrict__  t1y, float* __re
 
 					if (temp>TCurie/5.0){
 	       		torquea = -gillba*(m1xHmfa+GammaApara*(1.0f-m1dotm0a/ma/ma)*m1+GammaAperp/ma/ma*(m1xm1xHtot1))+h_par_scalea*hth2a-alphaa*hab;
-	       		torqueb = -gillbb*(m2xHmfa+GammaBpara*(1.0f-m2dotm0b/mb/mb)*m2+GammaBperp/mb/mb*(m2xm2xHtot2))+h_par_scaleb*hth2b-alphab*hba;
+						torqueb = -gillbb*(m2xHmfa+GammaBpara*(1.0f-m2dotm0b/mb/mb)*m2+GammaBperp/mb/mb*(m2xm2xHtot2))+h_par_scaleb*hth2b-alphab*hba;
+
+						// New exchange Unai
+
+						torquea = -gillba*(m1xHmfa+GammaApara*(1.0f-m1dotm0a/ma/ma)*m1+GammaAperp/ma/ma*(m1xm1xHtot1))+h_par_scalea*hth2a-alphaex*(Ha-Hb);
+						torqueb = -gillbb*(m2xHmfa+GammaBpara*(1.0f-m2dotm0b/mb/mb)*m2+GammaBperp/mb/mb*(m2xm2xHtot2))+h_par_scaleb*hth2b+alphaex*(Ha-Hb);
+
+
+						//
+
+
+
+
+
 	       	}
 	       	else {   // Not enogh precision in low temp for algorithm
 	       		torquea = -gillba*(m1xHmfa+GammaApara*((ma-mea)/mea)*m1+GammaAperp/ma/ma*(m1xm1xHtot1))+h_par_scalea*hth2a;

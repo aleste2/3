@@ -251,8 +251,8 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 
 		// New Implementatiosn of Unai Non Equiibrium exchanges
 		float beta=1.0f/(kB*temp);
-		float3 H1mfa=H1+J0aa/mua*m1+J0ab/mua*m2;
-		float3 H2mfa=H2+J0bb/mub*m2+J0ba/mub*m1;
+		float3 H1mfa=0.0*H1+J0aa/mua*m1+J0ab/mua*m2;
+		float3 H2mfa=0.0*H2+J0bb/mub*m2+J0ba/mub*m1;
 		float3 chiAmfa=beta*mua*H1mfa;
 		float3 chiBmfa=beta*mub*H2mfa;
 		float mchiAmfa=sqrt(dot(chiAmfa,chiAmfa));
@@ -264,25 +264,14 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float3 Ha=1/(beta*mua*dLder(mchiAmfa))*(m1-dL(mchiAmfa)/ma*m1);
 		float3 Hb=1/(beta*mub*dLder(mchiBmfa))*(m2-dL(mchiBmfa)/mb*m2);
 
-    //if (i==1) printf("%e\n",alphaex);
 
-		if (alphaex>0.1f) alphaex=0.1f; //0.1
-//    if (temp>TCurie) {
-		Ha=-1.0f*heffa;
-		Hb=-1.0f*heffb;
-//		}
-			 hab = 0.0*hab;
-			 hba = 0.0*hba;
-			 //Ha =alphaex/lambda0*hab;
-			 //Hb = alphaex/lambda0*hba;
-			 //hab =alphaex/lambda0*hab;
-			 //hba =alphaex/lambda0*hba;
+			 hab =0.0*hab;
+			 hab = 0.0*hba;
 		// end of new parameters
 
 
         H1=H1+heffa+hexa+hab;
         H2=H2+heffb+hexb+hba;
-
         float3 htot1=H1+h_perp_scalea*hth1a;
         float3 htot2=H2+h_perp_scaleb*hth1b;
 
@@ -297,13 +286,13 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         float gillba = 1.0f / (1.0f + alphaperpA * alphaperpA);
         float gillbb = 1.0f / (1.0f + alphaperpB * alphaperpB);
 
-        //torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a;
-        //torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b;
+        torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a;
+        torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b;
 
 				// New exchange Unai
 
 				torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a-alphaex*(Ha-Hb);
-        torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b+alphaex*(Ha-Hb);
+				torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b+alphaex*(Ha-Hb);
 
 
 				//

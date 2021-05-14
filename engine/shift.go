@@ -32,9 +32,9 @@ func Shift(dx int) {
 	TotalShift += float64(dx) * Mesh().CellSize()[X] // needed to re-init geom, regions
 	if ShiftM {
 		shiftMag(M.Buffer(), dx) // TODO: M.shift?
-		if AFf==true {
-				shiftMag(M1.Buffer(), dx)
-			  shiftMagM2(M1.Buffer(), dx)
+		if AFf == true {
+			shiftMag(M1.Buffer(), dx)
+			shiftMagM2(M1.Buffer(), dx)
 		}
 
 	}
@@ -45,9 +45,9 @@ func Shift(dx int) {
 		geometry.shift(dx)
 	}
 	M.normalize()
-	if AFf==true {
-			M1.normalize()
-			M2.normalize()
+	if AFf == true {
+		M1.normalize()
+		M2.normalize()
 	}
 }
 
@@ -76,9 +76,9 @@ func YShift(dy int) {
 	TotalYShift += float64(dy) * Mesh().CellSize()[Y] // needed to re-init geom, regions
 	if ShiftM {
 		shiftMagY(M.Buffer(), dy)
-		if AFf==true {
-				shiftMagY(M1.Buffer(), dy)
-				shiftMagYM2(M1.Buffer(), dy)
+		if AFf == true {
+			shiftMagY(M1.Buffer(), dy)
+			shiftMagYM2(M1.Buffer(), dy)
 		}
 	}
 	if ShiftRegions {
@@ -88,9 +88,9 @@ func YShift(dy int) {
 		geometry.shiftY(dy)
 	}
 	M.normalize()
-	if AFf==true {
-			M1.normalize()
-			M2.normalize()
+	if AFf == true {
+		M1.normalize()
+		M2.normalize()
 	}
 }
 
