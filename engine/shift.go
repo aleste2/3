@@ -32,6 +32,11 @@ func Shift(dx int) {
 	TotalShift += float64(dx) * Mesh().CellSize()[X] // needed to re-init geom, regions
 	if ShiftM {
 		shiftMag(M.Buffer(), dx) // TODO: M.shift?
+		if AFf==true {
+				shiftMag(M1.Buffer(), dx)
+			  shiftMagM2(M1.Buffer(), dx)
+		}
+
 	}
 	if ShiftRegions {
 		regions.shift(dx)
@@ -40,6 +45,10 @@ func Shift(dx int) {
 		geometry.shift(dx)
 	}
 	M.normalize()
+	if AFf==true {
+			M1.normalize()
+			M2.normalize()
+	}
 }
 
 func shiftMag(m *data.Slice, dx int) {
@@ -52,11 +61,25 @@ func shiftMag(m *data.Slice, dx int) {
 	}
 }
 
+func shiftMagM2(m *data.Slice, dx int) {
+	m2 := cuda.Buffer(1, m.Size())
+	defer cuda.Recycle(m2)
+	for c := 0; c < m.NComp(); c++ {
+		comp := m.Comp(c)
+		cuda.ShiftX(m2, comp, dx, float32(-ShiftMagL[c]), float32(-ShiftMagR[c]))
+		data.Copy(comp, m2) // str0 ?
+	}
+}
+
 // shift the simulation window over dy cells in Y direction
 func YShift(dy int) {
 	TotalYShift += float64(dy) * Mesh().CellSize()[Y] // needed to re-init geom, regions
 	if ShiftM {
 		shiftMagY(M.Buffer(), dy)
+		if AFf==true {
+				shiftMagY(M1.Buffer(), dy)
+				shiftMagYM2(M1.Buffer(), dy)
+		}
 	}
 	if ShiftRegions {
 		regions.shiftY(dy)
@@ -65,6 +88,10 @@ func YShift(dy int) {
 		geometry.shiftY(dy)
 	}
 	M.normalize()
+	if AFf==true {
+			M1.normalize()
+			M2.normalize()
+	}
 }
 
 func shiftMagY(m *data.Slice, dy int) {
@@ -73,6 +100,16 @@ func shiftMagY(m *data.Slice, dy int) {
 	for c := 0; c < m.NComp(); c++ {
 		comp := m.Comp(c)
 		cuda.ShiftY(m2, comp, dy, float32(ShiftMagU[c]), float32(ShiftMagD[c]))
+		data.Copy(comp, m2) // str0 ?
+	}
+}
+
+func shiftMagYM2(m *data.Slice, dy int) {
+	m2 := cuda.Buffer(1, m.Size())
+	defer cuda.Recycle(m2)
+	for c := 0; c < m.NComp(); c++ {
+		comp := m.Comp(c)
+		cuda.ShiftY(m2, comp, dy, float32(-ShiftMagU[c]), float32(-ShiftMagD[c]))
 		data.Copy(comp, m2) // str0 ?
 	}
 }
