@@ -220,9 +220,9 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
       heffa = -lambdaA*((ma-mea)/mea)*m1+fabs(J0ab)/mua*(tauB-taueB)/mea*m1;
       heffb = -lambdaB*((mb-meb)/meb)*m2+fabs(J0ba)/mub*(tauA-taueA)/meb*m2;
     }
-    float3 h0=lambda0*(ma+(1-x)*mub/x/mua*mb)/ma/mb*((mua/mub)*heffa-heffb);
-		float3 hab = h0;
-		float3 hba = -1.0f*h0;
+    //float3 h0=lambda0*(ma+(1-x)*mub/x/mua*mb)/ma/mb*((mua/mub)*heffa-heffb);
+		//float3 hab = h0;
+		//float3 hba = -1.0f*h0;
 		//float3 hab = lambda0*((ma+(x*mub/(1.0f-x)/mua)*mb)/ma/mb*((mua/mub)*heffa-heffb));
 		//float3 hba = lambda0*((mb+((1.0f-x)*mua/x/mub)*ma)/mb/ma*((mub/mua)*heffb-heffa));
 
@@ -261,18 +261,18 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float alphaae=alphaa*2*dL(mchiAmfa)/mchiAmfa;
 		float alphabe=alphab*2*dL(mchiBmfa)/mchiBmfa;
 		alphaex=0.5f*(alphaae/nv/x/ma+alphabe/(1.0f-x)/nv/mb);
-		float3 Ha=1/(beta*mua*dLder(mchiAmfa))*(m1-dL(mchiAmfa)/ma*m1);
-		float3 Hb=1/(beta*mub*dLder(mchiBmfa))*(m2-dL(mchiBmfa)/mb*m2);
+		//float3 Ha=1/(beta*mua*dLder(mchiAmfa))*(m1-dL(mchiAmfa)/ma*m1);
+		//float3 Hb=1/(beta*mub*dLder(mchiBmfa))*(m2-dL(mchiBmfa)/mb*m2);
 
     //if (i==1) printf("%e\n",alphaex);
 
 		if (alphaex>0.1f) alphaex=0.1f; //0.1
 //    if (temp>TCurie) {
-		Ha=-1.0f*heffa;
-		Hb=-1.0f*heffb;
+		float3 Ha=-1.0f*heffa;
+		float3 Hb=-1.0f*heffb;
 //		}
-			 hab = 0.0*hab;
-			 hba = 0.0*hba;
+//			 hab = 0.0*hab;  ///Old non equ interaction
+//			 hba = 0.0*hba;
 			 //Ha =alphaex/lambda0*hab;
 			 //Hb = alphaex/lambda0*hba;
 			 //hab =alphaex/lambda0*hab;
@@ -280,8 +280,10 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		// end of new parameters
 
 
-        H1=H1+heffa+hexa+hab;
-        H2=H2+heffb+hexb+hba;
+//		H1=H1+heffa+hexa+hab;
+//		H2=H2+heffb+hexb+hba;
+		H1=H1+heffa+hexa;
+		H2=H2+heffb+hexb;
 
         float3 htot1=H1+h_perp_scalea*hth1a;
         float3 htot2=H2+h_perp_scaleb*hth1b;
