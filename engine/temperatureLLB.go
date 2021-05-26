@@ -20,6 +20,7 @@ var (
 	TSubsteps                   = 3
 	TOversteps                  = 1
 	TOverstepsCounter           = 0
+	flagOST											= 0
 	TempJH            LocalTemp // Local temperature
 	Kthermal          = NewScalarParam("Kthermal", "W/(m·K)", "Thermal conductivity")
 	Cthermal          = NewScalarParam("Cthermal", "J/(Kg·K)", "Specific heat capacity")

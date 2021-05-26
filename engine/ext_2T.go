@@ -72,12 +72,14 @@ func NewtonStep2T(dt float32) {
 
 	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
 	err := cuda.MaxAbs(DeltaTe)
-	if err*dt < 2e-4 {
+	if ((err*dt < 10)||(flagOST==1)) {
 		TOverstepsCounter++
-		if TOverstepsCounter >= 100 {
-			cuda.Madd2(te, te, DeltaTe, 1, dt*100) // temp = temp + dt * dtemp0
-			cuda.Madd2(tl, tl, DeltaTl, 1, dt*100) // temp = temp + dt * dtemp0
+		flagOST=1
+		if TOverstepsCounter >=  TOversteps {
+			cuda.Madd2(te, te, DeltaTe, 1, dt*float32(TOversteps)) // temp = temp + dt * dtemp0
+			cuda.Madd2(tl, tl, DeltaTl, 1, dt*float32(TOversteps)) // temp = temp + dt * dtemp0
 			TOverstepsCounter = 0
+			flagOST = 0
 			//print("si\n")
 		}
 	} else {

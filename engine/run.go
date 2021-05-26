@@ -33,6 +33,7 @@ var (
 	LLB3Tf = false
 	LLB2Tf = false
 	AFf    = false
+	OSC		 = false
 )
 
 func init() {
@@ -75,6 +76,8 @@ const (
 	LLBJH = 27
 	LLB3T = 28
 	LLB2T = 29
+
+	LLB2TOST = 30
 
 	ANTIFERRORK4  = 100
 	ANTIFERRORK23 = 101
@@ -135,6 +138,11 @@ func SetSolver(typ int) {
 		stepper = new(HeunLLB2T)
 		LLBeq = true
 		LLB2Tf = true
+	case LLB2TOST:
+		stepper = new(HeunLLB2TOSC)
+		LLBeq = true
+		LLB2Tf = true
+		OSC=true
 
 		// Antiferro solvers
 
