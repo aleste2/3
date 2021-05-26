@@ -14,7 +14,7 @@ func AddOSTField(Beff, S *data.Slice, Msat, Jex MSlice) {
 	cfg := make1DConf(N)
 	k_addOSTField_async(
 		Beff.DevPtr(X), Beff.DevPtr(Y), Beff.DevPtr(Z),
-		S.DevPtr(X),S.DevPtr(Y), S.DevPtr(Z),
+		S.DevPtr(X), S.DevPtr(Y), S.DevPtr(Z),
 		Msat.DevPtr(0), Msat.Mul(0),
 		Jex.DevPtr(0), Jex.Mul(0),
 		N, cfg)

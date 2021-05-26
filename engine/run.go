@@ -33,7 +33,7 @@ var (
 	LLB3Tf = false
 	LLB2Tf = false
 	AFf    = false
-	OSC		 = false
+	OSC    = false
 )
 
 func init() {
@@ -142,7 +142,7 @@ func SetSolver(typ int) {
 		stepper = new(HeunLLB2TOSC)
 		LLBeq = true
 		LLB2Tf = true
-		OSC=true
+		OSC = true
 
 		// Antiferro solvers
 
