@@ -84,7 +84,7 @@ func (_ *HeunLLB2TOSC) Step() {
 		for iter := 0; iter < 10; iter++ {
 			StepOST(float32(Dt_si)/10)
 			Time += Dt_si/10
-		}*/  
+		}*/
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
 		setLastErr(err)
