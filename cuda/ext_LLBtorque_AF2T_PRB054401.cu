@@ -67,7 +67,8 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         float J0bb = amul(J0bb_, J0bb_mul, i)*nv*(1.0f-x);
         float J0ab = amul(J0ab_, J0ab_mul, i)*(1.0f-x)*nv;
         float J0ba = amul(J0ab_, J0ab_mul, i)*x*nv;
-				float lambda0 = amul(lambda0_, lambda0_mul, i)*x*nv;
+				//float lambda0 = amul(lambda0_, lambda0_mul, i)*x*nv;
+				float lambda0 = amul(lambda0_, lambda0_mul, i);
         float temp = temp_[i];
 
         if (temp==0) temp=0.0001; // to avoid zero division...
@@ -220,11 +221,6 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
       heffa = -lambdaA*((ma-mea)/mea)*m1+fabs(J0ab)/mua*(tauB-taueB)/mea*m1;
       heffb = -lambdaB*((mb-meb)/meb)*m2+fabs(J0ba)/mub*(tauA-taueA)/meb*m2;
     }
-    //float3 h0=lambda0*(ma+(1-x)*mub/x/mua*mb)/ma/mb*((mua/mub)*heffa-heffb);
-		//float3 hab = h0;
-		//float3 hba = -1.0f*h0;
-		//float3 hab = lambda0*((ma+(x*mub/(1.0f-x)/mua)*mb)/ma/mb*((mua/mub)*heffa-heffb));
-		//float3 hba = lambda0*((mb+((1.0f-x)*mua/x/mub)*ma)/mb/ma*((mub/mua)*heffb-heffa));
 
 		float alphaparA;
 		float alphaparB;
@@ -247,9 +243,22 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float h_par_scalea=sqrt(Msat/Msata*alphaparA/alpha);
 		float h_par_scaleb=sqrt(Msat/Msatb*alphaparB/alpha);
 
-
-
-		// New Implementatiosn of Unai Non Equiibrium exchanges
+		// Unai Non Equilibrium Exchange between lattices
+		float3 Ha;
+		float3 Hb;
+		float alphaex;
+		// Old implementation of Unai Non Equilibrium exchanges
+    if (lambda0>0) {
+		float3 h0=lambda0*(ma+(1-x)*mub/x/mua*mb)/ma/mb*((mua/mub)*heffa-heffb);
+		alphaex=lambda0;
+		Ha=0.0*h0;
+		Hb=0.0*h0;
+		float3 hab = h0;
+		float3 hba = -1.0*h0;
+		H1=H1+hab;
+		H2=H2+hba;
+	  } else {
+		// New Implementation of Unai Non Equilibrium exchanges
 		float beta=1.0f/(kB*temp);
 		float3 H1mfa=H1+J0aa/mua*m1+J0ab/mua*m2;
 		float3 H2mfa=H2+J0bb/mub*m2+J0ba/mub*m1;
@@ -257,61 +266,36 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float3 chiBmfa=beta*mub*H2mfa;
 		float mchiAmfa=sqrt(dot(chiAmfa,chiAmfa));
 		float mchiBmfa=sqrt(dot(chiBmfa,chiBmfa));
-		float alphaex;
 		float alphaae=alphaa*2*dL(mchiAmfa)/mchiAmfa;
 		float alphabe=alphab*2*dL(mchiBmfa)/mchiBmfa;
-		alphaex=0.5f*(alphaae/nv/x/ma+alphabe/(1.0f-x)/nv/mb);
-		//float3 Ha=1/(beta*mua*dLder(mchiAmfa))*(m1-dL(mchiAmfa)/ma*m1);
-		//float3 Hb=1/(beta*mub*dLder(mchiBmfa))*(m2-dL(mchiBmfa)/mb*m2);
+		alphaex=.5f*(alphaae/nv/x/ma+alphabe/(1.0f-x)/nv/mb);
+		if (alphaex>10.0f) alphaex=10.0f; //0.1
+		Ha=-1.0f*heffa;
+		Hb=-1.0f*heffb;
+	  }
 
-    //if (i==1) printf("%e\n",alphaex);
-
-		if (alphaex>0.1f) alphaex=0.1f; //0.1
-//    if (temp>TCurie) {
-		float3 Ha=-1.0f*heffa;
-		float3 Hb=-1.0f*heffb;
-//		}
-//			 hab = 0.0*hab;  ///Old non equ interaction
-//			 hba = 0.0*hba;
-			 //Ha =alphaex/lambda0*hab;
-			 //Hb = alphaex/lambda0*hba;
-			 //hab =alphaex/lambda0*hab;
-			 //hba =alphaex/lambda0*hba;
-		// end of new parameters
-
-
-//		H1=H1+heffa+hexa+hab;
-//		H2=H2+heffb+hexb+hba;
 		H1=H1+heffa+hexa;
 		H2=H2+heffb+hexb;
 
-        float3 htot1=H1+h_perp_scalea*hth1a;
-        float3 htot2=H2+h_perp_scaleb*hth1b;
+    float3 htot1=H1+h_perp_scalea*hth1a;
+    float3 htot2=H2+h_perp_scaleb*hth1b;
 
-        float3 m1xH1 = cross(m1, H1);
-        float3 m2xH2 = cross(m2, H2);
-        float m1dotH1 = dot(m1, H1);
-        float m2dotH2 = dot(m2, H2);
-        float3 m1xHtot1 = cross(m1, htot1);
-        float3 m2xHtot2 = cross(m2, htot2);
-        float3 m1xm1xHtot1 = cross(m1, m1xHtot1);
-        float3 m2xm2xHtot2 = cross(m2, m2xHtot2);
-        float gillba = 1.0f / (1.0f + alphaperpA * alphaperpA);
-        float gillbb = 1.0f / (1.0f + alphaperpB * alphaperpB);
+    float3 m1xH1 = cross(m1, H1);
+    float3 m2xH2 = cross(m2, H2);
+    float m1dotH1 = dot(m1, H1);
+    float m2dotH2 = dot(m2, H2);
+    float3 m1xHtot1 = cross(m1, htot1);
+    float3 m2xHtot2 = cross(m2, htot2);
+    float3 m1xm1xHtot1 = cross(m1, m1xHtot1);
+    float3 m2xm2xHtot2 = cross(m2, m2xHtot2);
+    float gillba = 1.0f / (1.0f + alphaperpA * alphaperpA);
+    float gillbb = 1.0f / (1.0f + alphaperpB * alphaperpB);
 
-        //torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a;
-        //torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b;
+		// New exchange Unai (last term or the addition to H1)
+		torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a-alphaex*(Ha-Hb);
+    torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b+alphaex*(Ha-Hb);
 
-				// New exchange Unai
-
-				torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a-alphaex*(Ha-Hb);
-        torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b+alphaex*(Ha-Hb);
-
-
-				//
-
-
-	}
+		}
 
     t1x[i] = torquea.x;
     t1y[i] = torquea.y;
