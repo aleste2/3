@@ -477,8 +477,8 @@ func AddSTTorqueAto(dst *data.Slice) {
 			defer xi.Recycle()
 			pol := Pol.MSlice()
 			defer pol.Recycle()
-			cuda.AddZhangLiTorque(dst, M.Buffer(), msat, j, alpha, xi, pol, Mesh())
-			multiplyVolume(dst) // Rewrite STT in cuda!!!!
+			cuda.AddZhangLiTorqueAto(dst, M.Buffer(), msat, j, alpha, xi, pol, Mesh(),celltype)
+			//multiplyVolume(dst) // Rewrite STT in cuda!!!!
 		}
 		if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
 			msat := mu.MSlice()

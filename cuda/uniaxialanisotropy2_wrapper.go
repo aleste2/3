@@ -116,7 +116,7 @@ var adduniaxialanisotropy2_map = map[int]string{0: "",
 // adduniaxialanisotropy2 PTX code for various compute capabilities.
 const (
 	adduniaxialanisotropy2_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -172,15 +172,15 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r1, %r2;
-	@%p1 bra 	LBB0_18;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_18;
 
-	setp.eq.s64 	%p2, %rd10, 0;
-	@%p2 bra 	LBB0_3;
+	setp.eq.s64	%p2, %rd10, 0;
+	@%p2 bra 	BB0_3;
 
 	cvta.to.global.u64 	%rd13, %rd10;
 	mul.wide.s32 	%rd14, %r1, 4;
@@ -188,9 +188,9 @@ const (
 	ld.global.nc.f32 	%f27, [%rd15];
 	mul.f32 	%f64, %f27, %f64;
 
-LBB0_3:
-	setp.eq.s64 	%p3, %rd11, 0;
-	@%p3 bra 	LBB0_5;
+BB0_3:
+	setp.eq.s64	%p3, %rd11, 0;
+	@%p3 bra 	BB0_5;
 
 	cvta.to.global.u64 	%rd16, %rd11;
 	mul.wide.s32 	%rd17, %r1, 4;
@@ -198,9 +198,9 @@ LBB0_3:
 	ld.global.nc.f32 	%f28, [%rd18];
 	mul.f32 	%f65, %f28, %f65;
 
-LBB0_5:
-	setp.eq.s64 	%p4, %rd12, 0;
-	@%p4 bra 	LBB0_7;
+BB0_5:
+	setp.eq.s64	%p4, %rd12, 0;
+	@%p4 bra 	BB0_7;
 
 	cvta.to.global.u64 	%rd19, %rd12;
 	mul.wide.s32 	%rd20, %r1, 4;
@@ -208,23 +208,23 @@ LBB0_5:
 	ld.global.nc.f32 	%f29, [%rd21];
 	mul.f32 	%f66, %f29, %f66;
 
-LBB0_7:
+BB0_7:
 	mul.f32 	%f31, %f65, %f65;
 	fma.rn.f32 	%f32, %f64, %f64, %f31;
 	fma.rn.f32 	%f33, %f66, %f66, %f32;
 	sqrt.rn.f32 	%f7, %f33;
-	setp.eq.f32 	%p5, %f7, 0f00000000;
 	mov.f32 	%f67, 0f00000000;
-	@%p5 bra 	LBB0_9;
+	setp.eq.f32	%p5, %f7, 0f00000000;
+	@%p5 bra 	BB0_9;
 
 	rcp.rn.f32 	%f67, %f7;
 
-LBB0_9:
+BB0_9:
 	mul.f32 	%f10, %f64, %f67;
 	mul.f32 	%f11, %f65, %f67;
 	mul.f32 	%f12, %f66, %f67;
-	setp.eq.s64 	%p6, %rd7, 0;
-	@%p6 bra 	LBB0_11;
+	setp.eq.s64	%p6, %rd7, 0;
+	@%p6 bra 	BB0_11;
 
 	cvta.to.global.u64 	%rd22, %rd7;
 	mul.wide.s32 	%rd23, %r1, 4;
@@ -232,16 +232,16 @@ LBB0_9:
 	ld.global.nc.f32 	%f34, [%rd24];
 	mul.f32 	%f68, %f34, %f68;
 
-LBB0_11:
-	setp.eq.f32 	%p7, %f68, 0f00000000;
+BB0_11:
+	setp.eq.f32	%p7, %f68, 0f00000000;
 	mov.f32 	%f69, 0f00000000;
-	@%p7 bra 	LBB0_13;
+	@%p7 bra 	BB0_13;
 
 	rcp.rn.f32 	%f69, %f68;
 
-LBB0_13:
-	setp.eq.s64 	%p8, %rd8, 0;
-	@%p8 bra 	LBB0_15;
+BB0_13:
+	setp.eq.s64	%p8, %rd8, 0;
+	@%p8 bra 	BB0_15;
 
 	cvta.to.global.u64 	%rd25, %rd8;
 	mul.wide.s32 	%rd26, %r1, 4;
@@ -249,9 +249,9 @@ LBB0_13:
 	ld.global.nc.f32 	%f36, [%rd27];
 	mul.f32 	%f70, %f36, %f70;
 
-LBB0_15:
-	setp.eq.s64 	%p9, %rd9, 0;
-	@%p9 bra 	LBB0_17;
+BB0_15:
+	setp.eq.s64	%p9, %rd9, 0;
+	@%p9 bra 	BB0_17;
 
 	cvta.to.global.u64 	%rd28, %rd9;
 	mul.wide.s32 	%rd29, %r1, 4;
@@ -259,7 +259,7 @@ LBB0_15:
 	ld.global.nc.f32 	%f37, [%rd30];
 	mul.f32 	%f71, %f37, %f71;
 
-LBB0_17:
+BB0_17:
 	cvta.to.global.u64 	%rd31, %rd4;
 	mul.wide.s32 	%rd32, %r1, 4;
 	add.s64 	%rd33, %rd31, %rd32;
@@ -303,10 +303,10 @@ LBB0_17:
 	add.f32 	%f63, %f62, %f57;
 	st.global.f32 	[%rd43], %f63;
 
-LBB0_18:
+BB0_18:
 	ret;
-
 }
+
 
 `
 )

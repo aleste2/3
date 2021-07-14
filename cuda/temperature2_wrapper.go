@@ -92,7 +92,7 @@ var settemperature2_map = map[int]string{0: "",
 // settemperature2 PTX code for various compute capabilities.
 const (
 	settemperature2_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -132,15 +132,15 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r1, %r2;
-	@%p1 bra 	LBB0_10;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_10;
 
-	setp.eq.s64 	%p2, %rd3, 0;
-	@%p2 bra 	LBB0_3;
+	setp.eq.s64	%p2, %rd3, 0;
+	@%p2 bra 	BB0_3;
 
 	cvta.to.global.u64 	%rd6, %rd3;
 	mul.wide.s32 	%rd7, %r1, 4;
@@ -148,16 +148,16 @@ const (
 	ld.global.nc.f32 	%f14, [%rd8];
 	mul.f32 	%f25, %f14, %f25;
 
-LBB0_3:
-	setp.eq.f32 	%p3, %f25, 0f00000000;
+BB0_3:
+	setp.eq.f32	%p3, %f25, 0f00000000;
 	mov.f32 	%f26, 0f00000000;
-	@%p3 bra 	LBB0_5;
+	@%p3 bra 	BB0_5;
 
 	rcp.rn.f32 	%f26, %f25;
 
-LBB0_5:
-	setp.eq.s64 	%p4, %rd4, 0;
-	@%p4 bra 	LBB0_7;
+BB0_5:
+	setp.eq.s64	%p4, %rd4, 0;
+	@%p4 bra 	BB0_7;
 
 	cvta.to.global.u64 	%rd9, %rd4;
 	mul.wide.s32 	%rd10, %r1, 4;
@@ -165,9 +165,9 @@ LBB0_5:
 	ld.global.nc.f32 	%f16, [%rd11];
 	mul.f32 	%f27, %f16, %f27;
 
-LBB0_7:
-	setp.eq.s64 	%p5, %rd5, 0;
-	@%p5 bra 	LBB0_9;
+BB0_7:
+	setp.eq.s64	%p5, %rd5, 0;
+	@%p5 bra 	BB0_9;
 
 	cvta.to.global.u64 	%rd12, %rd5;
 	mul.wide.s32 	%rd13, %r1, 4;
@@ -175,7 +175,7 @@ LBB0_7:
 	ld.global.nc.f32 	%f17, [%rd14];
 	mul.f32 	%f28, %f17, %f28;
 
-LBB0_9:
+BB0_9:
 	cvta.to.global.u64 	%rd15, %rd2;
 	mul.wide.s32 	%rd16, %r1, 4;
 	add.s64 	%rd17, %rd15, %rd16;
@@ -190,10 +190,10 @@ LBB0_9:
 	add.s64 	%rd19, %rd18, %rd16;
 	st.global.f32 	[%rd19], %f24;
 
-LBB0_10:
+BB0_10:
 	ret;
-
 }
+
 
 `
 )

@@ -77,7 +77,7 @@ var setPhi_map = map[int]string{0: "",
 // setPhi PTX code for various compute capabilities.
 const (
 	setPhi_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -92,9 +92,9 @@ const (
 	.param .u32 setPhi_param_5
 )
 {
-	.reg .pred 	%p<16>;
+	.reg .pred 	%p<15>;
 	.reg .f32 	%f<36>;
-	.reg .b32 	%r<42>;
+	.reg .b32 	%r<44>;
 	.reg .b64 	%rd<12>;
 
 
@@ -107,21 +107,21 @@ const (
 	mov.u32 	%r9, %ctaid.x;
 	mov.u32 	%r10, %ntid.x;
 	mov.u32 	%r11, %tid.x;
-	mad.lo.s32 	%r1, %r9, %r10, %r11;
+	mad.lo.s32 	%r1, %r10, %r9, %r11;
 	mov.u32 	%r12, %ntid.y;
 	mov.u32 	%r13, %ctaid.y;
 	mov.u32 	%r14, %tid.y;
-	mad.lo.s32 	%r2, %r13, %r12, %r14;
+	mad.lo.s32 	%r2, %r12, %r13, %r14;
 	mov.u32 	%r15, %ntid.z;
 	mov.u32 	%r16, %ctaid.z;
 	mov.u32 	%r17, %tid.z;
-	mad.lo.s32 	%r3, %r16, %r15, %r17;
-	setp.ge.s32 	%p1, %r1, %r6;
-	setp.ge.s32 	%p2, %r2, %r7;
+	mad.lo.s32 	%r3, %r15, %r16, %r17;
+	setp.ge.s32	%p1, %r2, %r7;
+	setp.ge.s32	%p2, %r1, %r6;
 	or.pred  	%p3, %p1, %p2;
-	setp.ge.s32 	%p4, %r3, %r8;
+	setp.ge.s32	%p4, %r3, %r8;
 	or.pred  	%p5, %p3, %p4;
-	@%p5 bra 	LBB0_7;
+	@%p5 bra 	BB0_7;
 
 	cvta.to.global.u64 	%rd4, %rd3;
 	mad.lo.s32 	%r18, %r3, %r7, %r2;
@@ -134,41 +134,41 @@ const (
 	abs.f32 	%f1, %f7;
 	ld.global.nc.f32 	%f8, [%rd6];
 	abs.f32 	%f2, %f8;
-	setp.eq.f32 	%p6, %f1, 0f00000000;
-	setp.eq.f32 	%p7, %f2, 0f00000000;
+	setp.eq.f32	%p6, %f1, 0f00000000;
+	setp.eq.f32	%p7, %f2, 0f00000000;
 	and.pred  	%p8, %p6, %p7;
-	mov.b32 	%r4, %f7;
-	mov.b32 	%r20, %f8;
+	mov.b32 	 %r4, %f7;
+	mov.b32 	 %r20, %f8;
 	and.b32  	%r5, %r20, -2147483648;
-	@%p8 bra 	LBB0_5;
-	bra.uni 	LBB0_2;
+	@%p8 bra 	BB0_5;
+	bra.uni 	BB0_2;
 
-LBB0_5:
-	shr.s32 	%r25, %r4, 31;
-	and.b32  	%r26, %r25, 1078530011;
-	or.b32  	%r27, %r26, %r5;
-	mov.b32 	%f35, %r27;
-	bra.uni 	LBB0_6;
+BB0_5:
+	shr.s32 	%r27, %r4, 31;
+	and.b32  	%r28, %r27, 1078530011;
+	or.b32  	%r29, %r28, %r5;
+	mov.b32 	 %f35, %r29;
+	bra.uni 	BB0_6;
 
-LBB0_2:
-	setp.eq.f32 	%p9, %f1, 0f7F800000;
-	setp.eq.f32 	%p10, %f2, 0f7F800000;
+BB0_2:
+	setp.eq.f32	%p9, %f1, 0f7F800000;
+	setp.eq.f32	%p10, %f2, 0f7F800000;
 	and.pred  	%p11, %p9, %p10;
-	@%p11 bra 	LBB0_4;
-	bra.uni 	LBB0_3;
+	@%p11 bra 	BB0_4;
+	bra.uni 	BB0_3;
 
-LBB0_4:
-	setp.lt.s32 	%p15, %r4, 0;
-	selp.b32 	%r23, 1075235812, 1061752795, %p15;
-	or.b32  	%r24, %r23, %r5;
-	mov.b32 	%f35, %r24;
-	bra.uni 	LBB0_6;
+BB0_4:
+	shr.s32 	%r23, %r4, 31;
+	and.b32  	%r24, %r23, 13483017;
+	add.s32 	%r25, %r24, 1061752795;
+	or.b32  	%r26, %r25, %r5;
+	mov.b32 	 %f35, %r26;
+	bra.uni 	BB0_6;
 
-LBB0_3:
-	setp.lt.s32 	%p12, %r4, 0;
-	min.f32 	%f9, %f2, %f1;
-	max.f32 	%f10, %f2, %f1;
-	div.rn.f32 	%f11, %f9, %f10;
+BB0_3:
+	max.f32 	%f9, %f2, %f1;
+	min.f32 	%f10, %f2, %f1;
+	div.rn.f32 	%f11, %f10, %f9;
 	mul.rn.f32 	%f12, %f11, %f11;
 	mov.f32 	%f13, 0fC0B59883;
 	mov.f32 	%f14, 0fBF52C7EA;
@@ -186,27 +186,28 @@ LBB0_3:
 	fma.rn.f32 	%f26, %f19, %f25, %f11;
 	mov.f32 	%f27, 0f3FC90FDB;
 	sub.f32 	%f28, %f27, %f26;
-	setp.gt.f32 	%p13, %f2, %f1;
-	selp.f32 	%f29, %f28, %f26, %p13;
+	setp.gt.f32	%p12, %f2, %f1;
+	selp.f32	%f29, %f28, %f26, %p12;
 	mov.f32 	%f30, 0f40490FDB;
 	sub.f32 	%f31, %f30, %f29;
-	selp.f32 	%f32, %f31, %f29, %p12;
-	mov.b32 	%r21, %f32;
-	or.b32  	%r22, %r5, %r21;
-	mov.b32 	%f33, %r22;
+	setp.lt.s32	%p13, %r4, 0;
+	selp.f32	%f32, %f31, %f29, %p13;
+	mov.b32 	 %r21, %f32;
+	or.b32  	%r22, %r21, %r5;
+	mov.b32 	 %f33, %r22;
 	add.f32 	%f34, %f1, %f2;
-	setp.le.f32 	%p14, %f34, 0f7F800000;
-	selp.f32 	%f35, %f33, %f34, %p14;
+	setp.gtu.f32	%p14, %f34, 0f7F800000;
+	selp.f32	%f35, %f34, %f33, %p14;
 
-LBB0_6:
+BB0_6:
 	cvta.to.global.u64 	%rd9, %rd1;
 	add.s64 	%rd11, %rd9, %rd5;
 	st.global.f32 	[%rd11], %f35;
 
-LBB0_7:
+BB0_7:
 	ret;
-
 }
+
 
 `
 )

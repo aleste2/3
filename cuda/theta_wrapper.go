@@ -74,7 +74,7 @@ var setTheta_map = map[int]string{0: "",
 // setTheta PTX code for various compute capabilities.
 const (
 	setTheta_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -102,21 +102,21 @@ const (
 	mov.u32 	%r7, %ctaid.x;
 	mov.u32 	%r8, %ntid.x;
 	mov.u32 	%r9, %tid.x;
-	mad.lo.s32 	%r1, %r7, %r8, %r9;
+	mad.lo.s32 	%r1, %r8, %r7, %r9;
 	mov.u32 	%r10, %ntid.y;
 	mov.u32 	%r11, %ctaid.y;
 	mov.u32 	%r12, %tid.y;
-	mad.lo.s32 	%r2, %r11, %r10, %r12;
+	mad.lo.s32 	%r2, %r10, %r11, %r12;
 	mov.u32 	%r13, %ntid.z;
 	mov.u32 	%r14, %ctaid.z;
 	mov.u32 	%r15, %tid.z;
-	mad.lo.s32 	%r3, %r14, %r13, %r15;
-	setp.ge.s32 	%p1, %r1, %r4;
-	setp.ge.s32 	%p2, %r2, %r5;
+	mad.lo.s32 	%r3, %r13, %r14, %r15;
+	setp.ge.s32	%p1, %r2, %r5;
+	setp.ge.s32	%p2, %r1, %r4;
 	or.pred  	%p3, %p1, %p2;
-	setp.ge.s32 	%p4, %r3, %r6;
+	setp.ge.s32	%p4, %r3, %r6;
 	or.pred  	%p5, %p3, %p4;
-	@%p5 bra 	LBB0_2;
+	@%p5 bra 	BB0_2;
 
 	cvta.to.global.u64 	%rd3, %rd2;
 	mad.lo.s32 	%r16, %r3, %r5, %r2;
@@ -129,8 +129,8 @@ const (
 	sub.f32 	%f4, %f3, %f2;
 	mul.f32 	%f5, %f4, 0f3F000000;
 	sqrt.rn.f32 	%f6, %f5;
-	setp.gt.f32 	%p6, %f2, 0f3F11EB85;
-	selp.f32 	%f7, %f6, %f2, %p6;
+	setp.gt.f32	%p6, %f2, 0f3F11EB85;
+	selp.f32	%f7, %f6, %f2, %p6;
 	mul.f32 	%f8, %f7, %f7;
 	mov.f32 	%f9, 0f3C94D2E9;
 	mov.f32 	%f10, 0f3D53F941;
@@ -146,19 +146,19 @@ const (
 	add.f32 	%f20, %f19, %f19;
 	mov.f32 	%f21, 0f3FC90FDB;
 	sub.f32 	%f22, %f21, %f19;
-	selp.f32 	%f23, %f20, %f22, %p6;
-	setp.lt.f32 	%p7, %f1, 0f00000000;
+	selp.f32	%f23, %f20, %f22, %p6;
+	setp.lt.f32	%p7, %f1, 0f00000000;
 	mov.f32 	%f24, 0f40490FDB;
 	sub.f32 	%f25, %f24, %f23;
-	selp.f32 	%f26, %f25, %f23, %p7;
+	selp.f32	%f26, %f25, %f23, %p7;
 	cvta.to.global.u64 	%rd6, %rd1;
 	add.s64 	%rd7, %rd6, %rd4;
 	st.global.f32 	[%rd7], %f26;
 
-LBB0_2:
+BB0_2:
 	ret;
-
 }
+
 
 `
 )

@@ -77,7 +77,7 @@ var MultiplyLandeFactor_map = map[int]string{0: "",
 // MultiplyLandeFactor PTX code for various compute capabilities.
 const (
 	MultiplyLandeFactor_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -107,15 +107,15 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r1, %r2;
-	@%p1 bra 	LBB0_4;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_4;
 
-	setp.eq.s64 	%p2, %rd4, 0;
-	@%p2 bra 	LBB0_3;
+	setp.eq.s64	%p2, %rd4, 0;
+	@%p2 bra 	BB0_3;
 
 	cvta.to.global.u64 	%rd5, %rd4;
 	mul.wide.s32 	%rd6, %r1, 4;
@@ -123,10 +123,10 @@ const (
 	ld.global.nc.f32 	%f4, [%rd7];
 	mul.f32 	%f13, %f4, %f13;
 
-LBB0_3:
+BB0_3:
 	mul.f32 	%f5, %f13, 0f3F000000;
-	setp.eq.f32 	%p3, %f5, 0f00000000;
-	selp.f32 	%f6, 0f3F800000, %f5, %p3;
+	setp.eq.f32	%p3, %f5, 0f00000000;
+	selp.f32	%f6, 0f3F800000, %f5, %p3;
 	cvta.to.global.u64 	%rd8, %rd1;
 	mul.wide.s32 	%rd9, %r1, 4;
 	add.s64 	%rd10, %rd8, %rd9;
@@ -136,7 +136,7 @@ LBB0_3:
 	cvta.to.global.u64 	%rd11, %rd2;
 	add.s64 	%rd12, %rd11, %rd9;
 	ld.global.f32 	%f9, [%rd12];
-	mul.f32 	%f10, %f6, %f9;
+	mul.f32 	%f10, %f9, %f6;
 	st.global.f32 	[%rd12], %f10;
 	cvta.to.global.u64 	%rd13, %rd3;
 	add.s64 	%rd14, %rd13, %rd9;
@@ -144,10 +144,10 @@ LBB0_3:
 	mul.f32 	%f12, %f6, %f11;
 	st.global.f32 	[%rd14], %f12;
 
-LBB0_4:
+BB0_4:
 	ret;
-
 }
+
 
 `
 )

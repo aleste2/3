@@ -74,7 +74,7 @@ var normalize_map = map[int]string{0: "",
 // normalize PTX code for various compute capabilities.
 const (
 	normalize_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -102,23 +102,23 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r1, %r2;
-	@%p1 bra 	LBB0_6;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_6;
 
-	setp.eq.s64 	%p2, %rd7, 0;
+	setp.eq.s64	%p2, %rd7, 0;
 	mov.f32 	%f20, 0f3F800000;
-	@%p2 bra 	LBB0_3;
+	@%p2 bra 	BB0_3;
 
 	cvta.to.global.u64 	%rd8, %rd7;
 	mul.wide.s32 	%rd9, %r1, 4;
 	add.s64 	%rd10, %rd8, %rd9;
 	ld.global.nc.f32 	%f20, [%rd10];
 
-LBB0_3:
+BB0_3:
 	cvta.to.global.u64 	%rd11, %rd4;
 	mul.wide.s32 	%rd12, %r1, 4;
 	add.s64 	%rd1, %rd11, %rd12;
@@ -136,13 +136,13 @@ LBB0_3:
 	fma.rn.f32 	%f15, %f3, %f3, %f14;
 	fma.rn.f32 	%f16, %f5, %f5, %f15;
 	sqrt.rn.f32 	%f6, %f16;
-	setp.eq.f32 	%p3, %f6, 0f00000000;
 	mov.f32 	%f21, 0f00000000;
-	@%p3 bra 	LBB0_5;
+	setp.eq.f32	%p3, %f6, 0f00000000;
+	@%p3 bra 	BB0_5;
 
 	rcp.rn.f32 	%f21, %f6;
 
-LBB0_5:
+BB0_5:
 	mul.f32 	%f17, %f3, %f21;
 	st.global.f32 	[%rd1], %f17;
 	mul.f32 	%f18, %f4, %f21;
@@ -150,10 +150,10 @@ LBB0_5:
 	mul.f32 	%f19, %f5, %f21;
 	st.global.f32 	[%rd3], %f19;
 
-LBB0_6:
+BB0_6:
 	ret;
-
 }
+
 
 `
 )

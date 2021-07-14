@@ -122,7 +122,7 @@ var addExchangeAFCell_map = map[int]string{0: "",
 // addExchangeAFCell PTX code for various compute capabilities.
 const (
 	addExchangeAFCell_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -154,7 +154,7 @@ const (
 {
 	.reg .pred 	%p<8>;
 	.reg .f32 	%f<49>;
-	.reg .b32 	%r<37>;
+	.reg .b32 	%r<9>;
 	.reg .b64 	%rd<54>;
 
 
@@ -182,69 +182,69 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
-	mad.lo.s32 	%r9, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r9, %r2;
-	@%p1 bra 	LBB0_14;
+	mad.lo.s32 	%r1, %r6, %r7, %r8;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_14;
 
-	setp.eq.s64 	%p2, %rd13, 0;
-	@%p2 bra 	LBB0_3;
+	setp.eq.s64	%p2, %rd13, 0;
+	@%p2 bra 	BB0_3;
 
 	cvta.to.global.u64 	%rd17, %rd13;
-	mul.wide.s32 	%rd18, %r9, 4;
+	mul.wide.s32 	%rd18, %r1, 4;
 	add.s64 	%rd19, %rd17, %rd18;
 	ld.global.nc.f32 	%f17, [%rd19];
 	mul.f32 	%f43, %f17, %f43;
 
-LBB0_3:
-	setp.eq.f32 	%p3, %f43, 0f00000000;
+BB0_3:
+	setp.eq.f32	%p3, %f43, 0f00000000;
 	mov.f32 	%f44, 0f00000000;
-	@%p3 bra 	LBB0_5;
+	@%p3 bra 	BB0_5;
 
 	rcp.rn.f32 	%f44, %f43;
 
-LBB0_5:
-	setp.eq.s64 	%p4, %rd14, 0;
-	@%p4 bra 	LBB0_7;
+BB0_5:
+	setp.eq.s64	%p4, %rd14, 0;
+	@%p4 bra 	BB0_7;
 
 	cvta.to.global.u64 	%rd20, %rd14;
-	mul.wide.s32 	%rd21, %r9, 4;
+	mul.wide.s32 	%rd21, %r1, 4;
 	add.s64 	%rd22, %rd20, %rd21;
 	ld.global.nc.f32 	%f19, [%rd22];
 	mul.f32 	%f45, %f19, %f45;
 
-LBB0_7:
-	setp.eq.f32 	%p5, %f45, 0f00000000;
+BB0_7:
+	setp.eq.f32	%p5, %f45, 0f00000000;
 	mov.f32 	%f46, 0f00000000;
-	@%p5 bra 	LBB0_9;
+	@%p5 bra 	BB0_9;
 
 	rcp.rn.f32 	%f46, %f45;
 
-LBB0_9:
-	setp.eq.s64 	%p6, %rd15, 0;
-	@%p6 bra 	LBB0_11;
+BB0_9:
+	setp.eq.s64	%p6, %rd15, 0;
+	@%p6 bra 	BB0_11;
 
 	cvta.to.global.u64 	%rd23, %rd15;
-	mul.wide.s32 	%rd24, %r9, 4;
+	mul.wide.s32 	%rd24, %r1, 4;
 	add.s64 	%rd25, %rd23, %rd24;
 	ld.global.nc.f32 	%f21, [%rd25];
 	mul.f32 	%f47, %f21, %f47;
 
-LBB0_11:
-	setp.eq.s64 	%p7, %rd16, 0;
-	@%p7 bra 	LBB0_13;
+BB0_11:
+	setp.eq.s64	%p7, %rd16, 0;
+	@%p7 bra 	BB0_13;
 
 	cvta.to.global.u64 	%rd26, %rd16;
-	mul.wide.s32 	%rd27, %r9, 4;
+	mul.wide.s32 	%rd27, %r1, 4;
 	add.s64 	%rd28, %rd26, %rd27;
 	ld.global.nc.f32 	%f22, [%rd28];
 	mul.f32 	%f48, %f22, %f48;
 
-LBB0_13:
+BB0_13:
 	cvta.to.global.u64 	%rd29, %rd10;
-	mul.wide.s32 	%rd30, %r9, 4;
+	mul.wide.s32 	%rd30, %r1, 4;
 	add.s64 	%rd31, %rd29, %rd30;
 	ld.global.nc.f32 	%f23, [%rd31];
 	mul.f32 	%f24, %f44, %f47;
@@ -295,10 +295,10 @@ LBB0_13:
 	fma.rn.f32 	%f42, %f34, %f40, %f41;
 	st.global.f32 	[%rd53], %f42;
 
-LBB0_14:
+BB0_14:
 	ret;
-
 }
+
 
 `
 )

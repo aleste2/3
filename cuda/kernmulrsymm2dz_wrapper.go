@@ -71,7 +71,7 @@ var kernmulRSymm2Dz_map = map[int]string{0: "",
 // kernmulRSymm2Dz PTX code for various compute capabilities.
 const (
 	kernmulRSymm2Dz_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -97,32 +97,32 @@ const (
 	mov.u32 	%r5, %ntid.x;
 	mov.u32 	%r6, %ctaid.x;
 	mov.u32 	%r7, %tid.x;
-	mad.lo.s32 	%r1, %r6, %r5, %r7;
+	mad.lo.s32 	%r1, %r5, %r6, %r7;
 	mov.u32 	%r8, %ntid.y;
 	mov.u32 	%r9, %ctaid.y;
 	mov.u32 	%r10, %tid.y;
-	mad.lo.s32 	%r2, %r9, %r8, %r10;
-	setp.ge.s32 	%p1, %r1, %r3;
-	setp.ge.s32 	%p2, %r2, %r4;
+	mad.lo.s32 	%r2, %r8, %r9, %r10;
+	setp.ge.s32	%p1, %r2, %r4;
+	setp.ge.s32	%p2, %r1, %r3;
 	or.pred  	%p3, %p1, %p2;
-	@%p3 bra 	LBB0_2;
+	@%p3 bra 	BB0_2;
 
-	cvta.to.global.u64 	%rd3, %rd2;
+	cvta.to.global.u64 	%rd3, %rd1;
+	cvta.to.global.u64 	%rd4, %rd2;
 	mad.lo.s32 	%r11, %r2, %r3, %r1;
 	shl.b32 	%r12, %r11, 1;
-	cvta.to.global.u64 	%rd4, %rd1;
 	mul.wide.s32 	%rd5, %r12, 4;
-	add.s64 	%rd6, %rd4, %rd5;
+	add.s64 	%rd6, %rd3, %rd5;
 	ld.global.f32 	%f1, [%rd6+4];
 	shr.u32 	%r13, %r4, 31;
 	add.s32 	%r14, %r4, %r13;
 	shr.s32 	%r15, %r14, 1;
-	setp.gt.s32 	%p4, %r2, %r15;
+	setp.gt.s32	%p4, %r2, %r15;
 	sub.s32 	%r16, %r4, %r2;
-	selp.b32 	%r17, %r16, %r2, %p4;
+	selp.b32	%r17, %r16, %r2, %p4;
 	mad.lo.s32 	%r18, %r17, %r3, %r1;
 	mul.wide.s32 	%rd7, %r18, 4;
-	add.s64 	%rd8, %rd3, %rd7;
+	add.s64 	%rd8, %rd4, %rd7;
 	ld.global.nc.f32 	%f2, [%rd8];
 	ld.global.f32 	%f3, [%rd6];
 	mul.f32 	%f4, %f3, %f2;
@@ -130,10 +130,10 @@ const (
 	mul.f32 	%f5, %f1, %f2;
 	st.global.f32 	[%rd6+4], %f5;
 
-LBB0_2:
+BB0_2:
 	ret;
-
 }
+
 
 `
 )

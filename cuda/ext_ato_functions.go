@@ -84,11 +84,44 @@ func MultiplyVolume(B *data.Slice, mesh *data.Mesh, celltype int) {
 		volume = volume * 0.74 * 8
 	}
 	cfg := make1DConf(N)
-	print(volume)
+	//print(volume)
 	k_MultiplyVolume_async(B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
 		volume,
 		N, cfg)
 }
+
+func AddZhangLiTorqueAto(torque, m *data.Slice, Msat, J, alpha, xi, pol MSlice, mesh *data.Mesh,celltype int) {
+	c := mesh.CellSize()
+	N := mesh.Size()
+	cfg := make3DConf(N)
+
+	volume := (c[X] * c[Y] * c[Z])
+	if celltype == 1 {
+		volume = volume * 0.68 * 8
+	}
+	if celltype == 2 {
+		volume = volume * 0.74 * 8
+	}
+
+
+	k_addzhanglitorque2ato_async(
+		torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
+		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
+		Msat.DevPtr(0), Msat.Mul(0),
+		J.DevPtr(X), J.Mul(X),
+		J.DevPtr(Y), J.Mul(Y),
+		J.DevPtr(Z), J.Mul(Z),
+		alpha.DevPtr(0), alpha.Mul(0),
+		xi.DevPtr(0), xi.Mul(0),
+		pol.DevPtr(0), pol.Mul(0),
+		float32(volume),
+		float32(c[X]), float32(c[Y]), float32(c[Z]),
+		N[X], N[Y], N[Z], mesh.PBC_code(), cfg)
+}
+
+
+
+
 
 func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol, λ, ε_prime MSlice, thickness MSlice, flp float64, mesh *data.Mesh, celltype int) {
 	N := torque.Len()

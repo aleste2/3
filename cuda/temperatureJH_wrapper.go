@@ -89,7 +89,7 @@ var settemperatureJH_map = map[int]string{0: "",
 // settemperatureJH PTX code for various compute capabilities.
 const (
 	settemperatureJH_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -127,15 +127,15 @@ const (
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r1, %r2;
-	@%p1 bra 	LBB0_8;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_8;
 
-	setp.eq.s64 	%p2, %rd3, 0;
-	@%p2 bra 	LBB0_3;
+	setp.eq.s64	%p2, %rd3, 0;
+	@%p2 bra 	BB0_3;
 
 	cvta.to.global.u64 	%rd6, %rd3;
 	mul.wide.s32 	%rd7, %r1, 4;
@@ -143,27 +143,27 @@ const (
 	ld.global.nc.f32 	%f12, [%rd8];
 	mul.f32 	%f22, %f12, %f22;
 
-LBB0_3:
-	setp.eq.f32 	%p3, %f22, 0f00000000;
+BB0_3:
+	setp.eq.f32	%p3, %f22, 0f00000000;
 	mov.f32 	%f23, 0f00000000;
-	@%p3 bra 	LBB0_5;
+	@%p3 bra 	BB0_5;
 
 	rcp.rn.f32 	%f23, %f22;
 
-LBB0_5:
+BB0_5:
 	cvta.to.global.u64 	%rd9, %rd4;
 	mul.wide.s32 	%rd10, %r1, 4;
 	add.s64 	%rd11, %rd9, %rd10;
 	ld.global.nc.f32 	%f5, [%rd11];
-	setp.eq.s64 	%p4, %rd5, 0;
-	@%p4 bra 	LBB0_7;
+	setp.eq.s64	%p4, %rd5, 0;
+	@%p4 bra 	BB0_7;
 
 	cvta.to.global.u64 	%rd12, %rd5;
 	add.s64 	%rd14, %rd12, %rd10;
 	ld.global.nc.f32 	%f14, [%rd14];
 	mul.f32 	%f24, %f14, %f24;
 
-LBB0_7:
+BB0_7:
 	cvta.to.global.u64 	%rd15, %rd2;
 	add.s64 	%rd17, %rd15, %rd10;
 	ld.global.nc.f32 	%f15, [%rd17];
@@ -177,10 +177,10 @@ LBB0_7:
 	add.s64 	%rd19, %rd18, %rd10;
 	st.global.f32 	[%rd19], %f21;
 
-LBB0_8:
+BB0_8:
 	ret;
-
 }
+
 
 `
 )

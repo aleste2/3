@@ -71,7 +71,7 @@ var regiondecode_map = map[int]string{0: "",
 // regiondecode PTX code for various compute capabilities.
 const (
 	regiondecode_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -98,19 +98,19 @@ const (
 	mov.u32 	%r3, %ctaid.y;
 	mov.u32 	%r4, %nctaid.x;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r3, %r4, %r5;
+	mad.lo.s32 	%r6, %r4, %r3, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r1, %r2;
-	@%p1 bra 	LBB0_2;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_2;
 
 	cvta.to.global.u64 	%rd4, %rd3;
-	cvt.s64.s32 	%rd5, %r1;
+	cvt.s64.s32	%rd5, %r1;
 	add.s64 	%rd6, %rd4, %rd5;
 	ld.global.nc.u8 	%rs1, [%rd6];
 	cvta.to.global.u64 	%rd7, %rd2;
-	cvt.u32.u16 	%r9, %rs1;
+	cvt.u32.u16	%r9, %rs1;
 	and.b32  	%r10, %r9, 255;
 	mul.wide.u32 	%rd8, %r10, 4;
 	add.s64 	%rd9, %rd7, %rd8;
@@ -120,10 +120,10 @@ const (
 	add.s64 	%rd12, %rd10, %rd11;
 	st.global.f32 	[%rd12], %f1;
 
-LBB0_2:
+BB0_2:
 	ret;
-
 }
+
 
 `
 )

@@ -92,7 +92,7 @@ var crop_map = map[int]string{0: "",
 // crop PTX code for various compute capabilities.
 const (
 	crop_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -131,22 +131,24 @@ const (
 	mov.u32 	%r12, %ctaid.x;
 	mov.u32 	%r13, %ntid.x;
 	mov.u32 	%r14, %tid.x;
-	mad.lo.s32 	%r1, %r12, %r13, %r14;
+	mad.lo.s32 	%r1, %r13, %r12, %r14;
 	mov.u32 	%r15, %ntid.y;
 	mov.u32 	%r16, %ctaid.y;
 	mov.u32 	%r17, %tid.y;
-	mad.lo.s32 	%r2, %r16, %r15, %r17;
+	mad.lo.s32 	%r2, %r15, %r16, %r17;
 	mov.u32 	%r18, %ntid.z;
 	mov.u32 	%r19, %ctaid.z;
 	mov.u32 	%r20, %tid.z;
-	mad.lo.s32 	%r3, %r19, %r18, %r20;
-	setp.ge.s32 	%p1, %r1, %r4;
-	setp.ge.s32 	%p2, %r2, %r5;
-	or.pred  	%p3, %p1, %p2;
-	setp.ge.s32 	%p4, %r3, %r11;
-	or.pred  	%p5, %p3, %p4;
-	@%p5 bra 	LBB0_2;
+	mad.lo.s32 	%r3, %r18, %r19, %r20;
+	setp.lt.s32	%p1, %r1, %r4;
+	setp.lt.s32	%p2, %r2, %r5;
+	and.pred  	%p3, %p1, %p2;
+	setp.lt.s32	%p4, %r3, %r11;
+	and.pred  	%p5, %p3, %p4;
+	@!%p5 bra 	BB0_2;
+	bra.uni 	BB0_1;
 
+BB0_1:
 	cvta.to.global.u64 	%rd3, %rd2;
 	add.s32 	%r21, %r3, %r10;
 	add.s32 	%r22, %r2, %r9;
@@ -163,10 +165,10 @@ const (
 	add.s64 	%rd8, %rd6, %rd7;
 	st.global.f32 	[%rd8], %f1;
 
-LBB0_2:
+BB0_2:
 	ret;
-
 }
+
 
 `
 )

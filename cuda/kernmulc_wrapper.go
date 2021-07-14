@@ -71,7 +71,7 @@ var kernmulC_map = map[int]string{0: "",
 // kernmulC PTX code for various compute capabilities.
 const (
 	kernmulC_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -97,39 +97,39 @@ const (
 	mov.u32 	%r5, %ntid.x;
 	mov.u32 	%r6, %ctaid.x;
 	mov.u32 	%r7, %tid.x;
-	mad.lo.s32 	%r1, %r6, %r5, %r7;
+	mad.lo.s32 	%r1, %r5, %r6, %r7;
 	mov.u32 	%r8, %ntid.y;
 	mov.u32 	%r9, %ctaid.y;
 	mov.u32 	%r10, %tid.y;
-	mad.lo.s32 	%r2, %r9, %r8, %r10;
-	setp.ge.s32 	%p1, %r1, %r3;
-	setp.ge.s32 	%p2, %r2, %r4;
+	mad.lo.s32 	%r2, %r8, %r9, %r10;
+	setp.ge.s32	%p1, %r2, %r4;
+	setp.ge.s32	%p2, %r1, %r3;
 	or.pred  	%p3, %p1, %p2;
-	@%p3 bra 	LBB0_2;
+	@%p3 bra 	BB0_2;
 
+	cvta.to.global.u64 	%rd3, %rd2;
+	cvta.to.global.u64 	%rd4, %rd1;
 	mad.lo.s32 	%r11, %r2, %r3, %r1;
 	shl.b32 	%r12, %r11, 1;
-	cvta.to.global.u64 	%rd3, %rd1;
-	mul.wide.s32 	%rd4, %r12, 4;
-	add.s64 	%rd5, %rd3, %rd4;
-	cvta.to.global.u64 	%rd6, %rd2;
-	add.s64 	%rd7, %rd6, %rd4;
+	mul.wide.s32 	%rd5, %r12, 4;
+	add.s64 	%rd6, %rd4, %rd5;
+	add.s64 	%rd7, %rd3, %rd5;
 	ld.global.nc.f32 	%f1, [%rd7];
-	ld.global.f32 	%f2, [%rd5];
+	ld.global.f32 	%f2, [%rd6];
 	mul.f32 	%f3, %f2, %f1;
 	ld.global.nc.f32 	%f4, [%rd7+4];
-	ld.global.f32 	%f5, [%rd5+4];
+	ld.global.f32 	%f5, [%rd6+4];
 	mul.f32 	%f6, %f5, %f4;
 	sub.f32 	%f7, %f3, %f6;
-	st.global.f32 	[%rd5], %f7;
+	st.global.f32 	[%rd6], %f7;
 	mul.f32 	%f8, %f2, %f4;
 	fma.rn.f32 	%f9, %f5, %f1, %f8;
-	st.global.f32 	[%rd5+4], %f9;
+	st.global.f32 	[%rd6+4], %f9;
 
-LBB0_2:
+BB0_2:
 	ret;
-
 }
+
 
 `
 )

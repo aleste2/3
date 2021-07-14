@@ -77,7 +77,7 @@ var alloyparcuda_map = map[int]string{0: "",
 // alloyparcuda PTX code for various compute capabilities.
 const (
 	alloyparcuda_ptx_70 = `
-.version 7.2
+.version 7.1
 .target sm_70
 .address_size 64
 
@@ -99,42 +99,42 @@ const (
 	.reg .b64 	%rd<9>;
 
 
-	ld.param.u8 	%rs2, [alloyparcuda_param_1];
-	ld.param.u8 	%rs1, [alloyparcuda_param_0];
 	ld.param.f32 	%f1, [alloyparcuda_param_2];
 	ld.param.u64 	%rd2, [alloyparcuda_param_3];
 	ld.param.u64 	%rd3, [alloyparcuda_param_4];
 	ld.param.u32 	%r2, [alloyparcuda_param_5];
+	ld.param.u8 	%rs2, [alloyparcuda_param_1];
+	ld.param.u8 	%rs1, [alloyparcuda_param_0];
 	mov.u32 	%r3, %nctaid.x;
 	mov.u32 	%r4, %ctaid.y;
 	mov.u32 	%r5, %ctaid.x;
-	mad.lo.s32 	%r6, %r4, %r3, %r5;
+	mad.lo.s32 	%r6, %r3, %r4, %r5;
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r7, %r8;
-	setp.ge.s32 	%p1, %r1, %r2;
-	@%p1 bra 	LBB0_4;
+	setp.ge.s32	%p1, %r1, %r2;
+	@%p1 bra 	BB0_4;
 
 	cvta.to.global.u64 	%rd4, %rd3;
-	cvt.s64.s32 	%rd5, %r1;
+	cvt.s64.s32	%rd5, %r1;
 	add.s64 	%rd1, %rd4, %rd5;
 	ld.global.u8 	%rs3, [%rd1];
-	setp.ne.s16 	%p2, %rs3, %rs1;
-	@%p2 bra 	LBB0_4;
+	setp.ne.s16	%p2, %rs3, %rs1;
+	@%p2 bra 	BB0_4;
 
 	cvta.to.global.u64 	%rd6, %rd2;
 	mul.wide.s32 	%rd7, %r1, 4;
 	add.s64 	%rd8, %rd6, %rd7;
 	ld.global.f32 	%f2, [%rd8];
-	setp.gtu.f32 	%p3, %f2, %f1;
-	@%p3 bra 	LBB0_4;
+	setp.gtu.f32	%p3, %f2, %f1;
+	@%p3 bra 	BB0_4;
 
 	st.global.u8 	[%rd1], %rs2;
 
-LBB0_4:
+BB0_4:
 	ret;
-
 }
+
 
 `
 )
