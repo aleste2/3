@@ -38,7 +38,7 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     // central cell
     int i = idx(ix, iy, iz);
     float3 m0 = make_float3(mx[i], my[i], mz[i]);
-    
+
     float mm=dot(m0,m0);
     dt0e_[i]=0.0;
     dt0l_[i]=0.0;
@@ -175,11 +175,22 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 	    dt0e_[i]+=Qext;                  //External Heating source in W/m3 without circular dichoism
 	} else
 	{
+
+  /*
+  //Old IMplementations MCD
 	float norm1=sqrt(mm);
 	float norm2=sqrt(alphaD);
 	float pe = -1.0*dot(m0,cd);		// Inversion of sign to lead to the same results as IFE
 	float scaleCD=1.0+(pe/norm1/norm2-1.0)/2.0*norm2;
 	dt0e_[i]+=Qext*scaleCD;
+  */
+  // New Implementation MCD
+	float norm2=sqrt(alphaD);
+  float pe = -1.0*dot(m0,cd);		// Inversion of sign to lead to the same results as IFE
+  if (pe>0) pe=1*norm2;
+  if (pe<0) pe=-1*norm2;
+  float scaleCD=1.0+0.5*pe;
+  dt0e_[i]+=Qext*scaleCD;
 	}
 
 // Missing constants

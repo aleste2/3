@@ -200,12 +200,27 @@ LLBtorqueAFMFA(float* __restrict__  t1x, float* __restrict__  t1y, float* __rest
 			alphaperpB=alphaparB;
 		}
 
-		H1=H1+J0aa/mua*m1+J0ab/mua*m2;
-		H2=H2+J0bb/mub*m2+J0ba/mub*m1;
+
+		// old
+		//H1=H1+J0aa/mua*m1+J0ab/mua*m2;
+		//H2=H2+J0bb/mub*m2+J0ba/mub*m1;
+		// to test
+		float3 tolerancia;
+		tolerancia.x=0.0001;
+		tolerancia.y=0.0001;
+		tolerancia.z=0.0001;
+		float3 HMFA1=J0aa/mua*m1+J0ab/mua*m2+tolerancia;
+		float3 HMFA2=J0bb/mub*m2+J0ba/mub*m1+tolerancia;
+
+
 
 		float beta=1.0f/(kB*temp);
-		float3 chiA=beta*mua*H1;
-		float3 chiB=beta*mub*H2;
+		// old
+		//float3 chiA=beta*mua*H1;
+		//float3 chiB=beta*mub*H2;
+		float3 chiA=beta*mua*HMFA1;
+		float3 chiB=beta*mub*HMFA2;
+
 		float mchiA=sqrt(dot(chiA,chiA));
 		float mchiB=sqrt(dot(chiB,chiB));
 		/*float3 m0A=dL(mchiA)/mchiA*chiA;
@@ -266,6 +281,10 @@ LLBtorqueAFMFA(float* __restrict__  t1x, float* __restrict__  t1y, float* __rest
 		float h_perp_scaleb=0.0*sqrt(Msat/Msatb*(alphaperpB-alphaparB)/(alpha*alphaperpB*alphaperpB));
 		float h_par_scalea=sqrt(Msat/Msata*alphaparA/alpha);
 		float h_par_scaleb=sqrt(Msat/Msatb*alphaparB/alpha);
+
+		// Recuperamos todas las contribuciones
+		H1=H1+J0aa/mua*m1+J0ab/mua*m2;
+		H2=H2+J0bb/mub*m2+J0ba/mub*m1;
 
     float3 htotA=m0A+h_perp_scalea*hth1a;
     float3 htotB=m0B+h_perp_scaleb*hth1b;

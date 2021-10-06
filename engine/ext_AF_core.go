@@ -16,6 +16,15 @@ var (
 	Ku21             = NewScalarParam("Ku21", "J/m3", "1st order uniaxial anisotropy constant")
 	Ku12             = NewScalarParam("Ku12", "J/m3", "1st order uniaxial anisotropy constant")
 	Ku22             = NewScalarParam("Ku22", "J/m3", "1st order uniaxial anisotropy constant")
+
+// Second set for another uniaxial Anisotropy
+Ku11b             = NewScalarParam("Ku11b", "J/m3", "1st order uniaxial anisotropy constant")
+Ku21b             = NewScalarParam("Ku21b", "J/m3", "1st order uniaxial anisotropy constant")
+Ku12b             = NewScalarParam("Ku12b", "J/m3", "1st order uniaxial anisotropy constant")
+Ku22b             = NewScalarParam("Ku22b", "J/m3", "1st order uniaxial anisotropy constant")
+AnisU1b           = NewVectorParam("anisU1b", "", "Uniaxial anisotropy direction")
+
+
 	Kc11             = NewScalarParam("Kc11", "J/m3", "1st order cubic anisotropy constant")
 	Kc21             = NewScalarParam("Kc21", "J/m3", "2nd order cubic anisotropy constant")
 	Kc31             = NewScalarParam("Kc31", "J/m3", "3rd order cubic anisotropy constant")
@@ -351,6 +360,11 @@ func (b *thermField) updateAF(i int) {
 func AddAnisotropyFieldAF(dst1, dst2 *data.Slice) {
 	addUniaxialAnisotropyFrom(dst1, M1, Msat1, Ku11, Ku21, AnisU1)
 	addUniaxialAnisotropyFrom(dst2, M2, Msat2, Ku12, Ku22, AnisU2)
+// second axis
+addUniaxialAnisotropyFrom(dst1, M1, Msat1, Ku11b, Ku21b, AnisU1b)
+addUniaxialAnisotropyFrom(dst2, M2, Msat2, Ku12b, Ku22b, AnisU1b)
+
+
 	addCubicAnisotropyFrom(dst1, M1, Msat1, Kc11, Kc21, Kc31, AnisC11, AnisC21)
 	addCubicAnisotropyFrom(dst2, M2, Msat2, Kc12, Kc22, Kc32, AnisC12, AnisC22)
 }
