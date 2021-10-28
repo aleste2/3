@@ -103,10 +103,10 @@ func (_ *HeunLLBAF2T) Step() {
 				}
 		*/
 
-		Time -= Dt_si
+		//Time -= Dt_si
 		for iter := 0; iter < TSubsteps; iter++ {
 			NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
-			Time += Dt_si / float64(TSubsteps)
+			//Time += Dt_si / float64(TSubsteps)
 		}
 
 		NSteps++
