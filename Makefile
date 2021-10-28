@@ -1,11 +1,11 @@
 export GOPATH=/home/vrf/Code/
 # Use the default go compiler
 GO_BUILDFLAGS=-compiler gc
-# Or uncomment the line below to use the gccgo compiler, which may 
+# Or uncomment the line below to use the gccgo compiler, which may
 # or may not be faster than gc and which may or may not compile...
 # GO_BUILDFLAGS=-compiler gccgo -gccgoflags '-static-libgcc -O4 -Ofast -march=native'
 
-export CUDA_CC=70
+export CUDA_CC=30 32 35 37 50 52 53 60 61 62 70 72 75 80 86
 
 CGO_CFLAGS_ALLOW='(-fno-schedule-insns|-malign-double|-ffast-math)'
 
