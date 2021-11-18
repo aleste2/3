@@ -21,6 +21,7 @@ addExchangeAFCell(float* __restrict__ dst1x, float* __restrict__ dst1y, float* _
         float invMs2 = inv_Msat(Ms2_, Ms2_mul, i);
         float bex12 = amul(Bex12_, Bex12_mul, i);
         float bex21 = amul(Bex21_, Bex21_mul, i);
+
         dst1x[i] += invMs1*bex12*m2x[i];
         dst1y[i] += invMs1*bex12*m2y[i];
         dst1z[i] += invMs1*bex12*m2z[i];
