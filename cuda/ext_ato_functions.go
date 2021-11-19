@@ -125,12 +125,12 @@ func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol
 	meshThickness := mesh.WorldSize()[Z]
 	volume := (c[X] * c[Y] * c[Z])
 	if celltype == 1 {
-		volume = volume * 8/2  // cell size should be in half lattice size, two atoms per elemental cell
+		volume = volume * 8  // cell size should be in half lattice size, two atoms per elemental cell
 	}
 	if celltype == 2 {
-		volume = volume * 8/4 // cell size should be in half lattice size, four atoms per elemental cell
+		volume = volume * 8  // cell size should be in half lattice size, four atoms per elemental cell
 	}
-	flt := float32(flp  / volume) // Put factor for conversion from mu to Msat in flt
+	flt := float32(flp / volume) // Put factor for conversion from mu to Msat in flt
 
 	k_addslonczewskitorque2_async(
 		torque.DevPtr(X), torque.DevPtr(Y), torque.DevPtr(Z),
