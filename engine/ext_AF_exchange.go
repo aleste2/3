@@ -44,6 +44,13 @@ func init() {
 	dbulk22.init(Dbulk2)
 
 	lexll.init(Aexll)
+
+	DeclFunc("ext_InterExchangeAex1", InterExchangeAex1, "Sets exchange coupling between two regions.")
+	DeclFunc("ext_InterExchangeAex2", InterExchangeAex2, "Sets exchange coupling between two regions.")
+	DeclFunc("ext_InterExchangeAexll", InterExchangeAexll, "Sets exchange coupling between two regions.")
+	DeclFunc("ext_ScaleExchangeAex1", ScaleInterExchangeAex1, "Re-scales exchange coupling between two regions.")
+	DeclFunc("ext_ScaleExchangeAex2", ScaleInterExchangeAex2, "Re-scales exchange coupling between two regions.")
+	DeclFunc("ext_ScaleExchangeAexll", ScaleInterExchangeAexll, "Re-scales exchange coupling between two regions.")
 }
 
 // Adds the current exchange AFfield to dst
@@ -89,4 +96,38 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 	defer bex21.Recycle()
 	cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21)
 	cuda.AddExchangeAFll(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, lexll.Gpu(), regions.Gpu(), M.Mesh())
+}
+
+
+// Scales the heisenberg exchange interaction between region1 and 2.
+// Scale = 1 means the harmonic mean over the regions of Aex.
+func ScaleInterExchangeAex1(region1, region2 int, scale float64) {
+	lex21.setScale(region1, region2, scale)
+}
+
+// Sets the exchange interaction between region 1 and 2.
+func InterExchangeAex1(region1, region2 int, value float64) {
+	lex21.setInter(region1, region2, value)
+}
+
+// Scales the heisenberg exchange interaction between region1 and 2.
+// Scale = 1 means the harmonic mean over the regions of Aex.
+func ScaleInterExchangeAex2(region1, region2 int, scale float64) {
+	lex22.setScale(region1, region2, scale)
+}
+
+// Sets the exchange interaction between region 1 and 2.
+func InterExchangeAex2(region1, region2 int, value float64) {
+	lex22.setInter(region1, region2, value)
+}
+
+// Scales the heisenberg exchange interaction between region1 and 2.
+// Scale = 1 means the harmonic mean over the regions of Aex.
+func ScaleInterExchangeAexll(region1, region2 int, scale float64) {
+	lexll.setScale(region1, region2, scale)
+}
+
+// Sets the exchange interaction between region 1 and 2.
+func InterExchangeAexll(region1, region2 int, value float64) {
+	lexll.setInter(region1, region2, value)
 }
