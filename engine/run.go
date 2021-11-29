@@ -34,6 +34,7 @@ var (
 	LLB2Tf = false
 	AFf    = false
 	OSC    = false
+	Ato    = false
 )
 
 func init() {
@@ -91,6 +92,7 @@ const (
 	// Atomistic solvers
 	ATOHEUN   = 150
 	ATOHEUN2T = 151
+	ATORK23		= 152
 )
 
 func SetSolver(typ int) {
@@ -171,10 +173,14 @@ func SetSolver(typ int) {
 		//      atomistic Solvers
 	case ATOHEUN:
 		stepper = new(HeunAto)
+		Ato = true
 	case ATOHEUN2T:
 		stepper = new(HeunAto2T)
 		LLB2Tf = true
-
+		Ato = true
+	case ATORK23:
+		stepper = new(AtoRK23)
+		Ato = true
 	}
 	solvertype = typ
 }

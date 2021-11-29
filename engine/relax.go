@@ -25,6 +25,10 @@ func Relax() {
 		RelaxAF()
 		return
 	}
+	if Ato == true { // For AF solver
+		RelaxAto()
+		return
+	}
 	SanityCheck()
 	pause = false
 

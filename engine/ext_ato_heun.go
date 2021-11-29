@@ -45,6 +45,7 @@ func init() {
 	DeclFunc("ext_InterAtoDMI", InterAtoDMI, "Sets DMI coupling between two regions.")
 	DeclFunc("ext_GetAtoEnergy", GetAtoEnergy, "Gets energy in atomistic calculations.")
 	DeclFunc("ext_GetAtoEnergy01", GetAtoEnergy01, "Gets 0 1 energy in atomistic calculations.")
+	DeclFunc("RelaxAto", RelaxAto, "Try to minimize the total energy in atomistic")
 }
 
 func SetMFullato(dst *data.Slice) {
@@ -605,4 +606,179 @@ func (b *thermField) updateAto() {
 
 	b.step = NSteps
 	b.dt = Dt_si
+}
+
+
+func RelaxAto() {
+	SanityCheck()
+	pause = false
+
+	// Save the settings we are changing...
+	prevType := solvertype
+	prevErr := MaxErr
+	prevFixDt := FixDt
+	prevPrecess := Precess
+
+	// ...to restore them later
+	defer func() {
+		SetSolver(prevType)
+		MaxErr = prevErr
+		FixDt = prevFixDt
+		Precess = prevPrecess
+		relaxing = false
+	}()
+
+	// Set good solver for relax
+	SetSolver(ATORK23) // to do ANTIFERRORK23
+	FixDt = 0
+	Precess = false
+	relaxing = true
+
+	// Minimize energy: take steps as long as energy goes down.
+	// This stops when energy reaches the numerical noise floor.
+	const N = 3 // evaluate energy (expensive) every N steps
+	relaxSteps(N)
+	E0 := GetTotalEnergy()
+	relaxSteps(N)
+	E1 := GetTotalEnergy()
+	for E1 < E0 && !pause {
+		relaxSteps(N)
+		E0, E1 = E1, GetTotalEnergy()
+	}
+
+	// Now we are already close to equilibrium, but energy is too noisy to be used any further.
+	// So now we minimize the total torque which is less noisy and does not have to cross any
+	// bumps once we are close to equilibrium.
+	solver := stepper.(*AtoRK23) // To do *AntiferroRK23
+	defer stepper.Free()               // purge previous rk.k1 because FSAL will be dead wrong.
+
+	maxTorque := func() float64 {
+		return cuda.MaxVecNorm(solver.k11)
+	}
+	avgTorque := func() float32 {
+		return cuda.Dot(solver.k11, solver.k11)
+	}
+
+	if RelaxTorqueThreshold > 0 {
+		// run as long as the max torque is above threshold. Then increase the accuracy and step more.
+		for !pause {
+			for maxTorque() > RelaxTorqueThreshold && !pause {
+				relaxSteps(N)
+			}
+			MaxErr /= math.Sqrt2
+			if MaxErr < 1e-9 {
+				break
+			}
+		}
+	} else {
+		// previous (<jan2018) behaviour: run as long as torque goes down. Then increase the accuracy and step more.
+		// if MaxErr < 1e-9, this code won't run.
+		var T0, T1 float32 = 0, avgTorque()
+		// Step as long as torque goes down. Then increase the accuracy and step more.
+		for MaxErr > 1e-9 && !pause {
+			MaxErr /= math.Sqrt2
+			relaxSteps(N) // TODO: Play with other values
+			T0, T1 = T1, avgTorque()
+			for T1 < T0 && !pause {
+				relaxSteps(N) // TODO: Play with other values
+				T0, T1 = T1, avgTorque()
+			}
+		}
+	}
+	pause = true
+}
+
+
+type AtoRK23 struct {
+	k11 *data.Slice // torque at end of step is kept for beginning of next step
+}
+
+func (rk *AtoRK23) Step() {
+	m := M.Buffer()
+	size := m.Size()
+
+	if FixDt != 0 {
+		Dt_si = FixDt
+	}
+
+	// upon resize: remove wrongly sized k1
+	if rk.k11.Size() != m.Size() {
+		rk.Free()
+	}
+
+	// first step ever: one-time k1 init and eval
+	if rk.k11 == nil {
+		rk.k11 = cuda.NewSlice(3, size)
+		torqueAto(rk.k11)
+	}
+
+	// FSAL cannot be used with temperature
+	if !Temp.isZero() {
+		torqueAto(rk.k11)
+	}
+
+	t0 := Time
+	// backup magnetization
+	m0 := cuda.Buffer(3, size)
+	defer cuda.Recycle(m0)
+	data.Copy(m0, m)
+
+	k12, k13, k14 := cuda.Buffer(3, size), cuda.Buffer(3, size), cuda.Buffer(3, size)
+	defer cuda.Recycle(k12)
+	defer cuda.Recycle(k13)
+	defer cuda.Recycle(k14)
+
+	h := float32(Dt_si * GammaLL)   // internal time step = Dt * gammaLL
+
+	// there is no explicit stage 1: k1 from previous step
+
+	// stage 2
+	Time = t0 + (1./2.)*Dt_si
+	cuda.Madd2(m, m, rk.k11, 1, (1./2.)*h) // m = m*1 + k1*h/2
+	M.normalize()
+	torqueAto(k12)
+
+	// stage 3
+	Time = t0 + (3./4.)*Dt_si
+	cuda.Madd2(m, m0, k12, 1, (3./4.)*h) // m = m0*1 + k2*3/4
+	M.normalize()
+	torqueAto(k13)
+
+	// 3rd order solution
+	cuda.Madd4(m, m0, rk.k11, k12, k13, 1, (2./9.)*h, (1./3.)*h, (4./9.)*h)
+	M.normalize()
+
+	// error estimate
+	Time = t0 + Dt_si
+	torqueAto(k14)
+	Err1 := k12 // re-use k2 as error
+	// difference of 3rd and 2nd order torque without explicitly storing them first
+	cuda.Madd4(Err1, rk.k11, k12, k13, k14, (7./24.)-(2./9.), (1./4.)-(1./3.), (1./3.)-(4./9.), (1. / 8.))
+
+	// determine error
+	err := cuda.MaxVecNorm(Err1) * float64(h)
+
+	// adjust next time step
+	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
+		// step OK
+		setLastErr(err)
+		setMaxTorque(k14)
+		NSteps++
+		Time = t0 + Dt_si
+		adaptDt(math.Pow(MaxErr/err, 1./3.))
+		data.Copy(rk.k11, k14) // FSAL
+	} else {
+		// undo bad step
+		//util.Println("Bad step at t=", t0, ", err=", err)
+		util.Assert(FixDt == 0)
+		Time = t0
+		data.Copy(m, m0)
+		NUndone++
+		adaptDt(math.Pow(MaxErr/err, 1./4.))
+	}
+}
+
+func (rk *AtoRK23) Free() {
+	rk.k11.Free()
+	rk.k11 = nil
 }
