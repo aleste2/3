@@ -183,6 +183,11 @@ func bcc_init() {
 	kk := 0
 	n := M.Mesh().Size()
 	nv.Set(27)
+
+	if geometry.Gpu().IsNil() {
+		SetGeom(Rect(1,1))
+	}
+
 	print("Region 255 used for empty atomic positions\n")
 	for i := 0; i < n[X]/2+1; i += 1 {
 		for j := 0; j < n[Y]/2+1; j += 1 {
@@ -192,41 +197,48 @@ func bcc_init() {
 				kk = k * 2
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
+				  cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i * 2
 				jj = j*2 + 1
 				kk = k * 2
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i*2 + 1
 				jj = j*2 + 1
 				kk = k * 2
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i * 2
 				jj = j * 2
 				kk = k*2 + 1
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i*2 + 1
 				jj = j * 2
 				kk = k*2 + 1
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i * 2
 				jj = j*2 + 1
 				kk = k*2 + 1
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 			}
 		}
 	}
 	M.SetRegion(255, Uniform(0, 0, 0))
+	M.normalize()
 }
 
 func fcc_init() {
@@ -238,6 +250,10 @@ func fcc_init() {
 	n := M.Mesh().Size()
 	nv.Set(27)
 	print("Region 255 used for empty atomic positions\n")
+
+	if geometry.Gpu().IsNil() {
+		SetGeom(Rect(1,1))
+	}
 	//SetGeom(Xrange(-Inf,Inf))
 	//SetGeom(Rect(1,1))
 	for i := 0; i < n[X]/2+1; i += 1 {
@@ -248,33 +264,34 @@ func fcc_init() {
 				kk = k * 2
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
-					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i * 2
 				jj = j*2 + 1
 				kk = k * 2
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
-					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i * 2
 				jj = j * 2
 				kk = k*2 + 1
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
-					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i*2 + 1
 				jj = j*2 + 1
 				kk = k*2 + 1
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
-					//cuda.SetCell(geometry.buffer, 0, ii, jj, kk, 0) // a bit slowish, but hardly reached
+				  cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 			}
 		}
 	}
 	M.SetRegion(255, Uniform(0, 0, 0))
+	M.normalize()
 }
 
 // Adaptive Heun solver.
@@ -608,7 +625,6 @@ func (b *thermField) updateAto() {
 	b.dt = Dt_si
 }
 
-
 func RelaxAto() {
 	SanityCheck()
 	pause = false
@@ -650,7 +666,7 @@ func RelaxAto() {
 	// So now we minimize the total torque which is less noisy and does not have to cross any
 	// bumps once we are close to equilibrium.
 	solver := stepper.(*AtoRK23) // To do *AntiferroRK23
-	defer stepper.Free()               // purge previous rk.k1 because FSAL will be dead wrong.
+	defer stepper.Free()         // purge previous rk.k1 because FSAL will be dead wrong.
 
 	maxTorque := func() float64 {
 		return cuda.MaxVecNorm(solver.k11)
@@ -687,7 +703,6 @@ func RelaxAto() {
 	}
 	pause = true
 }
-
 
 type AtoRK23 struct {
 	k11 *data.Slice // torque at end of step is kept for beginning of next step
@@ -728,7 +743,7 @@ func (rk *AtoRK23) Step() {
 	defer cuda.Recycle(k13)
 	defer cuda.Recycle(k14)
 
-	h := float32(Dt_si * GammaLL)   // internal time step = Dt * gammaLL
+	h := float32(Dt_si * GammaLL) // internal time step = Dt * gammaLL
 
 	// there is no explicit stage 1: k1 from previous step
 

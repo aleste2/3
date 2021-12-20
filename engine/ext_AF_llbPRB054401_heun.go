@@ -155,7 +155,7 @@ func torqueFnAFLLBPRB(dst1, dst2 *data.Slice, hth1a, hth2a, hth1b, hth2b *data.S
 	}*/
 
 	// STT
-	AddSTTorqueAF(dst1, dst2)
+	//AddSTTorqueAF(dst1, dst2)
 
 	// Add to sublattice 1 and 2
 	alpha := Alpha.MSlice()
@@ -207,6 +207,9 @@ func torqueFnAFLLBPRB(dst1, dst2 *data.Slice, hth1a, hth2a, hth1b, hth2b *data.S
 		cuda.LLNoPrecess(dst1, M1.Buffer(), dst1)
 		cuda.LLNoPrecess(dst2, M2.Buffer(), dst2)
 	}
+
+	// STT
+	AddSTTorqueAF(dst1, dst2)
 
 	FreezeSpins(dst1)
 	FreezeSpins(dst2)

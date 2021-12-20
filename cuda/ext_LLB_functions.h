@@ -23,6 +23,62 @@ inline __device__ float Lder(float x)
 	return (1.0f/(x*x)-pow(1.0f/sinh(x),2.0f));
 }
 
+
+
+// Trial single
+
+
+
+// Langevin function
+inline __device__ float dL(float x)
+{
+
+  float temp = exp(2*x)+(float)1.0;
+  if(fabs(temp)>1e38) return x>0 ? 1.0 : -1.0; // Large input
+  temp /= temp-2; // temp = coth(x);
+  //return 0.0001f+(temp-1/x)/1.05;
+  float value=temp-(float)1.0/x;
+  if (value<0.03) value=0.01;
+
+  return value;
+}
+
+// Langevin derivative function (de verdad)
+inline __device__ float dLder(float x)
+{
+	float value=1.0f/(x*x)-pow(1.0f/sinh(x),2.0f);
+  	if (value<0.03) value=0.01;
+	return (value);
+}
+
+// Langevin function
+inline __device__ float dL0(float x)
+{
+
+  float temp = exp(2*x)+(double)1.0;
+  if(fabs(temp)>1e38) return x>0 ? 1.0 : -1.0; // Large input
+  temp /= temp-2; // temp = coth(x);
+  //return 0.0001f+(temp-1/x)/1.05;
+  float value=temp-(float)1.0/x;
+
+  return value;
+}
+
+// Langevin derivative function (de verdad)
+inline __device__ float dLder0(float x)
+{
+	float value=1.0f/(x*x)-pow(1.0f/sinh(x),2.0f);
+	return (value);
+}
+
+
+
+
+
+
+/*
+
+
 // Langevin function
 inline __device__ float dL(float x)
 {
@@ -33,7 +89,7 @@ inline __device__ float dL(float x)
   //return 0.0001f+(temp-1/x)/1.05;
   double value=temp-(double)1.0/x;
   if (value<0.03) value=0.03;
-  
+
   return value;
 }
 
@@ -41,7 +97,7 @@ inline __device__ float dL(float x)
 inline __device__ float dLder(float x)
 {
 	double value=1.0f/(x*x)-pow(1.0f/sinh(x),2.0f);
-  	if (value<0.03) value=0.03;	
+  	if (value<0.03) value=0.03;
 	return (value);
 }
 
@@ -54,16 +110,15 @@ inline __device__ float dL0(float x)
   temp /= temp-2; // temp = coth(x);
   //return 0.0001f+(temp-1/x)/1.05;
   double value=temp-(double)1.0/x;
- 
+
   return value;
 }
 
 // Langevin derivative function (de verdad)
 inline __device__ float dLder0(float x)
 {
-	double value=1.0f/(x*x)-pow(1.0f/sinh(x),2.0f);	
+	double value=1.0f/(x*x)-pow(1.0f/sinh(x),2.0f);
 	return (value);
 }
 
-
-
+*/

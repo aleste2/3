@@ -16,6 +16,7 @@ func SetTorqueLLB(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
 
 // Sets dst to the current Landau-Lifshitz-Bloch torque
 func SetLLBTorque(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
+
 	SetEffectiveField(dst) // calc and store B_eff
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
@@ -34,7 +35,17 @@ func SetLLBTorque(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
 	//cuda.Zero(hth2)
 	//if (JHThermalnoise==true) {B_therm.AddTo(hth2)}
 	if Precess {
-		cuda.LLBTorque(dst, M.Buffer(), dst, Temp, alpha, TCurie, Msat, hth1, hth2, Langevin, A1) // overwrite dst with torque
+		if MFA == false {
+			cuda.LLBTorque(dst, M.Buffer(), dst, Temp, alpha, TCurie, Msat, hth1, hth2, Langevin, A1) // overwrite dst with torque
+		} else {
+			NV := nv.MSlice()
+			defer NV.Recycle()
+			MU1 := mu1.MSlice()
+			defer MU1.Recycle()
+			J0AA := J0aa.MSlice()
+			defer J0AA.Recycle()
+			cuda.LLBTorqueMFA(dst, M.Buffer(), dst, Temp, alpha, Msat, hth1, hth2, NV, MU1, J0AA)
+		}
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}

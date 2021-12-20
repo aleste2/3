@@ -9,7 +9,7 @@ func LLBTorqueAF2TMFA(torque1, m1, torque2, m2, B1, B2 *data.Slice, temp *data.S
 	N := torque1.Len()
 	cfg := make1DConf(N)
 	//	k_LLBtorqueAF2TPRB054401_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
-	k_LLBtorqueAF2TMFA_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
+	k_LLBtorqueAF2TMFA2_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
 		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
 		torque2.DevPtr(X), torque2.DevPtr(Y), torque2.DevPtr(Z),
 		m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),

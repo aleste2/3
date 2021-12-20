@@ -187,6 +187,7 @@ LLBtorqueAFPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float* 
 		float chiA=(J0aa*mea+fabs(J0ab)*meb)/(kB*temp);  // Arguments of Langevin functions Error in PRB 054401 using Low Temp Phys
 		float chiB=(J0bb*meb+fabs(J0ba)*mea)/(kB*temp);
 
+
 		float xpara;
 		float xparb;
 

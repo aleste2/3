@@ -255,6 +255,7 @@ func AddSTTorqueAF(dst1, dst2 *data.Slice) {
 		defer epsPrime2.Recycle()
 		thickness := FreeLayerThickness.MSlice()
 		defer thickness.Recycle()
+		if (LLBeq==false) {
 		cuda.AddSlonczewskiTorque2(dst1, M1.Buffer(),
 			msat1, j, fixedP, alpha1, pol1, lambda, epsPrime1,
 			thickness,
@@ -265,6 +266,18 @@ func AddSTTorqueAF(dst1, dst2 *data.Slice) {
 			thickness,
 			CurrentSignFromFixedLayerPosition[fixedLayerPosition],
 			Mesh())
+		} else {
+			cuda.AddSlonczewskiTorque2LLB(dst1, M1.Buffer(),
+				msat1, j, fixedP, alpha1, pol1, lambda, epsPrime1,
+				thickness,
+				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+				Mesh())
+			cuda.AddSlonczewskiTorque2LLB(dst2, M2.Buffer(),
+				msat2, j, fixedP, alpha2, pol2, lambda, epsPrime2,
+				thickness,
+				CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+				Mesh())
+		}
 
 	}
 }
