@@ -92,7 +92,7 @@ const (
 	// Atomistic solvers
 	ATOHEUN   = 150
 	ATOHEUN2T = 151
-	ATORK23		= 152
+	ATORK23   = 152
 )
 
 func SetSolver(typ int) {

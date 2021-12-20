@@ -185,7 +185,7 @@ func bcc_init() {
 	nv.Set(27)
 
 	if geometry.Gpu().IsNil() {
-		SetGeom(Rect(1,1))
+		SetGeom(Rect(1, 1))
 	}
 
 	print("Region 255 used for empty atomic positions\n")
@@ -197,7 +197,7 @@ func bcc_init() {
 				kk = k * 2
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
-				  cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 				ii = i * 2
 				jj = j*2 + 1
@@ -252,7 +252,7 @@ func fcc_init() {
 	print("Region 255 used for empty atomic positions\n")
 
 	if geometry.Gpu().IsNil() {
-		SetGeom(Rect(1,1))
+		SetGeom(Rect(1, 1))
 	}
 	//SetGeom(Xrange(-Inf,Inf))
 	//SetGeom(Rect(1,1))
@@ -285,7 +285,7 @@ func fcc_init() {
 				kk = k*2 + 1
 				if (ii < n[X]) && (jj < n[Y]) && (kk < n[Z]) {
 					regions.SetCell(ii, jj, kk, 255)
-				  cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
+					cuda.SetCell(geometry.Gpu(), 0, ii, jj, kk, float32(0))
 				}
 			}
 		}
