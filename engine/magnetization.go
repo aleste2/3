@@ -47,9 +47,9 @@ func (b *magnetization) SetArray(src *data.Slice) {
 		src = data.Resample(src, b.Mesh().Size())
 	}
 	data.Copy(b.Buffer(), src)
-	if LLBeq == false {
+	//if LLBeq == false {
 		b.normalize()
-	}
+	//}
 }
 
 func (m *magnetization) Set(c Config) {
