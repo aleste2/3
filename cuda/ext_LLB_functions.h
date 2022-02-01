@@ -72,6 +72,23 @@ inline __device__ float dLder0(float x)
 }
 
 
+// New Langevin and derivative 2022
+
+inline __device__ float NL(float x)
+{
+ if (x==0) {return(0.0f);} else {return(1.0f/tanh(x)-1/x);}
+}
+
+inline __device__ float DNL(float x)
+{
+if (fabs(x)<0.01) {
+  return(0.99999f);} else {
+    return (-pow(sinh(x),-2.0f) + 1.0f/(x*x) );}
+}
+
+
+
+
 
 
 

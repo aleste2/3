@@ -15,7 +15,7 @@ extern "C"
 // J0aa, J0bb, J0ab exchanges
 
 __global__ void
-LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float* __restrict__  t1z,
+LLBtorqueAF2TBrillouin(float* __restrict__  t1x, float* __restrict__  t1y, float* __restrict__  t1z,
 	float* __restrict__  mx1, float* __restrict__  my1, float* __restrict__  mz1,
 	float* __restrict__  t2x, float* __restrict__  t2y, float* __restrict__  t2z,
 	float* __restrict__  mx2, float* __restrict__  my2, float* __restrict__  mz2,
@@ -41,14 +41,18 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 	float* __restrict__  J0bb_, float J0bb_mul,
 	float* __restrict__  J0ab_, float J0ab_mul,
   float* __restrict__  lambda0_, float lambda0_mul,
+	float* __restrict__  JA_, float JA_mul,
+	float* __restrict__  JB_, float JB_mul,
 	int N) {
 
     const float kB=1.38064852e-23;
-		float mmin=0.0001; // Previously 0.01
+		float mmin=0.01; // Previously 0.01
 
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
 
     if (i < N) {
+				//float xx=(i-N/2.0)/2000;
+				//printf("%e %e %e\n",xx,Brillouin2(xx,0.5),DBrillouin2(xx,0.5));
         float3 m1 = {mx1[i], my1[i], mz1[i]};
         float3 m2 = {mx2[i], my2[i], mz2[i]};
         float3 H1 = {hx1[i], hy1[i], hz1[i]};
@@ -71,6 +75,8 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 				//float lambda0 = amul(lambda0_, lambda0_mul, i)*x*nv;
 				float lambda0 = amul(lambda0_, lambda0_mul, i);
         float temp = temp_[i];
+				float JA = amul(JA_, JA_mul, i);
+				float JB = amul(JB_, JB_mul, i);
 
         if (temp==0) temp=0.0001; // to avoid zero division...
         if (temp>2.0*TCurie) temp=2.0*TCurie; // To avoid numerical problems much above TC
@@ -88,37 +94,25 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         float ma=sqrt(dot(m1,m1));
         float mb=sqrt(dot(m2,m2));
         if ((ma==0)||(mb==0))	{
-			torquea = 0.0f*m1;
+					torquea = 0.0f*m1;
          	torqueb = 0.0f*m2;
  		} else {
 
 		float J01 = J0aa;
 		float J02 = J0bb;
 		float J012 = J0ab;
-		float J021 = J0ba;
-		TCurie = (J01+J02+pow(pow(J01-J02,2.0f)+4.0f*J012*J021,0.5f))/(6.0f*kB); // Eq (9) LowTempPhys 41 (9) 2015
+		float J021 = J0ba; 
+
+		//if (i==1) printf("%e %e %e %e\n",J01,J02,J012,J021);
+		//TCurie = (J01+J02+pow(pow(J01-J02,2.0f)+4.0f*J012*J021,0.5f))/(6.0f*kB); // Eq (9) LowTempPhys 41 (9) 2015
 		if ((fabs(temp-TCurie)<0.007*TCurie)&&(temp<TCurie)) {temp=0.993f*TCurie;}  // To avoid errors arround T=Tc
 
 		float mea;
 		float meb;
 
-		if (temp<TCurie) {
+//		if (temp<TCurie) {
 
 		// Parametros de LLB y calculo de m_e1,2
-
-		float Told=temp;
-		bool lin=false;   // Linear dependence at low temperatures due to numerical inestabilities
-		if (temp<TCurie/10.0f) {
-			Told=temp;
-			lin=true;
-			temp=TCurie/10.0f;
-		}
-		bool lin2=false;   // Linear dependence at close to Tc due to numerical inestabilities
-		if (temp>TCurie*0.995) {
-			Told=temp;
-			lin2=true;
-			temp=TCurie*0.995;
-		}
 
 		// Calculo de m_e1,m_e2
 		float A11, A12, A21, A22;
@@ -129,64 +123,60 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float det, deti;
 		float J11,J12,J21,J22;
 		float m_e1,m_e2;
-		float tolsq=1e-4;
+		float tolsq=1e-5;
 		float tol=1e-4;
+
 		float kB_T=kB*temp;
 		float beta = 1.0/kB_T;
-		if(kB_T == 0) {
-	    	m_e1=1.0;
-	    	m_e2=1.0;
-		}
-		A11 = beta*J01;
-		A12 = beta*fabs(J012);
-		A21 = beta*fabs(J021);
-		A22 = beta*J02;
-		x1 = 0.9; x2 = 0.9;
-		y1 = Langevin(A11*x1+A12*x2)-x1;
-		y2 = Langevin(A21*x1+A22*x2)-x2;
-		do {
-    		x10 = x1; x20 = x2;
-			dL1 = LangevinDeriv(A11*x1+A12*x2);
-			dL2 = LangevinDeriv(A21*x1+A22*x2);
-			// Jacobian
-			J11 = A11*dL1-1.0f;
-			J12 = A12*dL1;
-			J21 = A21*dL2;
-			J22 = A22*dL2-1.0f;
-			det = J11*J22-J12*J21;
-			if(det == 0.0) {
-      			// No more change. Calculate parameters with current x1, x2.
-				break;
-			}
-			deti = 1.0/det;
-			dx1 = -deti*(J22*y1-J12*y2);
-			dx2 = -deti*(-J21*y1+J11*y2);
-			x1 = x10 + dx1;
-			x2 = x20 + dx2;
-			y1 = Langevin(A11*x1+A12*x2)-x1;
-			y2 = Langevin(A21*x1+A22*x2)-x2;
-		} while( dx1*dx1>tolsq || dx2*dx2>tolsq );
-		m_e1 = x1>tol ? x1 : 0.001;
-		m_e2 = x2>tol ? x2 : 0.001;
+
+	   A11 = beta*J01;
+	   A12 = beta*fabs(J012);
+	   A21 = beta*fabs(J021);
+	   A22 = beta*J02;
+
+	   x1 = 0.8; x2 = 0.8;
+	   y1 = Brillouin2(A11*x1+A12*x2,JA)-x1;
+	   y2 = Brillouin2(A21*x1+A22*x2,JB)-x2;
+
+	   //int iter=0;
+	   do
+	   {
+	     x10 = x1; x20 = x2;
+	     dL1 = DBrillouin2(A11*x1+A12*x2,JA);
+	     dL2 = DBrillouin2(A21*x1+A22*x2,JB);
+	     // Jacobian
+	     J11 = A11*dL1-1;
+	     J12 = A12*dL1;
+	     J21 = A21*dL2;
+	     J22 = A22*dL2-1;
+	     det = J11*J22-J12*J21;
+	     if(det == 0.0) {
+	       // No more change. Calculate parameters with current x1, x2.
+	       break;
+	     }
+	     deti = 1.0/det;
+	     dx1 = -deti*(J22*y1-J12*y2);
+	     dx2 = -deti*(-J21*y1+J11*y2);
+	     x1 = x10 + dx1;
+	     x2 = x20 + dx2;
+	     y1 = Brillouin2(A11*x1+A12*x2,JA)-x1;
+	     y2 = Brillouin2(A21*x1+A22*x2,JA)-x2;
+	     //iter++;
+	   } while( dx1*dx1>tolsq || dx2*dx2>tolsq );
+	   m_e1 = x1>tol ? x1 : 0.0;
+	   m_e2 = x2>tol ? x2 : 0.0;
+
 		mea=m_e1;
 		meb=m_e2;
-		if (lin==true) {
-			mea=1.0f-(mea-1.0f)/(-temp)*(Told);
-			meb=1.0f-(meb-1.0f)/(-temp)*(Told);
-			temp=Told;
-		}
-		if (lin2==1) {
-			mea=mea*(TCurie-Told)/(0.005f*TCurie);
-			meb=meb*(TCurie-Told)/(0.005f*TCurie);
-			temp=Told;
-		}
-		} else	{
-			mea=mmin;
-			meb=mmin;
-		}
+
 		if (mea<mmin) {mea=mmin;}
 		if (meb<mmin) {meb=mmin;}
 
+//		if (i==1) printf("%e %e %e %e %e\n",temp,mea,meb,JA,JB);
+/*		if (i==1) printf("m1 %e %e %e\n",m1.x,m1.y,m1.z);
+		if (i==1) printf("m2 %e %e %e\n",m2.x,m2.y,m2.z);
+		if (i==1) printf("Cosas %e %e %e %e %e %e\n",H1.x,H1.y,H1.z,H2.x,H2.y,H2.z);
+*/
 		float chiA=(J0aa*mea+fabs(J0ab)*meb)/(kB*temp);  // Arguments of Langevin functions Error in PRB 054401 using Low Temp Phys
 		float chiB=(J0bb*meb+fabs(J0ba)*mea)/(kB*temp);
 
@@ -195,12 +185,32 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 
 //		Following notation of LowTemp Phys (eq 13), to avoid numerical errors float<1e-38
 		if (temp<TCurie) {
-			xpara=(mub/(kB*temp)*Lder(chiA)*fabs(J0ab)/(kB*temp)*Lder(chiB)+mua/(kB*temp)*Lder(chiA)*(1.0f-J0bb/(kB*temp)*Lder(chiB)))/((1.0f-J0aa/(kB*temp)*Lder(chiA))*(1.0f-J0bb/(kB*temp)*Lder(chiB))-fabs(J0ba)/(kB*temp)*Lder(chiA)*fabs(J0ab)/(kB*temp)*Lder(chiB));
-			xparb=(mua/(kB*temp)*Lder(chiB)*fabs(J0ba)/(kB*temp)*Lder(chiA)+mub/(kB*temp)*Lder(chiB)*(1.0f-J0aa/(kB*temp)*Lder(chiA)))/((1.0f-J0bb/(kB*temp)*Lder(chiB))*(1.0f-J0aa/(kB*temp)*Lder(chiA))-fabs(J0ab)/(kB*temp)*Lder(chiB)*fabs(J0ba)/(kB*temp)*Lder(chiA));
+			xpara=(mub/(kB*temp)*DBrillouin2(chiA,JA)*fabs(J0ab)/(kB*temp)*DBrillouin2(chiB,JB)+mua/(kB*temp)*DBrillouin2(chiA,JA)*(1.0f-J0bb/(kB*temp)*DBrillouin2(chiB,JB)))/((1.0f-J0aa/(kB*temp)*DBrillouin2(chiA,JA))*(1.0f-J0bb/(kB*temp)*DBrillouin2(chiB,JB))-fabs(J0ba)/(kB*temp)*DBrillouin2(chiA,JA)*fabs(J0ab)/(kB*temp)*DBrillouin2(chiB,JB));
+			xparb=(mua/(kB*temp)*DBrillouin2(chiB,JB)*fabs(J0ba)/(kB*temp)*DBrillouin2(chiA,JA)+mub/(kB*temp)*DBrillouin2(chiB,JB)*(1.0f-J0aa/(kB*temp)*DBrillouin2(chiA,JA)))/((1.0f-J0bb/(kB*temp)*DBrillouin2(chiB,JB))*(1.0f-J0aa/(kB*temp)*DBrillouin2(chiA,JA))-fabs(J0ab)/(kB*temp)*DBrillouin2(chiB,JB)*fabs(J0ba)/(kB*temp)*DBrillouin2(chiA,JA));
 		} else { // T>Tc Lder=1/3
 			xpara=(mub/(kB*temp)/3.0f*fabs(J0ab)/(kB*temp)/3.0f+mua/(kB*temp)/3.0f*(1.0f-J0bb/(kB*temp)/3.0f))/((1.0f-J0aa/(kB*temp)/3.0f)*(1.0f-J0bb/(kB*temp)/3.0f)-fabs(J0ba)/(kB*temp)/3.0f*fabs(J0ab)/(kB*temp)/3.0f);
 			xparb=(mua/(kB*temp)/3.0f*fabs(J0ba)/(kB*temp)/3.0f+mub/(kB*temp)/3.0f*(1.0f-J0aa/(kB*temp)/3.0f))/((1.0f-J0bb/(kB*temp)/3.0f)*(1.0f-J0aa/(kB*temp)/3.0f)-fabs(J0ab)/(kB*temp)/3.0f*fabs(J0ba)/(kB*temp)/3.0f);
 		}
+/*
+// Alternate method for not knowing Tc
+		if (mea>mmin) {
+			xpara=(mub/(kB*temp)*DBrillouin2(chiA,JA)*fabs(J0ab)/(kB*temp)*DBrillouin2(chiB,JB)+mua/(kB*temp)*DBrillouin2(chiA,JA)*(1.0f-J0bb/(kB*temp)*DBrillouin2(chiB,JB)))/((1.0f-J0aa/(kB*temp)*DBrillouin2(chiA,JA))*(1.0f-J0bb/(kB*temp)*DBrillouin2(chiB,JB))-fabs(J0ba)/(kB*temp)*DBrillouin2(chiA,JA)*fabs(J0ab)/(kB*temp)*DBrillouin2(chiB,JB));
+		} else {
+			xpara=(mub/(kB*temp)/3.0f*fabs(J0ab)/(kB*temp)/3.0f+mua/(kB*temp)/3.0f*(1.0f-J0bb/(kB*temp)/3.0f))/((1.0f-J0aa/(kB*temp)/3.0f)*(1.0f-J0bb/(kB*temp)/3.0f)-fabs(J0ba)/(kB*temp)/3.0f*fabs(J0ab)/(kB*temp)/3.0f);
+		}
+
+		if (meb>mmin) {
+			xparb=(mua/(kB*temp)*DBrillouin2(chiB,JB)*fabs(J0ba)/(kB*temp)*DBrillouin2(chiA,JA)+mub/(kB*temp)*DBrillouin2(chiB,JB)*(1.0f-J0aa/(kB*temp)*DBrillouin2(chiA,JA)))/((1.0f-J0bb/(kB*temp)*DBrillouin2(chiB,JB))*(1.0f-J0aa/(kB*temp)*DBrillouin2(chiA,JA))-fabs(J0ab)/(kB*temp)*DBrillouin2(chiB,JB)*fabs(J0ba)/(kB*temp)*DBrillouin2(chiA,JA));
+		} else {
+			xparb=(mua/(kB*temp)/3.0f*fabs(J0ba)/(kB*temp)/3.0f+mub/(kB*temp)/3.0f*(1.0f-J0aa/(kB*temp)/3.0f))/((1.0f-J0bb/(kB*temp)/3.0f)*(1.0f-J0aa/(kB*temp)/3.0f)-fabs(J0ab)/(kB*temp)/3.0f*fabs(J0ba)/(kB*temp)/3.0f);
+		}
+// End alterate
+*/
+		if (xpara<1e-5) xpara=1e-5;
+		if (xparb<1e-5) xparb=1e-5;
+		//if (i==1) printf("%e %e\n",xpara,xparb);
+
+
 
 		float3 hexa = -J0ab/(mua*ma*ma)*cross(m1, cross(m1, m2));
 		float3 hexb = -J0ba/(mub*mb*mb)*cross(m2, cross(m2, m1));
@@ -213,6 +223,15 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float lambdaA=(1.0f/xpara+fabs(J0ab)/mua*xparb/xpara);
 		float lambdaB=(1.0f/xparb+fabs(J0ba)/mub*xpara/xparb);
 
+
+
+		//if (i==1) printf("%e %e\n",lambdaA,lambdaB);
+		//if ((lambdaA>1e3)||(lambdaA!=lambdaA)) lambdaA=1e3;
+		//if ((lambdaB>1e3)||(lambdaB!=lambdaB)) lambdaB=1e3;
+
+		//if (lambdaA<100) lambdaA=100.0f;
+		//if (lambdaB<100) lambdaB=100.0f;
+
     float3 heffa;
 		float3 heffb;
     if (temp>TCurie) {
@@ -224,6 +243,21 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
       heffa = -lambdaA*((ma-mea)/mea)*m1+fabs(J0ab)/mua*(tauB-taueB)/mea*m1;
       heffb = -lambdaB*((mb-meb)/meb)*m2+fabs(J0ba)/mub*(tauA-taueA)/meb*m2;
     }
+/*
+// Alternate method for not knowing Tc
+if (mea<mmin) {
+	heffa = -lambdaA*m1+fabs(J0ab)/mua*tauB/ma*m1;
+} else {
+	heffa = -lambdaA*((ma-mea)/mea)*m1+fabs(J0ab)/mua*(tauB-taueB)/mea*m1;
+}
+
+if (meb<mmin) {
+	heffb = -lambdaB*m2+fabs(J0ba)/mub*tauA/mb*m2;
+} else {
+	heffb = -lambdaB*((mb-meb)/meb)*m2+fabs(J0ba)/mub*(tauA-taueA)/meb*m2;
+}
+// end alternate
+*/
 
 		float alphaparA;
 		float alphaparB;
@@ -240,6 +274,28 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 			alphaperpA=alphaparA;
 			alphaperpB=alphaparB;
 		}
+
+// Alternate method for not knowing Tc
+/*
+if (mea>mmin) {
+	alphaparA=2.0f*alphaa*kB*temp*mea/(J0aa*mea+fabs(J0ab)*meb);
+	alphaperpA=alphaa*(1.0f-kB*temp*mea/(J0aa*mea+fabs(J0ab)*meb));
+} else {
+	alphaparA=2.0f*alphaa*temp/(3.0f*TCurie);
+	alphaperpA=alphaparA;
+}
+
+if (meb>mmin) {
+	alphaparB=2.0f*alphab*kB*temp*meb/(J0bb*meb+fabs(J0ba)*mea);
+	alphaperpB=alphab*(1.0f-kB*temp*meb/(J0bb*meb+fabs(J0ba)*mea));
+} else {
+	alphaparB=2.0f*alphab*temp/(3.0f*TCurie);
+	alphaperpB=alphaparB;
+}
+
+
+// End alternate
+*/
 
 		float h_perp_scalea=sqrt(Msat/Msata*(alphaperpA-alphaparA)/(alpha*alphaperpA*alphaperpA));
 		float h_perp_scaleb=sqrt(Msat/Msatb*(alphaperpB-alphaparB)/(alpha*alphaperpB*alphaperpB));
@@ -272,8 +328,8 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 		float3 chiBmfa=beta*mub*H2mfa;
 		float mchiAmfa=sqrt(dot(chiAmfa,chiAmfa));
 		float mchiBmfa=sqrt(dot(chiBmfa,chiBmfa));
-		float alphaae=alphaa*2*dL(mchiAmfa)/mchiAmfa;
-		float alphabe=alphab*2*dL(mchiBmfa)/mchiBmfa;
+		float alphaae=alphaa*2*DBrillouin2(mchiAmfa,JA)/mchiAmfa;
+		float alphabe=alphab*2*DBrillouin2(mchiBmfa,JB)/mchiBmfa;
 		alphaex=2.8f*0.5f*(alphaae/nv/x/ma+alphabe/(1.0f-x)/nv/mb);
 		if (alphaex>0.1f) alphaex=0.1f; //0.1
 		Ha=-1.0f*heffa;

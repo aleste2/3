@@ -63,6 +63,9 @@ func (_ *AntiferroRK4) Step() {
 	cuda.Madd2(m2, m2, k21, 1, (1./2.)*h2) // m = m*1 + k1*h/2
 	M1.normalize()
 	M2.normalize()
+	if RenormLLB == true {
+		RenormAFBri(m1, m2, float32(Dt_si), float32(GammaLL1), float32(GammaLL2))
+	}
 	torqueFnAF(k12, k22)
 
 	// stage 3
@@ -70,6 +73,9 @@ func (_ *AntiferroRK4) Step() {
 	cuda.Madd2(m2, m20, k22, 1, (1./2.)*h2) // m = m0*1 + k2*1/2
 	M1.normalize()
 	M2.normalize()
+	if RenormLLB == true {
+		RenormAFBri(m1, m2, float32(Dt_si), float32(GammaLL1), float32(GammaLL2))
+	}
 	torqueFnAF(k13, k23)
 
 	// stage 4
@@ -78,6 +84,9 @@ func (_ *AntiferroRK4) Step() {
 	cuda.Madd2(m2, m20, k23, 1, 1.*h2) // m = m0*1 + k3*1
 	M1.normalize()
 	M2.normalize()
+	if RenormLLB == true {
+		RenormAFBri(m1, m2, float32(Dt_si), float32(GammaLL1), float32(GammaLL2))
+	}
 	torqueFnAF(k14, k24)
 
 	err1 := cuda.MaxVecDiff(k11, k14) * float64(h)
@@ -98,6 +107,9 @@ func (_ *AntiferroRK4) Step() {
 		M1.normalize()
 		cuda.Madd5(m2, m20, k21, k22, k23, k24, 1, (1./6.)*h2, (1./3.)*h2, (1./3.)*h2, (1./6.)*h2)
 		M2.normalize()
+		if RenormLLB == true {
+			RenormAFBri(m1, m2, float32(Dt_si), float32(GammaLL1), float32(GammaLL2))
+		}
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./4.))
 		setLastErr(err)

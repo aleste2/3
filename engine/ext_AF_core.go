@@ -68,6 +68,10 @@ var (
 	// For LLB AF Angular momentum exchange (Unai)
 	lambda0 = NewScalarParam("lambda0", "", "Moment exchange between sublattices")
 	MFA     = false
+	// For Brillouin
+	Brillouin = false
+	JA        = NewScalarParam("JA", "a.u.", "Billouin J lattice A")
+	JB        = NewScalarParam("JB", "a.u.", "Billouin J lattice B")
 )
 
 func init() {
@@ -81,6 +85,7 @@ func init() {
 	DeclVar("GammaLL2", &GammaLL2, "Gyromagnetic ratio in rad/Ts Lattice 2")
 	DeclVar("isolatedlattices", &isolatedlattices, "Isolate AF lattices")
 	DeclVar("MFA", &MFA, "MFA model for AF LLB")
+	DeclVar("Brillouin", &Brillouin, "Brillouin model for AF LLB")
 }
 
 func InitAntiferro() {
@@ -342,12 +347,12 @@ func (b *thermField) updateAF(i int) {
 	defer alpha.Recycle()
 	if i == 1 {
 		ms = Msat1.MSlice()
-		//defer ms.Recycle()
+		defer ms.Recycle()
 		alpha = Alpha1.MSlice()
 	}
 	if i == 2 {
 		ms = Msat2.MSlice()
-		//defer ms.Recycle()
+		defer ms.Recycle()
 		alpha = Alpha2.MSlice()
 	}
 
