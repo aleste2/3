@@ -5,7 +5,7 @@ import (
 )
 
 // Landau-Lifshitz torque for AF implementation PRB 100 054401 (2019)
-func LLBRenormAF2TBri(m01, m02, m1, m2 *data.Slice, temp *data.Slice, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, x, nv, mua, mub, J0aa, J0bb, J0ab MSlice, dt, Gamma1, Gamma2 float32,Ja,Jb MSlice) {
+func LLBRenormAF2TBri(m01, m02, m1, m2 *data.Slice, temp *data.Slice, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, x, nv, mua, mub, J0aa, J0bb, J0ab MSlice, dt, Gamma1, Gamma2 float32, Ja, Jb MSlice) {
 	N := m1.Len()
 	cfg := make1DConf(N)
 	k_AF2TRenormBri_async(m01.DevPtr(X), m01.DevPtr(Y), m01.DevPtr(Z),
@@ -34,7 +34,7 @@ func LLBRenormAF2TBri(m01, m02, m1, m2 *data.Slice, temp *data.Slice, alpha, alp
 }
 
 // Landau-Lifshitz torque for AF implementation PRB 100 054401 (2019)
-func LLBRenormAFBri(m01, m02, m1, m2 *data.Slice, Temp, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, x, nv, mua, mub, J0aa, J0bb, J0ab MSlice, dt, Gamma1, Gamma2 float32,Ja,Jb MSlice) {
+func LLBRenormAFBri(m01, m02, m1, m2 *data.Slice, Temp, alpha, alpha1, alpha2, TCurie, Msat, Msat1, Msat2 MSlice, x, nv, mua, mub, J0aa, J0bb, J0ab MSlice, dt, Gamma1, Gamma2 float32, Ja, Jb MSlice) {
 	N := m1.Len()
 	cfg := make1DConf(N)
 	k_AFRenormBri_async(m01.DevPtr(X), m01.DevPtr(Y), m01.DevPtr(Z),
