@@ -41,6 +41,8 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
 	float* __restrict__  J0bb_, float J0bb_mul,
 	float* __restrict__  J0ab_, float J0ab_mul,
   float* __restrict__  lambda0_, float lambda0_mul,
+	float* __restrict__  deltaM_, float deltaM_mul,
+	float* __restrict__ Qext_, float Qext_mul,
 	int N) {
 
     const float kB=1.38064852e-23;
@@ -70,6 +72,10 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
         float J0ba = amul(J0ab_, J0ab_mul, i)*x*nv;
 				//float lambda0 = amul(lambda0_, lambda0_mul, i)*x*nv;
 				float lambda0 = amul(lambda0_, lambda0_mul, i);
+
+				float Qext = amul(Qext_, Qext_mul, i);
+				float deltaM = amul(deltaM_, deltaM_mul, i);
+
         float temp = temp_[i];
 
         if (temp==0) temp=0.0001; // to avoid zero division...
@@ -298,10 +304,14 @@ LLBtorqueAF2TPRB054401(float* __restrict__  t1x, float* __restrict__  t1y, float
     float gillbb = 1.0f / (1.0f + alphaperpB * alphaperpB);
 
 		// New exchange Unai (last term or the addition to H1)
-		torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a-alphaex*(Ha-Hb);
-    torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b+alphaex*(Ha-Hb);
 
+		// Direct laser moment induction
+		float3 mi = {0.0f,0.0f,(Qext/1e20)*deltaM};
+		torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a-alphaex*(Ha-Hb)+mi;
+    torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b+alphaex*(Ha-Hb)+Msata/Msatb*mi;
+		//if (Qext>1e20) printf("%e %e %e %e\n",Qext,deltaM,(Qext/1e20)*deltaM,mi.z);
 		}
+
 
     t1x[i] = torquea.x;
     t1y[i] = torquea.y;
