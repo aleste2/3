@@ -34,18 +34,31 @@ func AddExchangeAFCell(dst1, dst2, m1, m2 *data.Slice, Ms1, Ms2, bex12, bex21 MS
 func AddExchangeAFll(dst1, dst2, m1, m2 *data.Slice, ms1, ms2 MSlice, llex_red SymmLUT, regions *Bytes, mesh *data.Mesh) {
 	//func AddExchange(B, m *data.Slice, Aex_red SymmLUT, regions *Bytes, mesh *data.Mesh) {
 	c := mesh.CellSize()
-	wx := float32(2 / (c[X] * c[X]))
-	wy := float32(2 / (c[Y] * c[Y]))
-	wz := float32(2 / (c[Z] * c[Z]))
+	wx := float32(1 / (c[X] * c[X]))
+	wy := float32(1 / (c[Y] * c[Y]))
+	wz := float32(1 / (c[Z] * c[Z]))
 	N := mesh.Size()
 	pbc := mesh.PBC_code()
 	cfg := make3DConf(N)
-	k_addexchangeAfll_async(dst1.DevPtr(X), dst1.DevPtr(Y), dst1.DevPtr(Z),
-		dst2.DevPtr(X), dst2.DevPtr(Y), dst2.DevPtr(Z),
-		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
+
+	k_addexchange_async(dst1.DevPtr(X), dst1.DevPtr(Y), dst1.DevPtr(Z),
 		m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),
 		ms1.DevPtr(0), ms1.Mul(0),
+		unsafe.Pointer(llex_red), regions.Ptr,
+		wx, wy, wz, N[X], N[Y], N[Z], pbc, cfg)
+	k_addexchange_async(dst2.DevPtr(X), dst2.DevPtr(Y), dst2.DevPtr(Z),
+		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
 		ms2.DevPtr(0), ms2.Mul(0),
 		unsafe.Pointer(llex_red), regions.Ptr,
 		wx, wy, wz, N[X], N[Y], N[Z], pbc, cfg)
+
+	/*
+		k_addexchangeAfll_async(dst1.DevPtr(X), dst1.DevPtr(Y), dst1.DevPtr(Z),
+			dst2.DevPtr(X), dst2.DevPtr(Y), dst2.DevPtr(Z),
+			m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
+			m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),
+			ms1.DevPtr(0), ms1.Mul(0),
+			ms2.DevPtr(0), ms2.Mul(0),
+			unsafe.Pointer(llex_red), regions.Ptr,
+			wx, wy, wz, N[X], N[Y], N[Z], pbc, cfg)*/
 }

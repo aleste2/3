@@ -96,9 +96,12 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 	defer bex21.Recycle()
 	cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21)
 	cuda.AddExchangeAFll(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, lexll.Gpu(), regions.Gpu(), M.Mesh())
+	//cuda.AddExchange(dst1, M2.Buffer(), lexll.Gpu(), ms1, regions.Gpu(), M.Mesh())
+	//cuda.AddExchange(dst2, M1.Buffer(), lexll.Gpu(), ms2, regions.Gpu(), M.Mesh())
+
 }
 
-// Scales the heisenberg exchange interaction between region1 and 2.
+// Scales the heisenberg exchange interaction between region1 and 2.l
 // Scale = 1 means the harmonic mean over the regions of Aex.
 func ScaleInterExchangeAex1(region1, region2 int, scale float64) {
 	lex21.setScale(region1, region2, scale)

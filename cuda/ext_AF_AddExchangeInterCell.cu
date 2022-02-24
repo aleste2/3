@@ -31,7 +31,7 @@ addexchangeAfll(float* __restrict__ dst1x, float* __restrict__ dst1y, float* __r
     float3 m2 = make_float3(m2x[I], m2y[I], m2z[I]);
     float invMs1 = inv_Msat(Ms1_, Ms1_mul, I);
     float invMs2 = inv_Msat(Ms2_, Ms2_mul, I);
- 
+
     // First lattice
 
     if (!is0(m2)) {
@@ -92,4 +92,70 @@ addexchangeAfll(float* __restrict__ dst1x, float* __restrict__ dst1y, float* __r
     dst1y[I] += B.y*invMs1;
     dst1z[I] += B.z*invMs1;
     }
+
+
+
+		// Second lattice
+
+		if (!is0(m1)) {
+
+		uint16_t r0 = regions[I];
+		float3 B  = make_float3(0.0, 0.0, 0.0);
+
+		int i_;    // neighbor index
+		float3 m_; // neighbor mag
+		float a__; // inter-cell exchange stiffness
+
+		// left neighbor
+		i_  = idx(lclampx(ix-1), iy, iz);           // clamps or wraps index according to PBC
+		m_  = make_float3(m1x[i_], m1y[i_], m1z[i_]);  // load m
+		m_  = ( is0(m_)? m1: m_ );                  // replace missing non-boundary neighbor
+		a__ = aLUT2d[symidx(r0, regions[i_])];
+		B += wx * a__ *(m_ - m1);
+
+		// right neighbor
+		i_  = idx(hclampx(ix+1), iy, iz);
+		m_  = make_float3(m1x[i_], m1y[i_], m1z[i_]);
+		m_  = ( is0(m_)? m1: m_ );
+		a__ = aLUT2d[symidx(r0, regions[i_])];
+		B += wx * a__ *(m_ - m1);
+
+		// back neighbor
+		i_  = idx(ix, lclampy(iy-1), iz);
+		m_  = make_float3(m1x[i_], m1y[i_], m1z[i_]);
+		m_  = ( is0(m_)? m1: m_ );
+		a__ = aLUT2d[symidx(r0, regions[i_])];
+		B += wy * a__ *(m_ - m1);
+
+		// front neighbor
+		i_  = idx(ix, hclampy(iy+1), iz);
+		m_  = make_float3(m1x[i_], m1y[i_], m1z[i_]);
+		m_  = ( is0(m_)? m1: m_ );
+		a__ = aLUT2d[symidx(r0, regions[i_])];
+		B += wy * a__ *(m_ - m1);
+
+		// only take vertical derivative for 3D sim
+		if (Nz != 1) {
+				// bottom neighbor
+				i_  = idx(ix, iy, lclampz(iz-1));
+				m_  = make_float3(m1x[i_], m1y[i_], m1z[i_]);
+				m_  = ( is0(m_)? m1: m_ );
+				a__ = aLUT2d[symidx(r0, regions[i_])];
+				B += wz * a__ *(m_ - m1);
+
+				// top neighbor
+				i_  = idx(ix, iy, hclampz(iz+1));
+				m_  = make_float3(m1x[i_], m1y[i_], m1z[i_]);
+				m_  = ( is0(m_)? m1: m_ );
+				a__ = aLUT2d[symidx(r0, regions[i_])];
+				B += wz * a__ *(m_ - m1);
+		}
+
+		dst2x[I] += B.x*invMs2;
+		dst2y[I] += B.y*invMs2;
+		dst2z[I] += B.z*invMs2;
+		}
+
+
+
 }
