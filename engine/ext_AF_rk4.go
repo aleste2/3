@@ -103,7 +103,7 @@ func (_ *AntiferroRK4) Step() {
 	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
 		// step OK
 		// 4th order solution
-		cuda.Madd5(m1, m10, k11, k12, k13, k14, 1, (1./6.)*h1, (1./3.)*h1, (1./3.)*h1, (1./6.)*h2)
+		cuda.Madd5(m1, m10, k11, k12, k13, k14, 1, (1./6.)*h1, (1./3.)*h1, (1./3.)*h1, (1./6.)*h1)
 		M1.normalize()
 		cuda.Madd5(m2, m20, k21, k22, k23, k24, 1, (1./6.)*h2, (1./3.)*h2, (1./3.)*h2, (1./6.)*h2)
 		M2.normalize()
