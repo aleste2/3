@@ -215,8 +215,8 @@ func torqueFnAFLLB2TPRB(dst1, dst2 *data.Slice, hth1a, hth2a, hth1b, hth2b *data
 	Jb := JB.MSlice()
 	defer Jb.Recycle()
 
-  // Direct deltai induction
-	deltam:=deltaM.MSlice()
+	// Direct deltai induction
+	deltam := deltaM.MSlice()
 	defer deltam.Recycle()
 	Qext := Qext.MSlice()
 	defer Qext.Recycle()
@@ -230,7 +230,7 @@ func torqueFnAFLLB2TPRB(dst1, dst2 *data.Slice, hth1a, hth2a, hth1b, hth2b *data
 			if Brillouin == true {
 				cuda.LLBTorqueAF2TBrillouin(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, Lambda0, Ja, Jb) // overwrite dst with torque
 			} else {
-				cuda.LLBTorqueAF2TPRB(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, Lambda0,Qext,deltam) // overwrite dst with torque
+				cuda.LLBTorqueAF2TPRB(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, Lambda0, Qext, deltam) // overwrite dst with torque
 			}
 		} else {
 			cuda.LLBTorqueAF2TMFA(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, Lambda0) // overwrite dst with torque

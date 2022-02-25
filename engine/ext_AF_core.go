@@ -73,7 +73,8 @@ var (
 	JA        = NewScalarParam("JA", "a.u.", "Billouin J lattice A")
 	JB        = NewScalarParam("JB", "a.u.", "Billouin J lattice B")
 	// Direct moment induction
-	deltaM        = NewScalarParam("deltaM", "a.u.", "Moment indiced by laser"))
+	deltaM = NewScalarParam("deltaM", "a.u.", "Moment indiced by laser")
+)
 
 func init() {
 	DeclFunc("UpdateM", UpdateM, "UpdateM")
