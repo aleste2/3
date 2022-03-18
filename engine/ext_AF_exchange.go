@@ -32,6 +32,11 @@ var (
 	lex22   exchParam // inter-cell exchange
 	din22   exchParam // inter-cell interfacial DMI
 	dbulk22 exchParam // inter-cell bulk DMI
+
+	// Trial Exchange Fields
+	B_exch1     = NewVectorField("B_exch", "T", "Exchange field", AddExchangeField1)
+	B_exch2     = NewVectorField("B_exch", "T", "Exchange field", AddExchangeField2)
+
 )
 
 func init() {
@@ -65,7 +70,8 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 	case !inter && !bulk:
 		cuda.AddExchange(dst1, M1.Buffer(), lex21.Gpu(), ms1, regions.Gpu(), M.Mesh())
 	case inter && !bulk:
-		cuda.AddDMI(dst1, M1.Buffer(), lex21.Gpu(), din21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+//		cuda.AddDMI(dst1, M1.Buffer(), lex21.Gpu(), din21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		cuda.AddDMIAF(dst1, M1.Buffer(),M2.Buffer(), lex21.Gpu(), din21.Gpu(),lex22.Gpu(), din22.Gpu(),lexll.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case bulk && !inter:
 		cuda.AddDMIBulk(dst1, M1.Buffer(), lex21.Gpu(), dbulk21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case inter && bulk:
@@ -81,7 +87,8 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 	case !inter && !bulk:
 		cuda.AddExchange(dst2, M2.Buffer(), lex22.Gpu(), ms2, regions.Gpu(), M.Mesh())
 	case inter && !bulk:
-		cuda.AddDMI(dst2, M2.Buffer(), lex22.Gpu(), din22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+//		cuda.AddDMI(dst2, M2.Buffer(), lex22.Gpu(), din22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+	cuda.AddDMIAF(dst2, M2.Buffer(),M1.Buffer(), lex22.Gpu(), din22.Gpu(),lex21.Gpu(), din21.Gpu(),lexll.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case bulk && !inter:
 		cuda.AddDMIBulk(dst2, M2.Buffer(), lex22.Gpu(), dbulk22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case inter && bulk:
@@ -132,4 +139,20 @@ func ScaleInterExchangeAexll(region1, region2 int, scale float64) {
 // Sets the exchange interaction between region 1 and 2.
 func InterExchangeAexll(region1, region2 int, value float64) {
 	lexll.setInter(region1, region2, value)
+}
+
+// Adds the current exchange field to dst
+func AddExchangeField1(dst *data.Slice) {
+	size := dst.Size()
+	dst2 := cuda.Buffer(3, size)
+	defer cuda.Recycle(dst2)
+	AddExchangeFieldAF(dst, dst2)
+}
+
+// Adds the current exchange field to dst
+func AddExchangeField2(dst *data.Slice) {
+	size := dst.Size()
+	dst2 := cuda.Buffer(3, size)
+	defer cuda.Recycle(dst2)
+	AddExchangeFieldAF(dst2, dst)
 }
