@@ -34,9 +34,8 @@ var (
 	dbulk22 exchParam // inter-cell bulk DMI
 
 	// Trial Exchange Fields
-	B_exch1     = NewVectorField("B_exch", "T", "Exchange field", AddExchangeField1)
-	B_exch2     = NewVectorField("B_exch", "T", "Exchange field", AddExchangeField2)
-
+	B_exch1 = NewVectorField("B_exch1", "T", "Exchange field Subnet 1", AddExchangeField1)
+	B_exch2 = NewVectorField("B_exch2", "T", "Exchange field Subnet 2", AddExchangeField2)
 )
 
 func init() {
@@ -70,8 +69,8 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 	case !inter && !bulk:
 		cuda.AddExchange(dst1, M1.Buffer(), lex21.Gpu(), ms1, regions.Gpu(), M.Mesh())
 	case inter && !bulk:
-//		cuda.AddDMI(dst1, M1.Buffer(), lex21.Gpu(), din21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-		cuda.AddDMIAF(dst1, M1.Buffer(),M2.Buffer(), lex21.Gpu(), din21.Gpu(),lex22.Gpu(), din22.Gpu(),lexll.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		//		cuda.AddDMI(dst1, M1.Buffer(), lex21.Gpu(), din21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		cuda.AddDMIAF(dst1, M1.Buffer(), M2.Buffer(), lex21.Gpu(), din21.Gpu(), lex22.Gpu(), din22.Gpu(), lexll.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case bulk && !inter:
 		cuda.AddDMIBulk(dst1, M1.Buffer(), lex21.Gpu(), dbulk21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case inter && bulk:
@@ -87,8 +86,8 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 	case !inter && !bulk:
 		cuda.AddExchange(dst2, M2.Buffer(), lex22.Gpu(), ms2, regions.Gpu(), M.Mesh())
 	case inter && !bulk:
-//		cuda.AddDMI(dst2, M2.Buffer(), lex22.Gpu(), din22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-	cuda.AddDMIAF(dst2, M2.Buffer(),M1.Buffer(), lex22.Gpu(), din22.Gpu(),lex21.Gpu(), din21.Gpu(),lexll.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		//		cuda.AddDMI(dst2, M2.Buffer(), lex22.Gpu(), din22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		cuda.AddDMIAF(dst2, M2.Buffer(), M1.Buffer(), lex22.Gpu(), din22.Gpu(), lex21.Gpu(), din21.Gpu(), lexll.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case bulk && !inter:
 		cuda.AddDMIBulk(dst2, M2.Buffer(), lex22.Gpu(), dbulk22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case inter && bulk:

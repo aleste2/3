@@ -62,3 +62,47 @@ func AddExchangeAFll(dst1, dst2, m1, m2 *data.Slice, ms1, ms2 MSlice, llex_red S
 			unsafe.Pointer(llex_red), regions.Ptr,
 			wx, wy, wz, N[X], N[Y], N[Z], pbc, cfg)*/
 }
+
+func MagnetizationAF(dst, m1, m2 *data.Slice, Ms1, Ms2 MSlice) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_MagnetizationAF_async(dst.DevPtr(X), dst.DevPtr(Y), dst.DevPtr(Z),
+		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
+		m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),
+		Ms1.DevPtr(0), Ms1.Mul(0),
+		Ms2.DevPtr(0), Ms2.Mul(0), N, cfg)
+}
+
+func NeelAF(dst, m1, m2 *data.Slice, Ms1, Ms2 MSlice) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_NeelAF_async(dst.DevPtr(X), dst.DevPtr(Y), dst.DevPtr(Z),
+		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
+		m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),
+		Ms1.DevPtr(0), Ms1.Mul(0),
+		Ms2.DevPtr(0), Ms2.Mul(0), N, cfg)
+}
+
+func GMagnetizationAF(dst, m1, m2 *data.Slice, Ms1, Ms2 MSlice, g1, g2 float32) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_GMagnetizationAF_async(dst.DevPtr(X), dst.DevPtr(Y), dst.DevPtr(Z),
+		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
+		m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),
+		Ms1.DevPtr(0), Ms1.Mul(0),
+		Ms2.DevPtr(0), Ms2.Mul(0),
+		float32(g1), float32(g2),
+		N, cfg)
+}
+
+func GNeelAF(dst, m1, m2 *data.Slice, Ms1, Ms2 MSlice, g1, g2 float32) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_GNeelAF_async(dst.DevPtr(X), dst.DevPtr(Y), dst.DevPtr(Z),
+		m1.DevPtr(X), m1.DevPtr(Y), m1.DevPtr(Z),
+		m2.DevPtr(X), m2.DevPtr(Y), m2.DevPtr(Z),
+		Ms1.DevPtr(0), Ms1.Mul(0),
+		Ms2.DevPtr(0), Ms2.Mul(0),
+		float32(g1), float32(g2),
+		N, cfg)
+}

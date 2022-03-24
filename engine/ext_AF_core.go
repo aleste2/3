@@ -74,6 +74,12 @@ var (
 	JB        = NewScalarParam("JB", "a.u.", "Billouin J lattice B")
 	// Direct moment induction
 	deltaM = NewScalarParam("deltaM", "a.u.", "Moment indiced by laser")
+
+	// M and neel vectors
+	MAFg  = NewVectorField("MAFg", "A/m", "Moment AF", GmagnetizationAF)
+	Neelg = NewVectorField("Neelg", "A/m", "Neel moment AF", GneelAF)
+	MAF   = NewVectorField("MAF", "A/m", "Magnetization AF", MagnetizationAF)
+	Neel  = NewVectorField("Neel", "A/m", "Magnetization AF", NeelAF)
 )
 
 func init() {
@@ -395,4 +401,36 @@ func UpdateM() {
 	ms2 := Msat2.MSlice()
 	defer ms2.Recycle()
 	cuda.NormalizeAF(M.Buffer(), M1.Buffer(), M2.Buffer(), ms0, ms1, ms2)
+}
+
+func MagnetizationAF(dst *data.Slice) {
+	ms1 := Msat1.MSlice()
+	defer ms1.Recycle()
+	ms2 := Msat2.MSlice()
+	defer ms2.Recycle()
+	cuda.MagnetizationAF(dst, M1.Buffer(), M2.Buffer(), ms1, ms2)
+}
+
+func NeelAF(dst *data.Slice) {
+	ms1 := Msat1.MSlice()
+	defer ms1.Recycle()
+	ms2 := Msat2.MSlice()
+	defer ms2.Recycle()
+	cuda.NeelAF(dst, M1.Buffer(), M2.Buffer(), ms1, ms2)
+}
+
+func GmagnetizationAF(dst *data.Slice) {
+	ms1 := Msat1.MSlice()
+	defer ms1.Recycle()
+	ms2 := Msat2.MSlice()
+	defer ms2.Recycle()
+	cuda.GMagnetizationAF(dst, M1.Buffer(), M2.Buffer(), ms1, ms2, float32(GammaLL1), float32(GammaLL2))
+}
+
+func GneelAF(dst *data.Slice) {
+	ms1 := Msat1.MSlice()
+	defer ms1.Recycle()
+	ms2 := Msat2.MSlice()
+	defer ms2.Recycle()
+	cuda.GNeelAF(dst, M1.Buffer(), M2.Buffer(), ms1, ms2, float32(GammaLL1), float32(GammaLL2))
 }
