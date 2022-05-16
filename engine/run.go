@@ -85,6 +85,7 @@ const (
 
 	ANTIFERROLLBPRB = 127
 	LLBAF2T         = 129
+	LLBAFJH         = 130
 
 	HEUNJHONLY = 207
 	ONLY2T     = 208
@@ -126,20 +127,26 @@ func SetSolver(typ int) {
 		stepper = new(RK56)
 		//      LLB Solvers
 	case LLB:
-		stepper = new(HeunLLB)
+		//stepper = new(HeunLLB)
+		stepper = new(HeunLLBFerroUnified)
 		LLBeq = true
+		LLB2Tf = false
 	case LLBJH:
-		stepper = new(HeunLLBJH)
+		//stepper = new(HeunLLBJH)
+		stepper = new(HeunLLBFerroUnified)
 		LLBeq = true
 		LLBJHf = true
+		LLB2Tf = false
 	case LLB3T:
 		stepper = new(HeunLLB3T)
 		LLBeq = true
 		LLB3Tf = true
 	case LLB2T:
-		stepper = new(HeunLLB2T)
+		//stepper = new(HeunLLB2T)
+		stepper = new(HeunLLBFerroUnified)
 		LLBeq = true
 		LLB2Tf = true
+		LLBJHf = false
 	case LLB2TOST:
 		stepper = new(HeunLLB2TOSC)
 		LLBeq = true
@@ -155,14 +162,24 @@ func SetSolver(typ int) {
 		stepper = new(AntiferroRK23)
 		AFf = true
 	case ANTIFERROLLBPRB:
-		stepper = new(HeunAFLLBPRB054401)
+		//stepper = new(HeunAFLLBPRB054401)
+		stepper = new(HeunLLBAFUnified)
 		AFf = true
 		LLBeq = true
 	case LLBAF2T:
-		stepper = new(HeunLLBAF2T)
+		//stepper = new(HeunLLBAF2T)
+		stepper = new(HeunLLBAFUnified)
 		LLBeq = true
 		AFf = true
 		LLB2Tf = true
+		LLBJHf = false
+	case LLBAFJH:
+		//stepper = new(HeunLLB2T)
+		stepper = new(HeunLLBAFUnified)
+		LLBeq = true
+		AFf = true
+		LLB2Tf = false
+		LLBJHf = true
 
 		// Thermal only solvers
 	case HEUNJHONLY:

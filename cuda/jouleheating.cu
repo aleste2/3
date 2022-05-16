@@ -32,7 +32,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     // central cell
     int i = idx(ix, iy, iz);
     float3 m0 = make_float3(mx[i], my[i], mz[i]);
-    
+
     float mm=dot(m0,m0);
     dt0_[i]=0.0;
     if (mm!=0)
@@ -113,7 +113,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
         if (mm_!=0)
         {
 	        tempv = temp_[i_];
-         dt0_[i] += (Kth*(tempv-temp)/wz/wz); 
+         dt0_[i] += (Kth*(tempv-temp)/wz/wz);
         }
         }
 
@@ -125,7 +125,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
         if (mm_!=0)
         {
 	        tempv = temp_[i_];
-          dt0_[i] += (Kth*(tempv-temp)/wz/wz); 
+          dt0_[i] += (Kth*(tempv-temp)/wz/wz);
         }
         }
     }

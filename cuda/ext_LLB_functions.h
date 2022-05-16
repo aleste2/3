@@ -81,17 +81,10 @@ inline __device__ float NL(float x)
 
 inline __device__ float DNL(float x)
 {
-if (fabs(x)<0.01) {
-  return(0.99999f);} else {
-    return (-pow(sinh(x),-2.0f) + 1.0f/(x*x) );}
+  if (fabs(x)<0.08) {
+    return(0.33333-x*x*0.068);} else {
+      return (-pow(sinh(x),-2.0f) + 1.0f/(x*x) );}
 }
-
-
-
-
-
-
-
 
 /*
 

@@ -147,8 +147,10 @@ func (b *thermField) LLBupdate() {
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
 		if LLBJHf == true {
-			TempJH.update()
-			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha, ScaleNoiseLLB)
+			//TempJH.update()
+			Te.update()
+			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Te.temp, alpha, ScaleNoiseLLB)
+			//			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha, ScaleNoiseLLB)
 		}
 		if LLB3Tf == true {
 			Te.update()
@@ -168,7 +170,8 @@ func (b *thermField) LLBupdate() {
 }
 
 func StartJH() {
-	TempJH.JHSetLocalTemp()
+	//TempJH.JHSetLocalTemp()
+	Te.JHSetLocalTemp()
 }
 
 func Start3T() {
