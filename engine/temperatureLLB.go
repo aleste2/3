@@ -6,6 +6,7 @@ import (
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/mag"
 	//"github.com/mumax/3/util"
+	"math"
 )
 
 var (
@@ -68,6 +69,9 @@ func init() {
 	DeclFunc("GetTe", GetTe, "Gets electron cell temperature")
 	DeclFunc("GetTl", GetTl, "Gets lattice cell temperature")
 	DeclFunc("GetTs", GetTs, "Gets spin cell temperature")
+	DeclFunc("SetTl", SetTlToTe, "Set Tl to Te")
+
+	DeclFunc("RadialMask", RadialMask, "Gaussian mask")
 
 	DeclFunc("SetM", SetM, "Adjust m to temperature")
 	DeclTVar("JHThermalnoise", &JHThermalnoise, "Enable/disable thermal noise")
@@ -185,6 +189,10 @@ func Start2T() {
 	Tl.JHSetLocalTemp()
 }
 
+func SetTlToTe() {
+	data.Copy(Tl.temp, Te.temp)
+}
+
 func SetM() {
 	TCurie := TCurie.MSlice()
 	defer TCurie.Recycle()
@@ -249,4 +257,18 @@ func GetTs(ix, iy, iz int) float64 {
 
 func GetTl(ix, iy, iz int) float64 {
 	return float64(Tl.GetCell(ix, iy, iz))
+}
+
+func RadialMask(mascara *data.Slice, xc, yc, r0 float64, Nx, Ny int) {
+	for i := 0; i < Nx; i++ {
+		for j := 0; j < Ny; j++ {
+			r := Index2Coord(i, j, 0)
+			x := r.X()
+			y := r.Y()
+			dr := math.Sqrt((x-xc)*(x-xc) + (y-yc)*(y-yc))            // Distancia al centro del Laser
+			LS := math.Exp(-4.0 * math.Log(2.0) * math.Pow(dr/r0, 2)) // Gaussian Laser Spot (circular)
+			mascara.SetVector(i, j, 0, Vector(LS, 0, 0))              // For Q_ext
+		}
+	}
+
 }
