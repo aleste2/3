@@ -80,6 +80,8 @@ const (
 
 	LLB2TOST = 30
 
+	LLGJH = 50
+
 	ANTIFERRORK4  = 100
 	ANTIFERRORK23 = 101
 
@@ -106,6 +108,7 @@ func SetSolver(typ int) {
 	LLBeq = false
 	LLBJHf = false
 	LLB3Tf = false
+	LLB2Tf = false
 	AFf = false
 
 	switch typ {
@@ -152,6 +155,13 @@ func SetSolver(typ int) {
 		LLBeq = true
 		LLB2Tf = true
 		OSC = true
+
+	case LLGJH:
+		stepper = new(LLGJHSolver)
+		LLBJHf = true
+		LLBeq = false
+		LLB2Tf = false
+		OSC = false
 
 		// Antiferro solvers
 

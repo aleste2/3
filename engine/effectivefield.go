@@ -22,8 +22,14 @@ func SetEffectiveField(dst *data.Slice) {
 	}
 	if !relaxing {
 		if LLBeq != true { // Needed not to add two times thermal noises in the case of LLB equation
-			B_therm.AddTo(dst)
+
+			if LLBJHf == true {
+				B_therm.LLBAddTo(dst)
+			} else {
+				B_therm.AddTo(dst)
+			}
 		}
+
 	}
 	AddCustomField(dst)
 }
