@@ -72,7 +72,7 @@ func (_ *LLGJHSolver) Step() {
 			if TOversteps == 1 {
 				//StepJH(float32(Dt_si))
 				for iter := 0; iter < TSubsteps; iter++ {
-					StepJH(float32(Dt_si)/float32(TSubsteps))
+					StepJH(float32(Dt_si) / float32(TSubsteps))
 					//Time += Dt_si / float64(TSubsteps)
 				}
 			}
