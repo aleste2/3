@@ -54,7 +54,18 @@ func SetLLTorque(dst *data.Slice) {
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
 	if Precess {
-		cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
+		// Chiral Torque
+		if !AlphaChiral.isZero() {
+			m := M.Buffer()
+			size := m.Size()
+			buf := cuda.Buffer(1, size)
+			defer cuda.Recycle(buf)
+			calculateAlphaChiral(buf)
+			cuda.ChiralLLTorque(dst, M.Buffer(), dst, alpha, buf) // overwrite dst with Chiral torque
+		} else {
+			cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
+		}
+
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}
