@@ -10,14 +10,14 @@ import (
 )
 
 var (
-	TCurie = NewScalarParam("TCurie", "K", "Curie Temperature")
+	//TCurie = NewScalarParam("TCurie", "K", "Curie Temperature")
 	Qext   = NewExcitation("Qext", "W/m3", "External Heating")
 
 	// For Joule heating
 	Langevin                    = 0
 	JHThermalnoise              = true
 	ScaleNoiseLLB     float64   = 1.0 // reduce noise in LLB
-	RenormLLB                   = false
+	//RenormLLB                   = false
 	TSubsteps                   = 3
 	TOversteps                  = 1
 	TOverstepsCounter           = 0
@@ -29,8 +29,8 @@ var (
 	Density           = NewScalarParam("Density", "Kg/m3", "Mass density")
 	TSubs             = NewScalarParam("TSubs", "K", "Substrate Temperature")
 	TauSubs           = NewScalarParam("TauSubs", "s", "Substrate difussion time")
-	a1                = NewScalarParam("a1", "a.u.", "Exponent Langevin (T/Tc)^a1") // 0.2-1.4
-	a2                = NewScalarParam("a2", "a.u.", "Exponent Langevin (T/Tc)^a2") // 0.2-1.4
+	//a1                = NewScalarParam("a1", "a.u.", "Exponent Langevin (T/Tc)^a1") // 0.2-1.4
+	//a2                = NewScalarParam("a2", "a.u.", "Exponent Langevin (T/Tc)^a2") // 0.2-1.4
 
 	// For 3T Model
 	Te  LocalTemp // Electron temperature
@@ -73,10 +73,10 @@ func init() {
 
 	DeclFunc("RadialMask", RadialMask, "Gaussian mask")
 
-	DeclFunc("SetM", SetM, "Adjust m to temperature")
+	//DeclFunc("SetM", SetM, "Adjust m to temperature")
 	DeclTVar("JHThermalnoise", &JHThermalnoise, "Enable/disable thermal noise")
-	DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
-	DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
+	//DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
+	//DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
 	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
 	DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
 	DeclVar("ScaleNoiseLLB", &ScaleNoiseLLB, "Thermal noise scale")
@@ -192,7 +192,7 @@ func Start2T() {
 func SetTlToTe() {
 	data.Copy(Tl.temp, Te.temp)
 }
-
+/*
 func SetM() {
 	TCurie := TCurie.MSlice()
 	defer TCurie.Recycle()
@@ -211,7 +211,7 @@ func SetM() {
 		cuda.InitmLLBJH(M.Buffer(), Te.temp, TCurie, Langevin)
 	}
 }
-
+*/
 func (b *LocalTemp) JHSetLocalTemp() {
 	b.update()
 	TSubs := TSubs.MSlice()
