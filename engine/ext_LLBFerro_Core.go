@@ -8,17 +8,17 @@ import (
 )
 
 var (
-	TCurie = NewScalarParam("TCurie", "K", "Curie Temperature")
-  RenormLLB                   = false
-  a1                = NewScalarParam("a1", "a.u.", "Exponent Langevin (T/Tc)^a1") // 0.2-1.4
-  a2                = NewScalarParam("a2", "a.u.", "Exponent Langevin (T/Tc)^a2") // 0.2-1.4
+	TCurie    = NewScalarParam("TCurie", "K", "Curie Temperature")
+	RenormLLB = false
+	a1        = NewScalarParam("a1", "a.u.", "Exponent Langevin (T/Tc)^a1") // 0.2-1.4
+	a2        = NewScalarParam("a2", "a.u.", "Exponent Langevin (T/Tc)^a2") // 0.2-1.4
 
 )
 
 func unit() {
-  	DeclFunc("SetM", SetM, "Adjust m to temperature")
-    DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
-    DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
+	DeclFunc("SetM", SetM, "Adjust m to temperature")
+	DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
+	DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
 }
 
 func (m *magnetization) LoadLLBFile(fname string) {

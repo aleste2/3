@@ -77,6 +77,7 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 				float Qext = amul(Qext_, Qext_mul, i);
 				float deltaM = amul(deltaM_, deltaM_mul, i);
 				float temp;
+
         if (TTM==1) {temp = te_[i];} else{ temp=amul(temp_, temp_mul, i);}
 
         if (temp==0) temp=0.0001; // to avoid zero division...
@@ -103,7 +104,8 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 					float J012 = J0ab;
 					float J021 = J0ba;
 					TCurie = (J01+J02+pow(pow(J01-J02,2.0f)+4.0f*J012*J021,0.5f))/(6.0f*kB); // Eq (9) LowTempPhys 41 (9) 2015
-					if ((fabs(temp-TCurie)<0.001*TCurie)&&(temp<TCurie)) {temp=0.999f*TCurie;}  // To avoid errors arround T=Tc
+					//					if ((fabs(temp-TCurie)<0.01*TCurie)&&(temp<=TCurie)) {temp=0.99f*TCurie;}  // To avoid errors arround T=Tc
+//					if ((fabs(temp-TCurie)<0.008*TCurie)&&(temp<=TCurie)) {temp=0.992f*TCurie;}  // To avoid errors arround T=Tc
 					//if (temp>1.5*TCurie) temp=1.5*TCurie; // To avoid numerical problems much above TC
 
 					float mea;
@@ -168,6 +170,9 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 					}
 					if (mea<mmin) {mea=mmin;}
 					if (meb<mmin) {meb=mmin;}
+
+//					if ((fabs(temp-TCurie)<0.01*TCurie)&&(temp<TCurie)) {temp=0.99f*TCurie;}  // To avoid errors arround T=Tc
+					if ((fabs(temp-TCurie)<0.0025*TCurie)&&(temp<TCurie)) {temp=1.001f*TCurie;}  // To avoid errors arround T=Tc
 
 					float chiA=(J0aa*mea+fabs(J0ab)*meb)/(kB*temp);  // Arguments of Langevin functions Error in PRB 054401 using Low Temp Phys
 					float chiB=(J0bb*meb+fabs(J0ba)*mea)/(kB*temp);

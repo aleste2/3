@@ -33,8 +33,8 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
 	int TTM,
 	int N) {
 
-		const float kB=1.38064852e-23;
-		float mmin=0.0001; // Previously 0.01
+	const float kB=1.38064852e-23;
+	float mmin=0.0001; // Previously 0.01
 
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
 
@@ -48,79 +48,100 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
         float mua = amul(mua_, mua_mul, i);
         float J0aa = amul(J0aa_, J0aa_mul, i)*nv;
 
-				float Qext = amul(Qext_, Qext_mul, i);
-				float deltaM = amul(deltaM_, deltaM_mul, i);
-				float temp;
+		float Qext = amul(Qext_, Qext_mul, i);
+		float deltaM = amul(deltaM_, deltaM_mul, i);
+		float temp;
         if (TTM==1) {temp = te_[i];} else{ temp=amul(temp_, temp_mul, i);}
 
         if (temp==0) temp=0.0001; // to avoid zero division...
-
+	
         float3 hth1a = {hth11x[i], hth11y[i],hth11z[i]};
         float3 hth2a = {hth21x[i], hth21y[i],hth21z[i]};
         float3 torquea;
 
         // Parametros de LLB
         float ma=sqrt(dot(m1,m1));
-				if (ma<0.01) ma=0.01;
+		if (ma<0.01) ma=0.01;
         if (ma==0)	{
-					torquea = 0.0f*m1;
- 				} else {
+			torquea = 0.0f*m1;
+ 		} else {
+			if (fabs(temp-TCurie)<0.001) {temp=TCurie+0.001;}  // To avoid errors arround T=Tc
+			if (temp>1.5*TCurie) temp=1.5*TCurie; // To avoid numerical problems much above TC
 
-					if ((fabs(temp-TCurie)<0.001*TCurie)&&(temp<TCurie)) {temp=0.999f*TCurie;}  // To avoid errors arround T=Tc
-					if (temp>1.5*TCurie) temp=1.5*TCurie; // To avoid numerical problems much above TC
+			float mea;
+			if (temp<TCurie) {
+				mea=pow(1.0f-pow(temp/TCurie,1.23318f),0.433936f);
+			} else	{
+				mea=mmin;
+			}
+			if (mea<mmin) {mea=mmin;}
 
-					float mea;
-					if (temp<TCurie) {
-						mea=pow(1.0f-pow(temp/TCurie,1.23318f),0.433936f);
-					} else	{
-						mea=mmin;
-					}
-					if (mea<mmin) {mea=mmin;}
+			float chiA=3.0f*TCurie/temp*mea;  // Arguments of Langevin function
+			float xpara;
 
-					float chiA=TCurie/temp*mea;  // Arguments of Langevin function
-					float xpara;
-					if (temp<=TCurie) {
-						xpara=mua/(kB*temp)*DNL(chiA)/((1.0f-TCurie/temp*DNL(chiA)));
-					} else { // T>Tc DNL=1/3
-						xpara=mua/(kB*temp)/3.0f/((1.0f-TCurie/temp/3.0f));
-					}
+			/*
+			if (temp<=TCurie) {
+				xpara=mua/(kB*temp)*DNL(chiA)/((1.0f-TCurie/temp*DNL(chiA)));
+			} else { // T>Tc DNL=1/3
+				xpara=mua/(kB*temp)/3.0f/((1.0f-TCurie/temp/3.0f));
+			}
 
-					//if (xpara<=0.0) xpara=0.0001f;
+			//if (xpara<=0.0001) xpara=0.0001f;
+			//if (xpara<=1e-6) xpara=1e-6;
+			*/
 
-					float lambdaA=(1.0f/xpara);
-    			float3 heffa;
-					float alphaparA;
-					float alphaperpA;
-					alphaparA=2.0f*alpha*temp/(3.0f*TCurie);
-    			if (temp>=TCurie) {
-		  			heffa = -lambdaA*m1;
-						alphaperpA=alphaparA;
-    			} else {
-      			heffa = -lambdaA*((ma-mea)/mea)*m1;
-						alphaperpA=alpha*(1.0f-temp/(3.0f*TCurie));
-    			}
+			if (temp<=TCurie) {
+			//	xpara=2.0f*DNL(chiA)/((1.0f-3.0f*temp/TCurie*DNL(chiA)));
+				xpara=(mua/kB)*DNL(chiA)/((temp-3.0f*TCurie*DNL(chiA)));
+			} else { // T>Tc DNL=1/3
+			//	xpara=0.33333333333f/((1.0f-TCurie/temp));
+				xpara=(mua/kB)*0.33333333333f/(temp-TCurie);
+			}
 
-					float h_perp_scalea=sqrt((alphaperpA-alphaparA)/(alpha*alphaperpA*alphaperpA));
-					float h_par_scalea=sqrt(alphaparA/alpha);
+			if (xpara>0.25f) xpara=0.25f;
+			//xpara=xpara*(mua/(kB*temp));
+			//if (xpara<=1e-6) xpara=1e-6;
 
-					H1=H1+heffa;
 
-    			float3 htot1=H1+h_perp_scalea*hth1a;
+			float lambdaA=(1.0f/xpara);
+			float3 heffa;
+			float alphaparA;
+			float alphaperpA;
+			alphaparA=2.0f*alpha*temp/(3.0f*TCurie);
+			if (temp>TCurie) {
+  				heffa = -lambdaA*m1;  // Segun Vogler
+				
+				//float ft=TCurie/(TCurie-temp);
+				//if (ft>1) ft=1.0f;
+				//heffa = -lambdaA*(1.0f+3.0f/5.0f*ft*ma*ma)*m1;
+				
+				alphaperpA=alphaparA;
+				} else {
+				heffa = -lambdaA*((ma-mea)/mea)*m1;  // Sin el 0.5 segun Vogler
+				alphaperpA=alpha*(1.0f-temp/(3.0f*TCurie));
+			}
 
-    			float3 m1xH1 = cross(m1, H1);
-    			float m1dotH1 = dot(m1, H1);
-    			float3 m1xHtot1 = cross(m1, htot1);
-    			float3 m1xm1xHtot1 = cross(m1, m1xHtot1);
-    			float gillba = 1.0f / (1.0f + alphaperpA * alphaperpA);
+			float h_perp_scalea=sqrt((alphaperpA-alphaparA)/(alpha*alphaperpA*alphaperpA));
+			float h_par_scalea=sqrt(alphaparA/alpha);
 
-					// Direct laser moment induction
-					float3 mi = {0.0f,0.0f,(Qext/1e20)*deltaM};
+			H1=H1+heffa;
 
-					torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a+mi;
-				}
+			float3 htot1=H1+h_perp_scalea*hth1a;
 
-    		t1x[i] = torquea.x;
-    		t1y[i] = torquea.y;
-    		t1z[i] = torquea.z;
+			float3 m1xH1 = cross(m1, H1);
+			float m1dotH1 = dot(m1, H1);
+			float3 m1xHtot1 = cross(m1, htot1);
+			float3 m1xm1xHtot1 = cross(m1, m1xHtot1);
+    		float gillba = 1.0f / (1.0f + alphaperpA * alphaperpA);
+
+			// Direct laser moment induction
+			float3 mi = {0.0f,0.0f,(Qext/1e20)*deltaM};
+
+			torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a+mi;
+		}
+
+  		t1x[i] = torquea.x;
+   		t1y[i] = torquea.y;
+   		t1z[i] = torquea.z;
     }
 }

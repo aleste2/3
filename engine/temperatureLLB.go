@@ -11,12 +11,12 @@ import (
 
 var (
 	//TCurie = NewScalarParam("TCurie", "K", "Curie Temperature")
-	Qext   = NewExcitation("Qext", "W/m3", "External Heating")
+	Qext = NewExcitation("Qext", "W/m3", "External Heating")
 
 	// For Joule heating
-	Langevin                    = 0
-	JHThermalnoise              = true
-	ScaleNoiseLLB     float64   = 1.0 // reduce noise in LLB
+	Langevin               = 0
+	JHThermalnoise         = true
+	ScaleNoiseLLB  float64 = 1.0 // reduce noise in LLB
 	//RenormLLB                   = false
 	TSubsteps                   = 3
 	TOversteps                  = 1
@@ -192,6 +192,7 @@ func Start2T() {
 func SetTlToTe() {
 	data.Copy(Tl.temp, Te.temp)
 }
+
 /*
 func SetM() {
 	TCurie := TCurie.MSlice()
