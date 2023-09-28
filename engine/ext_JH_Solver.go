@@ -43,7 +43,7 @@ func (_ *HeunJH) Step() {
 	// stage 1
 
 	// Rewrite to calculate m step 1
-	cuda.Evaldt0(temp0, dtemp0, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh())
+	cuda.Evaldt0(temp0, dtemp0, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh(), geometry.Gpu())
 	cuda.Madd2(temp0, temp0, dtemp0, 1, dt/float32(GammaLL)) // temp = temp + dt * dtemp0
 
 	// stage 2
@@ -53,7 +53,7 @@ func (_ *HeunJH) Step() {
 	Time += Dt_si
 
 	// Rewrite to calculate spep 2
-	cuda.Evaldt0(temp0, dtemp, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh())
+	cuda.Evaldt0(temp0, dtemp, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh(), geometry.Gpu())
 	cuda.Madd3(temp0, temp0, dtemp, dtemp0, 1, 0.5*dt/float32(GammaLL), -0.5*dt/float32(GammaLL)) //****
 
 }
@@ -87,7 +87,7 @@ func StepJH(dt float32) {
 	// stage 1
 
 	// Rewrite to calculate m step 1
-	cuda.Evaldt0(temp0, dtemp0, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh())
+	cuda.Evaldt0(temp0, dtemp0, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh(), geometry.Gpu())
 	cuda.Madd2(temp0, temp0, dtemp0, 1, dt) // temp = temp + dt * dtemp0
 
 	// stage 2
@@ -97,6 +97,6 @@ func StepJH(dt float32) {
 	//Time += Dt_si
 
 	// Rewrite to calculate spep 2
-	cuda.Evaldt0(temp0, dtemp, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh())
+	cuda.Evaldt0(temp0, dtemp, M.Buffer(), Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, j, M.Mesh(), geometry.Gpu())
 	cuda.Madd3(temp0, temp0, dtemp, dtemp0, 1, 0.5*dt, -0.5*dt) //****
 }

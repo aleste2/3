@@ -19,7 +19,8 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
                 float* __restrict__ jx_, float jx_mul,
                 float* __restrict__ jy_, float jy_mul,
                 float* __restrict__ jz_, float jz_mul,
-		            float wx, float wy, float wz, int Nx, int Ny, int Nz
+		            float wx, float wy, float wz, int Nx, int Ny, int Nz,
+                float* __restrict__ vol
                 ) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
@@ -31,9 +32,9 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     }
     // central cell
     int i = idx(ix, iy, iz);
-    float3 m0 = make_float3(mx[i], my[i], mz[i]);
-
-    float mm=dot(m0,m0);
+    float mm = (vol == NULL? 1.0f: vol[i]);
+    //float3 m0={mx[i], my[i], mz[i]};
+//    float mm=dot(m0,m0);
     dt0_[i]=0.0;
     if (mm!=0)
     {
@@ -50,15 +51,16 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     float temp = temp_[i];
 
     int i_;    // neighbor index
-    float3 m_; // neighbor mag
+    //float3 m_; // neighbor mag
     float mm_;
     float tempv=0;
 
     // left neighbor
     if (ix-1>=0){
     i_  = idx(ix-1, iy, iz);           // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+    //m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+    //mm_=dot(m_,m_);
+    mm_ = (vol == NULL? 1.0f: vol[i_]);
     if (mm_!=0)
     {
      tempv = temp_[i_];
@@ -69,8 +71,9 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     // right neighbor
     if (ix+1<Nx){
     i_  = idx(ix+1, iy, iz);           // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+    //m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+    //mm_=dot(m_,m_);
+    mm_ = (vol == NULL? 1.0f: vol[i_]);
     if (mm_!=0)
     {
      tempv = temp_[i_];
@@ -81,8 +84,9 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     // back neighbor
     if (iy-1>=0){
     i_  = idx(ix, iy-1, iz);          // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+    //m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+    //mm_=dot(m_,m_);
+    mm_ = (vol == NULL? 1.0f: vol[i_]);
     if (mm_!=0)
     {
      tempv = temp_[i_];
@@ -94,8 +98,9 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
 
     if (iy+1<Ny){
     i_  = idx(ix, iy+1, iz);          // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+    //m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+    //mm_=dot(m_,m_);
+    mm_ = (vol == NULL? 1.0f: vol[i_]);
     if (mm_!=0)
     {
      tempv = temp_[i_];
@@ -108,8 +113,9 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
         // bottom neighbor
 	      if (iz-1>=0){
         i_  = idx(ix, iy, iz-1);
-        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-        mm_=dot(m_,m_);
+        //m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+        //mm_=dot(m_,m_);
+        mm_ = (vol == NULL? 1.0f: vol[i_]);
         if (mm_!=0)
         {
 	        tempv = temp_[i_];
@@ -120,8 +126,9 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
         // top neighbor
         if (iz+1<Nz){
         i_  = idx(ix, iy,iz+1);
-        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-        mm_=dot(m_,m_);
+        //m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+        //mm_=dot(m_,m_);
+        mm_ = (vol == NULL? 1.0f: vol[i_]);
         if (mm_!=0)
         {
 	        tempv = temp_[i_];

@@ -31,6 +31,7 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
 	float* __restrict__  deltaM_, float deltaM_mul,
 	float* __restrict__ Qext_, float Qext_mul,
 	int TTM,
+	float* __restrict__ vol,
 	int N) {
 
 	const float kB=1.38064852e-23;
@@ -47,6 +48,7 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
         float nv = amul(nv_, nv_mul, i);
         float mua = amul(mua_, mua_mul, i);
         float J0aa = amul(J0aa_, J0aa_mul, i)*nv;
+				float v = (vol == NULL? 1.0f: vol[i]);
 
 		float Qext = amul(Qext_, Qext_mul, i);
 		float deltaM = amul(deltaM_, deltaM_mul, i);
@@ -54,17 +56,18 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
         if (TTM==1) {temp = te_[i];} else{ temp=amul(temp_, temp_mul, i);}
 
         if (temp==0) temp=0.0001; // to avoid zero division...
-	
+
         float3 hth1a = {hth11x[i], hth11y[i],hth11z[i]};
         float3 hth2a = {hth21x[i], hth21y[i],hth21z[i]};
         float3 torquea;
-
-        // Parametros de LLB
         float ma=sqrt(dot(m1,m1));
-		if (ma<0.01) ma=0.01;
-        if (ma==0)	{
-			torquea = 0.0f*m1;
- 		} else {
+        // Parametros de LLB
+
+				if ((v==0)||(ma==0))	{
+					torquea = 0.0f*m1;
+				} else {
+
+				if (ma<0.01) ma=0.01;
 			if (fabs(temp-TCurie)<0.001) {temp=TCurie+0.001;}  // To avoid errors arround T=Tc
 			if (temp>1.5*TCurie) temp=1.5*TCurie; // To avoid numerical problems much above TC
 
@@ -110,11 +113,11 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
 			alphaparA=2.0f*alpha*temp/(3.0f*TCurie);
 			if (temp>TCurie) {
   				heffa = -lambdaA*m1;  // Segun Vogler
-				
+
 				//float ft=TCurie/(TCurie-temp);
 				//if (ft>1) ft=1.0f;
 				//heffa = -lambdaA*(1.0f+3.0f/5.0f*ft*ma*ma)*m1;
-				
+
 				alphaperpA=alphaparA;
 				} else {
 				heffa = -lambdaA*((ma-mea)/mea)*m1;  // Sin el 0.5 segun Vogler

@@ -54,7 +54,9 @@ func (_ *HeunLLB2TOSC) Step() {
 	// stage 1
 
 	// Rewrite to calculate m step 1
-	torqueFnLLB2T(dy0, Hth1, Hth2)
+	//torqueFnLLB2T(dy0, Hth1, Hth2)
+	torqueFnFerroLLBUnified(dy0, Hth1, Hth2)
+
 	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
 
 	// stage 2
@@ -64,7 +66,8 @@ func (_ *HeunLLB2TOSC) Step() {
 	Time += Dt_si
 
 	// Rewrite to calculate step 2
-	torqueFnLLB2T(dy, Hth1, Hth2)
+	//torqueFnLLB2T(dy, Hth1, Hth2)
+	torqueFnFerroLLBUnified(dy, Hth1, Hth2)
 
 	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
 	// adjust next time step

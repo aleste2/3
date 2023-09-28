@@ -70,7 +70,7 @@ func NewtonStep2T(dt float32) {
 	DeltaTl := cuda.Buffer(1, size)
 	defer cuda.Recycle(DeltaTl)
 
-	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh())
+	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, Kel, Cel, Klat, Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu())
 	err := cuda.MaxAbs(DeltaTe)
 	if (err*dt < 10) || (flagOST == 1) {
 		TOverstepsCounter++

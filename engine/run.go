@@ -75,7 +75,6 @@ const (
 
 	LLB   = 26
 	LLBJH = 27
-	LLB3T = 28
 	LLB2T = 29
 
 	LLB2TOST = 30
@@ -140,10 +139,6 @@ func SetSolver(typ int) {
 		LLBeq = true
 		LLBJHf = true
 		LLB2Tf = false
-	case LLB3T:
-		stepper = new(HeunLLB3T)
-		LLBeq = true
-		LLB3Tf = true
 	case LLB2T:
 		//stepper = new(HeunLLB2T)
 		stepper = new(HeunLLBFerroUnified)
@@ -218,6 +213,7 @@ func torqueFn(dst *data.Slice) {
 	NEvals++
 }
 
+/*
 ////////////////////////////////////   Added for LLB
 
 func torqueFnLLB(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
@@ -245,6 +241,8 @@ func torqueFnLLB2T(dst *data.Slice, hth1 *data.Slice, hth2 *data.Slice) {
 	SetTorqueLLB2T(dst, hth1, hth2)
 	NEvals++
 }
+
+*/
 
 // returns number of torque evaluations
 func getNEval() int {

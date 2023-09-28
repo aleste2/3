@@ -102,7 +102,7 @@ func (_ *HeunLLBAFUnified) Step() {
 		// Renormalization
 		if RenormLLB == true {
 			if Brillouin == true {
-				RenormAF2T(y01, y02, float32(Dt_si), float32(GammaLL1), float32(GammaLL2))
+				RenormAF2TBri(y01, y02, float32(Dt_si), float32(GammaLL1), float32(GammaLL2))
 			} else {
 				RenormAF2T(y01, y02, float32(Dt_si), float32(GammaLL1), float32(GammaLL2))
 			}
@@ -223,7 +223,7 @@ func torqueFnAFLLBUnified(dst1, dst2 *data.Slice, hth1a, hth2a, hth1b, hth2b *da
 		TTM = 1
 	}
 	if Precess {
-		cuda.LLBTorqueAFUnified(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, temp, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, Lambda0, Qext, deltam, TTM) // overwrite dst with torque
+		cuda.LLBTorqueAFUnified(dst1, M1.Buffer(), dst2, M2.Buffer(), dst1, dst2, temp, Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, hth1a, hth2a, hth1b, hth2b, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, Lambda0, Qext, deltam, TTM, geometry.Gpu()) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst1, M1.Buffer(), dst1)
 		cuda.LLNoPrecess(dst2, M2.Buffer(), dst2)
@@ -236,4 +236,92 @@ func torqueFnAFLLBUnified(dst1, dst2 *data.Slice, hth1a, hth2a, hth1b, hth2b *da
 	FreezeSpins(dst2)
 
 	NEvals++
+}
+
+func RenormAF2T(y01, y02 *data.Slice, dt, GammaLL1, GammaLL2 float32) {
+
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+	alpha1 := Alpha1.MSlice()
+	defer alpha1.Recycle()
+	alpha2 := Alpha2.MSlice()
+	defer alpha2.Recycle()
+
+	Tcurie := TCurie.MSlice()
+	defer Tcurie.Recycle()
+	Msat := Msat.MSlice()
+	defer Msat.Recycle()
+	Msat1 := Msat1.MSlice()
+	defer Msat1.Recycle()
+	Msat2 := Msat2.MSlice()
+	defer Msat2.Recycle()
+	temp := Temp.MSlice()
+	defer temp.Recycle()
+
+	X_TM := x_TM.MSlice()
+	defer X_TM.Recycle()
+	NV := nv.MSlice()
+	defer NV.Recycle()
+
+	MU1 := mu1.MSlice()
+	defer MU1.Recycle()
+	MU2 := mu2.MSlice()
+	defer MU2.Recycle()
+
+	J0AA := J0aa.MSlice()
+	defer J0AA.Recycle()
+	J0BB := J0bb.MSlice()
+	defer J0BB.Recycle()
+	J0AB := J0ab.MSlice()
+	defer J0AB.Recycle()
+
+	cuda.LLBRenormAF2T(y01, y02, M1.Buffer(), M2.Buffer(), Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, dt, GammaLL1, GammaLL2)
+
+}
+
+func RenormAF2TBri(y01, y02 *data.Slice, dt, GammaLL1, GammaLL2 float32) {
+
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+	alpha1 := Alpha1.MSlice()
+	defer alpha1.Recycle()
+	alpha2 := Alpha2.MSlice()
+	defer alpha2.Recycle()
+
+	Tcurie := TCurie.MSlice()
+	defer Tcurie.Recycle()
+	Msat := Msat.MSlice()
+	defer Msat.Recycle()
+	Msat1 := Msat1.MSlice()
+	defer Msat1.Recycle()
+	Msat2 := Msat2.MSlice()
+	defer Msat2.Recycle()
+	temp := Temp.MSlice()
+	defer temp.Recycle()
+
+	X_TM := x_TM.MSlice()
+	defer X_TM.Recycle()
+	NV := nv.MSlice()
+	defer NV.Recycle()
+
+	MU1 := mu1.MSlice()
+	defer MU1.Recycle()
+	MU2 := mu2.MSlice()
+	defer MU2.Recycle()
+
+	J0AA := J0aa.MSlice()
+	defer J0AA.Recycle()
+	J0BB := J0bb.MSlice()
+	defer J0BB.Recycle()
+	J0AB := J0ab.MSlice()
+	defer J0AB.Recycle()
+
+	// for Brillouin
+	Ja := JA.MSlice()
+	defer Ja.Recycle()
+	Jb := JB.MSlice()
+	defer Jb.Recycle()
+
+	cuda.LLBRenormAF2TBri(y01, y02, M1.Buffer(), M2.Buffer(), Te.temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, dt, GammaLL1, GammaLL2, Ja, Jb)
+
 }

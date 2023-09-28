@@ -6,19 +6,14 @@
 extern "C"
 
  __global__ void
-evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
+evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 	float* __restrict__  templ_,      float* __restrict__ dt0l_,
-	float* __restrict__  temps_,      float* __restrict__ dt0s_,
 	float* __restrict__ mx, float* __restrict__ my, float* __restrict__ mz,
                 float* __restrict__ Ke_, float Ke_mul,
                 float* __restrict__ Ce_, float Ce_mul,
                 float* __restrict__ Kl_, float Kl_mul,
                 float* __restrict__ Cl_, float Cl_mul,
-                float* __restrict__ Ks_, float Ks_mul,
-                float* __restrict__ Cs_, float Cs_mul,
                 float* __restrict__ Gel_, float Gel_mul,
-                float* __restrict__ Ges_, float Ges_mul,
-                float* __restrict__ Gls_, float Gls_mul,
                 float* __restrict__ Dth_, float Dth_mul,
                 float* __restrict__ Tsubsth_, float Tsubsth_mul,
                 float* __restrict__ Tausubsth_, float Tausubsth_mul,
@@ -30,7 +25,8 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
                 float* __restrict__ jx_, float jx_mul,
                 float* __restrict__ jy_, float jy_mul,
                 float* __restrict__ jz_, float jz_mul,
-            		float wx, float wy, float wz, int Nx, int Ny, int Nz
+            		float wx, float wy, float wz, int Nx, int Ny, int Nz,
+                float* __restrict__ vol
                 ) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
@@ -42,12 +38,11 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     }
     // central cell
     int i = idx(ix, iy, iz);
-    float3 m0 = make_float3(mx[i], my[i], mz[i]);
-    
-    float mm=dot(m0,m0);
+		float mm = (vol == NULL? 1.0f: vol[i]);
+    float3 m0={mx[i], my[i], mz[i]};
+//    float mm=dot(m0,m0);
     dt0e_[i]=0.0;
     dt0l_[i]=0.0;
-    dt0s_[i]=0.0;
 
     if (mm!=0)
     {
@@ -57,12 +52,8 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     float Ce = amul(Ce_, Ce_mul, i);
     float Kl = amul(Kl_, Kl_mul, i);
     float Cl = amul(Cl_, Cl_mul, i);
-    float Ks = amul(Ks_, Ks_mul, i);
-    float Cs = amul(Cs_, Cs_mul, i);
     float Dth = amul(Dth_, Dth_mul, i);
     float Gel = amul(Gel_, Gel_mul, i);
-    float Ges = amul(Ges_, Ges_mul, i);
-    float Gls = amul(Gls_, Gls_mul, i);
     float3 cd = vmul(cdx_, cdy_, cdz_, cdx_mul, cdy_mul, cdz_mul, i);
 
     float Tsubsth = amul(Tsubsth_, Tsubsth_mul, i);
@@ -73,32 +64,29 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     float tempe = tempe_[i];
     if (tempe!=0) {Ce=Ce*tempe/300.0;} else {Ce=Ce*1.0/300.0;}  // To account for temperature dependence. Cl is almost constat at T>TD
     float templ = templ_[i];
-    float temps = temps_[i];
 
     int i_;    // neighbor index
-    float3 m_; // neighbor mag
+//    float3 m_; // neighbor mag
     float mm_;
 
     // Difusission for each temperature
 
     float tempve=0;
     float tempvl=0;
-    float tempvs=0;
 
     // left neighbor
     if (ix-1>=0){
     i_  = idx(ix-1, iy, iz);           // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+//    mm_=dot(m_,m_);
+		mm_ = (vol == NULL? 1.0f: vol[i_]);
 
     if (mm_!=0)
     {
      tempve = tempe_[i_];
      tempvl = templ_[i_];
-     tempvs = temps_[i_];
      dt0e_[i] += (Ke*(tempve-tempe)/wx/wx);
      dt0l_[i] += (Kl*(tempvl-templ)/wx/wx);
-     dt0s_[i] += (Ks*(tempvs-temps)/wx/wx);
      //if (tempv>=1e4) {   printf("%d %d %d %e %e %e %e\n",ix,iy,iz,dt0_[i],temp,tempv,mm); dt0_[i]=0.0;}
     }
     }
@@ -106,32 +94,30 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     // right neighbor
     if (ix+1<Nx){
     i_  = idx(ix+1, iy, iz);           // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+//    mm_=dot(m_,m_);
+		mm_ = (vol == NULL? 1.0f: vol[i_]);
     if (mm_!=0)
     {
      tempve = tempe_[i_];
      tempvl = templ_[i_];
-     tempvs = temps_[i_];
      dt0e_[i] += (Ke*(tempve-tempe)/wx/wx);
      dt0l_[i] += (Kl*(tempvl-templ)/wx/wx);
-     dt0s_[i] += (Ks*(tempvs-temps)/wx/wx);
     }
     }
 
     // back neighbor
     if (iy-1>=0){
     i_  = idx(ix, iy-1, iz);          // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+//    mm_=dot(m_,m_);
+		mm_ = (vol == NULL? 1.0f: vol[i_]);
     if (mm_!=0)
     {
      tempve = tempe_[i_];
      tempvl = templ_[i_];
-     tempvs = temps_[i_];
      dt0e_[i] += (Ke*(tempve-tempe)/wy/wy);
      dt0l_[i] += (Kl*(tempvl-templ)/wy/wy);
-     dt0s_[i] += (Ks*(tempvs-temps)/wy/wy);
     }
     }
 
@@ -139,16 +125,15 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 
     if (iy+1<Ny){
     i_  = idx(ix, iy+1, iz);          // clamps or wraps index according to PBC
-    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-    mm_=dot(m_,m_);
+//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+//    mm_=dot(m_,m_);
+		mm_ = (vol == NULL? 1.0f: vol[i_]);
     if (mm_!=0)
     {
      tempve = tempe_[i_];
      tempvl = templ_[i_];
-     tempvs = temps_[i_];
      dt0e_[i] += (Ke*(tempve-tempe)/wy/wy);
      dt0l_[i] += (Kl*(tempvl-templ)/wy/wy);
-     dt0s_[i] += (Ks*(tempvs-temps)/wy/wy);
     }
     }
 
@@ -157,40 +142,37 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
         // bottom neighbor
 	if (iz-1>=0){
         i_  = idx(ix, iy, iz-1);
-        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-        mm_=dot(m_,m_);
+//        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+//        mm_=dot(m_,m_);
+		mm_ = (vol == NULL? 1.0f: vol[i_]);
         if (mm_!=0)
         {
 	     tempve = tempe_[i_];
 	     tempvl = templ_[i_];
-	     tempvs = temps_[i_];
 	     dt0e_[i] += (Ke*(tempve-tempe)/wz/wz);
 	     dt0l_[i] += (Kl*(tempvl-templ)/wz/wz);
-	     dt0s_[i] += (Ks*(tempvs-temps)/wz/wz); 
         }
         }
 
         // top neighbor
         if (iz+1<Nz){
         i_  = idx(ix, iy,iz+1);
-        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-        mm_=dot(m_,m_);
+//        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
+//        mm_=dot(m_,m_);
+		mm_ = (vol == NULL? 1.0f: vol[i_]);
         if (mm_!=0)
         {
 	     tempve = tempe_[i_];
 	     tempvl = templ_[i_];
-	     tempvs = temps_[i_];
 	     dt0e_[i] += (Ke*(tempve-tempe)/wz/wz);
 	     dt0l_[i] += (Kl*(tempvl-templ)/wz/wz);
-	     dt0s_[i] += (Ks*(tempvs-temps)/wz/wz);
         }
         }
     }
 
 // Exchange between temperatures
-    dt0e_[i]+=-Gel*(tempe-templ)-Ges*(tempe-temps);
-    dt0l_[i]+=-Gel*(templ-tempe)-Gls*(templ-temps);
-    dt0s_[i]+=-Ges*(temps-tempe)-Gls*(temps-templ);
+    dt0e_[i]+=-Gel*(tempe-templ);
+    dt0l_[i]+=-Gel*(templ-tempe);
 
 //External sources on electron?
     dt0l_[i]+=dot(J,J)*res;          //Joule Heating
@@ -200,20 +182,34 @@ evaldt03T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 	    dt0e_[i]+=Qext;                  //External Heating source in W/m3 without circular dichoism
 	} else
 	{
+
+  /*
+  //Old IMplementations MCD
 	float norm1=sqrt(mm);
 	float norm2=sqrt(alphaD);
 	float pe = -1.0*dot(m0,cd);		// Inversion of sign to lead to the same results as IFE
 	float scaleCD=1.0+(pe/norm1/norm2-1.0)/2.0*norm2;
 	dt0e_[i]+=Qext*scaleCD;
+  */
+  // New Implementation MCD
+	float norm2=sqrt(alphaD);
+  float pe = -1.0*dot(m0,cd);		// Inversion of sign to lead to the same results as IFE
+  if (pe>0) pe=1*norm2;
+  if (pe<0) pe=-1*norm2;
+  float scaleCD=1.0+0.5*pe;
+  dt0e_[i]+=Qext*scaleCD;
 	}
 
 // Missing constants
     dt0e_[i]=dt0e_[i]/Ce;
     dt0l_[i]=dt0l_[i]/Cl;
-    dt0s_[i]=dt0s_[i]/Cs;
 
     if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
 
+    }
+    else{
+      tempe_[i]=0;
+      templ_[i]=0;
     }
 
 }

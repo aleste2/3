@@ -5,7 +5,7 @@ import (
 )
 
 // Landau-Lifshitz torque for AF implementation PRB 100 054401 (2019)
-func LLBTorqueFerroUnified(torque1, m1, B1 *data.Slice, temp MSlice, te *data.Slice, alpha, TCurie, Msat MSlice, hth1a *data.Slice, hth2a *data.Slice, nv, mua, J0aa, Qext, deltaM MSlice, TTM int) {
+func LLBTorqueFerroUnified(torque1, m1, B1 *data.Slice, temp MSlice, te *data.Slice, alpha, TCurie, Msat MSlice, hth1a *data.Slice, hth2a *data.Slice, nv, mua, J0aa, Qext, deltaM MSlice, TTM int, vol *data.Slice) {
 	N := torque1.Len()
 	cfg := make1DConf(N)
 	//	k_LLBtorqueAF2TPRB054401_async(torque1.DevPtr(X), torque1.DevPtr(Y), torque1.DevPtr(Z),
@@ -25,5 +25,6 @@ func LLBTorqueFerroUnified(torque1, m1, B1 *data.Slice, temp MSlice, te *data.Sl
 		deltaM.DevPtr(0), deltaM.Mul(0),
 		Qext.DevPtr(0), Qext.Mul(0),
 		TTM,
+		vol.DevPtr(0),
 		N, cfg)
 }

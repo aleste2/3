@@ -10,14 +10,12 @@ import (
 )
 
 var (
-	//TCurie = NewScalarParam("TCurie", "K", "Curie Temperature")
 	Qext = NewExcitation("Qext", "W/m3", "External Heating")
 
 	// For Joule heating
-	Langevin               = 0
-	JHThermalnoise         = true
-	ScaleNoiseLLB  float64 = 1.0 // reduce noise in LLB
-	//RenormLLB                   = false
+	Langevin                    = 0
+	JHThermalnoise              = true
+	ScaleNoiseLLB     float64   = 1.0 // reduce noise in LLB
 	TSubsteps                   = 3
 	TOversteps                  = 1
 	TOverstepsCounter           = 0
@@ -29,22 +27,16 @@ var (
 	Density           = NewScalarParam("Density", "Kg/m3", "Mass density")
 	TSubs             = NewScalarParam("TSubs", "K", "Substrate Temperature")
 	TauSubs           = NewScalarParam("TauSubs", "s", "Substrate difussion time")
-	//a1                = NewScalarParam("a1", "a.u.", "Exponent Langevin (T/Tc)^a1") // 0.2-1.4
-	//a2                = NewScalarParam("a2", "a.u.", "Exponent Langevin (T/Tc)^a2") // 0.2-1.4
 
-	// For 3T Model
+	// For 2T Model
 	Te  LocalTemp // Electron temperature
 	Tl  LocalTemp // lattice temperature
-	Ts  LocalTemp // Spin temperature
 	Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity")
 	Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity")
 	Ks  = NewScalarParam("Ks", "W/(m·K)", "Spin thermal conductivity")
 	Ce  = NewScalarParam("Ce", "J/(m3·K)", "Electron Heat capacity")
 	Cl  = NewScalarParam("Cl", "J/(m3·K)", "Lattice Heat capacity")
-	Cs  = NewScalarParam("Cs", "J/(m3·K)", "Spin Heat capacity")
 	Gel = NewScalarParam("Gel", "W/(m3·K)", "Transfer electron-lattice")
-	Ges = NewScalarParam("Ges", "W/(m3·K)", "Transfer electron-spin")
-	Gls = NewScalarParam("Gls", "W/(m3·K)", "Transfer lattice-spin")
 
 	// For circular dichroism (only 3T model)
 	CD = NewVectorParam("CD", "", "Laser beam direction and Circular Dichroism magnitude")
@@ -57,18 +49,14 @@ func init() {
 	DeclFunc("RestartJH", StartJH, "Equals Temperature to substrate")
 	DeclFunc("GetTemp", GetCell, "Gets cell temperature")
 
-	// For 3T and 2T
-	DeclFunc("Restart3T", Start3T, "Equals Temperatures to substrate")
+	// For 2T
 	DeclFunc("Restart2T", Start2T, "Equals Temperatures to substrate")
 	DeclROnly("Te", AsScalarField(&Te), "Electron Local Temperature (K)")
 	Te.name = "Local_Temperature_Electrons"
 	DeclROnly("Tl", AsScalarField(&Tl), "Lattice Local Temperature (K)")
 	Tl.name = "Local_Temperature_Phonons"
-	DeclROnly("Ts", AsScalarField(&Ts), "Spin Local Temperature (K)")
-	Ts.name = "Local_Temperature_Spins"
 	DeclFunc("GetTe", GetTe, "Gets electron cell temperature")
 	DeclFunc("GetTl", GetTl, "Gets lattice cell temperature")
-	DeclFunc("GetTs", GetTs, "Gets spin cell temperature")
 	DeclFunc("SetTl", SetTlToTe, "Set Tl to Te")
 
 	DeclFunc("RadialMask", RadialMask, "Gaussian mask")
@@ -151,16 +139,8 @@ func (b *thermField) LLBupdate() {
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
 		if LLBJHf == true {
-			//TempJH.update()
 			Te.update()
 			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Te.temp, alpha, ScaleNoiseLLB)
-			//			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, TempJH.temp, alpha, ScaleNoiseLLB)
-		}
-		if LLB3Tf == true {
-			Te.update()
-			Tl.update()
-			Ts.update()
-			cuda.SetTemperatureJH(dst.Comp(i), noise, k2_VgammaDt, ms, Ts.temp, alpha, ScaleNoiseLLB)
 		}
 		if LLB2Tf == true {
 			Te.update()
@@ -178,12 +158,6 @@ func StartJH() {
 	Te.JHSetLocalTemp()
 }
 
-func Start3T() {
-	Te.JHSetLocalTemp()
-	Tl.JHSetLocalTemp()
-	Ts.JHSetLocalTemp()
-}
-
 func Start2T() {
 	Te.JHSetLocalTemp()
 	Tl.JHSetLocalTemp()
@@ -193,26 +167,6 @@ func SetTlToTe() {
 	data.Copy(Tl.temp, Te.temp)
 }
 
-/*
-func SetM() {
-	TCurie := TCurie.MSlice()
-	defer TCurie.Recycle()
-	if solvertype == 26 {
-		Temp := Temp.MSlice()
-		defer Temp.Recycle()
-		cuda.InitmLLB(M.Buffer(), Temp, TCurie, Langevin)
-	}
-	if solvertype == 27 {
-		cuda.InitmLLBJH(M.Buffer(), TempJH.temp, TCurie, Langevin)
-	}
-	if solvertype == 28 {
-		cuda.InitmLLBJH(M.Buffer(), Ts.temp, TCurie, Langevin)
-	}
-	if solvertype == 29 {
-		cuda.InitmLLBJH(M.Buffer(), Te.temp, TCurie, Langevin)
-	}
-}
-*/
 func (b *LocalTemp) JHSetLocalTemp() {
 	b.update()
 	TSubs := TSubs.MSlice()
@@ -250,10 +204,6 @@ func GetCell(ix, iy, iz int) float64 {
 
 func GetTe(ix, iy, iz int) float64 {
 	return float64(Te.GetCell(ix, iy, iz))
-}
-
-func GetTs(ix, iy, iz int) float64 {
-	return float64(Ts.GetCell(ix, iy, iz))
 }
 
 func GetTl(ix, iy, iz int) float64 {

@@ -153,7 +153,7 @@ func torqueFnFerroLLBUnified(dst1 *data.Slice, hth1a, hth2a *data.Slice) {
 		TTM = 1
 	}
 	if Precess {
-		cuda.LLBTorqueFerroUnified(dst1, M.Buffer(), dst1, temp, Te.temp, alpha, Tcurie, Msat, hth1a, hth2a, NV, MU1, J0AA, Qext, deltam, TTM) // overwrite dst with torque
+		cuda.LLBTorqueFerroUnified(dst1, M.Buffer(), dst1, temp, Te.temp, alpha, Tcurie, Msat, hth1a, hth2a, NV, MU1, J0AA, Qext, deltam, TTM, geometry.Gpu()) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst1, M.Buffer(), dst1)
 	}

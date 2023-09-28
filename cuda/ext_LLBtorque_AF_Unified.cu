@@ -45,6 +45,7 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 	float* __restrict__  deltaM_, float deltaM_mul,
 	float* __restrict__ Qext_, float Qext_mul,
 	int TTM,
+	float* __restrict__ vol,
 	int N) {
 
 		const float kB=1.38064852e-23;
@@ -77,6 +78,8 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 				float Qext = amul(Qext_, Qext_mul, i);
 				float deltaM = amul(deltaM_, deltaM_mul, i);
 				float temp;
+				float v = (vol == NULL? 1.0f: vol[i]);
+				//if (i==10) printf("%f\n",v);
 
         if (TTM==1) {temp = te_[i];} else{ temp=amul(temp_, temp_mul, i);}
 
@@ -88,17 +91,16 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
         float3 hth2b = {hth22x[i], hth22y[i],hth22z[i]};
         float3 torquea;
         float3 torqueb;
+				float ma=sqrt(dot(m1,m1));
+				float mb=sqrt(dot(m2,m2));
 
-        // Parametros de LLB
-        float ma=sqrt(dot(m1,m1));
-				if (ma<0.01) ma=0.01;
-        float mb=sqrt(dot(m2,m2));
-				if (mb<0.01) mb=0.01;
-        if ((ma==0)||(mb==0))	{
+        if ((v==0)||(ma==0)||(mb==0))	{
 					torquea = 0.0f*m1;
          	torqueb = 0.0f*m2;
  				} else {
-
+					// Parametros de LLB
+					if (ma<0.01) ma=0.01;
+					if (mb<0.01) mb=0.01;
 					float J01 = J0aa;
 					float J02 = J0bb;
 					float J012 = J0ab;

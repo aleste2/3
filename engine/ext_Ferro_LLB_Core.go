@@ -43,9 +43,9 @@ func SetM() {
 	if solvertype == 27 {
 		cuda.InitmLLBJH(M.Buffer(), TempJH.temp, TCurie, Langevin)
 	}
-	if solvertype == 28 {
+	/*if solvertype == 28 {
 		cuda.InitmLLBJH(M.Buffer(), Ts.temp, TCurie, Langevin)
-	}
+	}*/
 	if solvertype == 29 {
 		cuda.InitmLLBJH(M.Buffer(), Te.temp, TCurie, Langevin)
 	}

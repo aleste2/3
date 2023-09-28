@@ -6,8 +6,8 @@ GO_BUILDFLAGS=-compiler gc
 # GO_BUILDFLAGS=-compiler gccgo -gccgoflags '-static-libgcc -O4 -Ofast -march=native'
 
 # Multiple gpus
-export CUDA_CC=30 32 35 37 50 52 53 60 61 62 70 72 75 80 86
-
+# export CUDA_CC=30 32 35 37 50 52 53 60 61 62 70 72 75 80 86
+export CUDA_CC=86
 CGO_CFLAGS_ALLOW='(-fno-schedule-insns|-malign-double|-ffast-math)'
 
 
