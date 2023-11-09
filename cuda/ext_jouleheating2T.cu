@@ -2,6 +2,7 @@
 #include "amul.h"
 #include "float3.h"
 #include "stencil.h"
+#include "exchange.h"
 
 extern "C"
 
@@ -9,9 +10,11 @@ extern "C"
 evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 	float* __restrict__  templ_,      float* __restrict__ dt0l_,
 	float* __restrict__ mx, float* __restrict__ my, float* __restrict__ mz,
-                float* __restrict__ Ke_, float Ke_mul,
+//                float* __restrict__ Ke_, float Ke_mul,
+                float* __restrict__ Ke_,
                 float* __restrict__ Ce_, float Ce_mul,
-                float* __restrict__ Kl_, float Kl_mul,
+//                float* __restrict__ Kl_, float Kl_mul,
+                float* __restrict__ Kl_,
                 float* __restrict__ Cl_, float Cl_mul,
                 float* __restrict__ Gel_, float Gel_mul,
                 float* __restrict__ Dth_, float Dth_mul,
@@ -19,14 +22,15 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
                 float* __restrict__ Tausubsth_, float Tausubsth_mul,
                 float* __restrict__ res_, float res_mul,
                 float* __restrict__ Qext_, float Qext_mul,
-	        float* __restrict__ cdx_, float cdx_mul,
+	              float* __restrict__ cdx_, float cdx_mul,
                 float* __restrict__ cdy_, float cdy_mul,
                 float* __restrict__ cdz_, float cdz_mul,
                 float* __restrict__ jx_, float jx_mul,
                 float* __restrict__ jy_, float jy_mul,
                 float* __restrict__ jz_, float jz_mul,
             		float wx, float wy, float wz, int Nx, int Ny, int Nz,
-                float* __restrict__ vol
+                float* __restrict__ vol,
+                uint8_t* __restrict__ regions
                 ) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
@@ -38,19 +42,22 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     }
     // central cell
     int i = idx(ix, iy, iz);
+    uint8_t r0 = regions[i];
 		float mm = (vol == NULL? 1.0f: vol[i]);
     float3 m0={mx[i], my[i], mz[i]};
 //    float mm=dot(m0,m0);
     dt0e_[i]=0.0;
     dt0l_[i]=0.0;
 
+    //if (i==0) printf("%e %d\n",Ke_[symidx(0, 0)],symidx(0, 0));
+
     if (mm!=0)
     {
 
     float3 J = vmul(jx_, jy_, jz_, jx_mul, jy_mul, jz_mul, i);
-    float Ke = amul(Ke_, Ke_mul, i);
+    //float Ke = amul(Ke_, Ke_mul, i);
     float Ce = amul(Ce_, Ce_mul, i);
-    float Kl = amul(Kl_, Kl_mul, i);
+    //float Kl = amul(Kl_, Kl_mul, i);
     float Cl = amul(Cl_, Cl_mul, i);
     float Dth = amul(Dth_, Dth_mul, i);
     float Gel = amul(Gel_, Gel_mul, i);
@@ -68,106 +75,106 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     int i_;    // neighbor index
 //    float3 m_; // neighbor mag
     float mm_;
-
     // Difusission for each temperature
 
     float tempve=0;
     float tempvl=0;
+    float Ke;
+    float Kl;
 
     // left neighbor
     if (ix-1>=0){
-    i_  = idx(ix-1, iy, iz);           // clamps or wraps index according to PBC
-//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-//    mm_=dot(m_,m_);
-		mm_ = (vol == NULL? 1.0f: vol[i_]);
-
-    if (mm_!=0)
-    {
-     tempve = tempe_[i_];
-     tempvl = templ_[i_];
-     dt0e_[i] += (Ke*(tempve-tempe)/wx/wx);
-     dt0l_[i] += (Kl*(tempvl-templ)/wx/wx);
-     //if (tempv>=1e4) {   printf("%d %d %d %e %e %e %e\n",ix,iy,iz,dt0_[i],temp,tempv,mm); dt0_[i]=0.0;}
-    }
+      i_  = idx(ix-1, iy, iz);           // clamps or wraps index according to PBC
+		    mm_ = (vol == NULL? 1.0f: vol[i_]);
+        if (mm_!=0)
+        {
+          tempve = tempe_[i_];
+          tempvl = templ_[i_];
+          Ke = Ke_[symidx(r0, regions[i_])];
+          Kl = Kl_[symidx(r0, regions[i_])];
+          dt0e_[i] += (Ke*(tempve-tempe)/wx/wx);
+          dt0l_[i] += (Kl*(tempvl-templ)/wx/wx);
+        }
     }
 
     // right neighbor
     if (ix+1<Nx){
-    i_  = idx(ix+1, iy, iz);           // clamps or wraps index according to PBC
-//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-//    mm_=dot(m_,m_);
-		mm_ = (vol == NULL? 1.0f: vol[i_]);
-    if (mm_!=0)
-    {
-     tempve = tempe_[i_];
-     tempvl = templ_[i_];
-     dt0e_[i] += (Ke*(tempve-tempe)/wx/wx);
-     dt0l_[i] += (Kl*(tempvl-templ)/wx/wx);
-    }
+      i_  = idx(ix+1, iy, iz);           // clamps or wraps index according to PBC
+		  mm_ = (vol == NULL? 1.0f: vol[i_]);
+      if (mm_!=0)
+      {
+        tempve = tempe_[i_];
+        tempvl = templ_[i_];
+        Ke = Ke_[symidx(r0, regions[i_])];
+        Kl = Kl_[symidx(r0, regions[i_])];
+        dt0e_[i] += (Ke*(tempve-tempe)/wx/wx);
+        dt0l_[i] += (Kl*(tempvl-templ)/wx/wx);
+      }
     }
 
     // back neighbor
     if (iy-1>=0){
-    i_  = idx(ix, iy-1, iz);          // clamps or wraps index according to PBC
-//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-//    mm_=dot(m_,m_);
-		mm_ = (vol == NULL? 1.0f: vol[i_]);
-    if (mm_!=0)
-    {
-     tempve = tempe_[i_];
-     tempvl = templ_[i_];
-     dt0e_[i] += (Ke*(tempve-tempe)/wy/wy);
-     dt0l_[i] += (Kl*(tempvl-templ)/wy/wy);
-    }
+      i_  = idx(ix, iy-1, iz);          // clamps or wraps index according to PBC
+		    mm_ = (vol == NULL? 1.0f: vol[i_]);
+        if (mm_!=0)
+        {
+          tempve = tempe_[i_];
+          tempvl = templ_[i_];
+          Ke = Ke_[symidx(r0, regions[i_])];
+          Kl = Kl_[symidx(r0, regions[i_])];
+          dt0e_[i] += (Ke*(tempve-tempe)/wy/wy);
+          dt0l_[i] += (Kl*(tempvl-templ)/wy/wy);
+        }
     }
 
     // front neighbor
 
     if (iy+1<Ny){
-    i_  = idx(ix, iy+1, iz);          // clamps or wraps index according to PBC
-//    m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-//    mm_=dot(m_,m_);
-		mm_ = (vol == NULL? 1.0f: vol[i_]);
-    if (mm_!=0)
-    {
-     tempve = tempe_[i_];
-     tempvl = templ_[i_];
-     dt0e_[i] += (Ke*(tempve-tempe)/wy/wy);
-     dt0l_[i] += (Kl*(tempvl-templ)/wy/wy);
-    }
+      i_  = idx(ix, iy+1, iz);          // clamps or wraps index according to PBC
+		  mm_ = (vol == NULL? 1.0f: vol[i_]);
+      if (mm_!=0)
+      {
+        tempve = tempe_[i_];
+        tempvl = templ_[i_];
+        Ke = Ke_[symidx(r0, regions[i_])];
+        Kl = Kl_[symidx(r0, regions[i_])];
+        dt0e_[i] += (Ke*(tempve-tempe)/wy/wy);
+        dt0l_[i] += (Kl*(tempvl-templ)/wy/wy);
+        //if (i==1) printf("%f %f %d\n",Ke,Kl,symidx(r0, regions[i_]));
+      }
     }
 
     // only take vertical derivative for 3D sim
     if (Nz != 1) {
         // bottom neighbor
-	if (iz-1>=0){
-        i_  = idx(ix, iy, iz-1);
-//        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-//        mm_=dot(m_,m_);
-		mm_ = (vol == NULL? 1.0f: vol[i_]);
-        if (mm_!=0)
-        {
-	     tempve = tempe_[i_];
-	     tempvl = templ_[i_];
-	     dt0e_[i] += (Ke*(tempve-tempe)/wz/wz);
-	     dt0l_[i] += (Kl*(tempvl-templ)/wz/wz);
-        }
-        }
+	       if (iz-1>=0){
+           i_  = idx(ix, iy, iz-1);
+		         mm_ = (vol == NULL? 1.0f: vol[i_]);
+             if (mm_!=0)
+             {
+	              tempve = tempe_[i_];
+	              tempvl = templ_[i_];
+                 Ke = Ke_[symidx(r0, regions[i_])];
+                 Kl = Kl_[symidx(r0, regions[i_])];
+	               dt0e_[i] += (Ke*(tempve-tempe)/wz/wz);
+	               dt0l_[i] += (Kl*(tempvl-templ)/wz/wz);
+               }
+         }
 
         // top neighbor
         if (iz+1<Nz){
-        i_  = idx(ix, iy,iz+1);
-//        m_  = make_float3(mx[i_], my[i_], mz[i_]);  // load m
-//        mm_=dot(m_,m_);
-		mm_ = (vol == NULL? 1.0f: vol[i_]);
-        if (mm_!=0)
-        {
-	     tempve = tempe_[i_];
-	     tempvl = templ_[i_];
-	     dt0e_[i] += (Ke*(tempve-tempe)/wz/wz);
-	     dt0l_[i] += (Kl*(tempvl-templ)/wz/wz);
-        }
-        }
+          i_  = idx(ix, iy,iz+1);
+		      mm_ = (vol == NULL? 1.0f: vol[i_]);
+          if (mm_!=0)
+          {
+	           tempve = tempe_[i_];
+	            tempvl = templ_[i_];
+              Ke = Ke_[symidx(r0, regions[i_])];
+              Kl = Kl_[symidx(r0, regions[i_])];
+	            dt0e_[i] += (Ke*(tempve-tempe)/wz/wz);
+	            dt0l_[i] += (Kl*(tempvl-templ)/wz/wz);
+            }
+         }
     }
 
 // Exchange between temperatures

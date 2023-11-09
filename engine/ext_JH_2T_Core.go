@@ -29,14 +29,20 @@ var (
 	TauSubs           = NewScalarParam("TauSubs", "s", "Substrate difussion time")
 
 	// For 2T Model
-	Te  LocalTemp // Electron temperature
-	Tl  LocalTemp // lattice temperature
-	Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity")
-	Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity")
-	Ks  = NewScalarParam("Ks", "W/(m·K)", "Spin thermal conductivity")
+	Te LocalTemp // Electron temperature
+	Tl LocalTemp // lattice temperature
+	// Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity")
+	// Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity")
+	//Ks  = NewScalarParam("Ks", "W/(m·K)", "Spin thermal conductivity")
 	Ce  = NewScalarParam("Ce", "J/(m3·K)", "Electron Heat capacity")
 	Cl  = NewScalarParam("Cl", "J/(m3·K)", "Lattice Heat capacity")
 	Gel = NewScalarParam("Gel", "W/(m3·K)", "Transfer electron-lattice")
+
+	// Trial Ke Ka type exchange for thermal resistance and different materials
+	Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity", &kel)
+	Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity", &kll)
+	kel exchParam // electron themal contuctivity
+	kll exchParam // lattice themal contuctivity
 
 	// For circular dichroism (only 3T model)
 	CD = NewVectorParam("CD", "", "Laser beam direction and Circular Dichroism magnitude")
@@ -68,6 +74,96 @@ func init() {
 	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
 	DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
 	DeclVar("ScaleNoiseLLB", &ScaleNoiseLLB, "Thermal noise scale")
+
+	// For new thermal difussion
+	kel.init(Ke)
+	kll.init(Kl)
+	DeclFunc("ext_InterExchangeKe", InterExchangeKe, "Sets electron thermal difussion between two regions.")
+	DeclFunc("ext_InterExchangeKl", InterExchangeKl, "Sets lattice thermal difussion between two regions.")
+	DeclFunc("PrintAex", printAex, "Equals Temperatures to substrate")
+	DeclFunc("PrintKe", printKe, "Equals Temperatures to substrate")
+	DeclFunc("PrintKl", printKl, "Equals Temperatures to substrate")
+	DeclFunc("PrintAex1", printAex1, "Equals Temperatures to substrate")
+}
+
+// Sets electron thermal difussion between two regions
+func InterExchangeKe(region1, region2 int, value float64) {
+	kel.setInter(region1, region2, value)
+	kel.update()
+}
+
+func printAex() {
+	lex2.update()
+
+	ex := lex2.parent.cpuLUT()
+	for i := 0; i < NREGION; i++ {
+		exi := ex[0][i]
+		for j := i; j < NREGION; j++ {
+			exj := ex[0][j]
+			I := symmidx(i, j)
+			if (i < 2) && (j < 2) {
+				print(" Ex (", i, ",", j, ")=", lex2.lut[I], "", lex2.scale[I], "", lex2.inter[I], "", exchAverage(exi, exj), "\n")
+			}
+		}
+	}
+
+}
+
+func printAex1() {
+	//lex21.update()
+
+	ex := lex21.parent.cpuLUT()
+	for i := 0; i < NREGION; i++ {
+		exi := ex[0][i]
+		for j := i; j < NREGION; j++ {
+			exj := ex[0][j]
+			I := symmidx(i, j)
+			if (i < 2) && (j < 2) {
+				print(" Ex (", i, ",", j, ")=", lex21.lut[I], "", lex21.scale[I], "", lex21.inter[I], "", exchAverage(exi, exj), "\n")
+			}
+		}
+	}
+
+}
+
+func printKe() {
+	kel.update()
+
+	ex := kel.parent.cpuLUT()
+	for i := 0; i < NREGION; i++ {
+		exi := ex[0][i]
+		for j := i; j < NREGION; j++ {
+			exj := ex[0][j]
+			I := symmidx(i, j)
+			if (i < 2) && (j < 2) {
+				print(" Ex (", i, ",", j, ")=", kel.lut[I], "", kel.scale[I], "", kel.inter[I], "", exchAverage(exi, exj), "\n")
+			}
+		}
+	}
+
+}
+
+func printKl() {
+	kll.update()
+
+	ex := kll.parent.cpuLUT()
+	for i := 0; i < NREGION; i++ {
+		exi := ex[0][i]
+		for j := i; j < NREGION; j++ {
+			exj := ex[0][j]
+			I := symmidx(i, j)
+			if (i < 2) && (j < 2) {
+				print(" Ex (", i, ",", j, ")=", kll.lut[I], "", kll.scale[I], "", kll.inter[I], "", exchAverage(exi, exj), "\n")
+			}
+		}
+	}
+
+}
+
+// Sets lattice thermal difussion between two regions
+func InterExchangeKl(region1, region2 int, value float64) {
+	kll.setInter(region1, region2, value)
+	kll.update()
 }
 
 // LocalTemp definitions and Functions for JH
