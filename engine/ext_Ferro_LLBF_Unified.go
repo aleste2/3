@@ -7,13 +7,33 @@ import (
 	"math"
 )
 
-// Heun solver for LLB equation + joule heating + 2T model.
-type HeunLLBFerroUnified struct{}
+// Heun solver for Ferro LLB equation + joule heating + 2T model.
+type HeunLLBFerroUnified struct {
+	bufferTe    *data.Slice // buffer for slow Te evolucion
+	bufferTl    *data.Slice // buffer for slow Tl evolucion
+	bufferTeBig *data.Slice // buffer for slow Te evolucion
+	bufferTlBig *data.Slice // buffer for slow Tl evolucion
+}
 
 // Adaptive HeunLLB2T method, can be used as solver.Step
-func (_ *HeunLLBFerroUnified) Step() {
+func (LLB *HeunLLBFerroUnified) Step() {
 
 	y1 := M.Buffer()
+
+	// Temperature Buffers
+	if LLB2Tf == true {
+		if LLB.bufferTe == nil {
+			size := Te.Mesh().Size()
+			LLB.bufferTe = cuda.NewSlice(1, size)
+			LLB.bufferTl = cuda.NewSlice(1, size)
+			LLB.bufferTeBig = cuda.NewSlice(1, size)
+			LLB.bufferTlBig = cuda.NewSlice(1, size)
+			cuda.Madd2(LLB.bufferTe, LLB.bufferTe, LLB.bufferTe, 0, 0) // bufferTe to 0
+			cuda.Madd2(LLB.bufferTl, LLB.bufferTl, LLB.bufferTl, 0, 0) // bufferTl to 0
+			cuda.Madd2(LLB.bufferTeBig, Te.temp, Te.temp, 1, 0)
+			cuda.Madd2(LLB.bufferTlBig, Tl.temp, Tl.temp, 1, 0)
+		}
+	}
 
 	// For renorm
 	y01 := cuda.Buffer(VECTOR, y1.Size())
@@ -71,9 +91,10 @@ func (_ *HeunLLBFerroUnified) Step() {
 		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt, -0.5*dt) //****
 
 		if LLB2Tf == true {
-			for iter := 0; iter < TSubsteps; iter++ {
-				NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
-			}
+			//for iter := 0; iter < TSubsteps; iter++ {
+			//				NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
+			AdaptativeNewtonStep2T(float32(Dt_si), LLB.bufferTe, LLB.bufferTl, LLB.bufferTeBig, LLB.bufferTlBig)
+			//}
 		}
 
 		if LLBJHf == true {
@@ -106,7 +127,16 @@ func (_ *HeunLLBFerroUnified) Step() {
 	}
 }
 
-func (_ *HeunLLBFerroUnified) Free() {}
+func (LLB *HeunLLBFerroUnified) Free() {
+	LLB.bufferTe.Free()
+	LLB.bufferTe = nil
+	LLB.bufferTl.Free()
+	LLB.bufferTl = nil
+	LLB.bufferTeBig.Free()
+	LLB.bufferTeBig = nil
+	LLB.bufferTlBig.Free()
+	LLB.bufferTlBig = nil
+}
 
 // Torque for antiferro LLB 2T
 
