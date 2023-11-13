@@ -17,9 +17,9 @@ func SetEffectiveField(dst *data.Slice) {
 	AddAFMExchangeField(dst) // AFM Exchange non adjacent layers Victor mod
 	B_ext.AddTo(dst)
 	//print(OSC,"\n")
-	if OSC == true {
+	/*if OSC == true {
 		AddOSCField(dst)
-	}
+	}*/
 	if !relaxing {
 		if LLBeq != true { // Needed not to add two times thermal noises in the case of LLB equation
 

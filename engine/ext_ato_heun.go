@@ -349,16 +349,31 @@ func (_ *HeunAto) Step() {
 
 func (_ *HeunAto) Free() {}
 
-type HeunAto2T struct{}
+type HeunAto2T struct {
+	bufferTe    *data.Slice // buffer for slow Te evolucion
+	bufferTl    *data.Slice // buffer for slow Tl evolucion
+	bufferTeBig *data.Slice // buffer for Te evolution
+	bufferTlBig *data.Slice // buffer for Tl evolution
+}
 
 // Adaptive Heun method for 2T model, can be used as solver.Step
-func (_ *HeunAto2T) Step() {
+func (SATO2T *HeunAto2T) Step() {
 	y := M.Buffer()
 	dy0 := cuda.Buffer(VECTOR, y.Size())
 	defer cuda.Recycle(dy0)
 
 	if FixDt != 0 {
 		Dt_si = FixDt
+	}
+
+	if SATO2T.bufferTe == nil {
+		size := Te.Mesh().Size()
+		SATO2T.bufferTe = cuda.NewSlice(1, size)
+		SATO2T.bufferTl = cuda.NewSlice(1, size)
+		SATO2T.bufferTeBig = cuda.NewSlice(1, size)
+		SATO2T.bufferTlBig = cuda.NewSlice(1, size)
+		cuda.Madd2(SATO2T.bufferTeBig, Te.temp, Te.temp, 1, 0)
+		cuda.Madd2(SATO2T.bufferTlBig, Tl.temp, Tl.temp, 1, 0)
 	}
 
 	dt := float32(Dt_si * GammaLL)
@@ -390,9 +405,12 @@ func (_ *HeunAto2T) Step() {
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
 		setLastErr(err)
 		setMaxTorque(dy)
-		for iter := 0; iter < TSubsteps; iter++ {
-			NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
-		}
+		AdaptativeNewtonStep2T(float32(Dt_si), SATO2T.bufferTe, SATO2T.bufferTl, SATO2T.bufferTeBig, SATO2T.bufferTlBig)
+		/*
+			for iter := 0; iter < TSubsteps; iter++ {
+				NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
+			}
+		*/
 	} else {
 		// undo bad step
 		util.Assert(FixDt == 0)
@@ -400,11 +418,19 @@ func (_ *HeunAto2T) Step() {
 		cuda.Madd2(y, y, dy0, 1, -dt)
 		NUndone++
 		adaptDt(math.Pow(MaxErr/err, 1./3.))
-		//		print("No debo entrar aqui\n")
 	}
 }
 
-func (_ *HeunAto2T) Free() {}
+func (SATO2T *HeunAto2T) Free() {
+	SATO2T.bufferTe.Free()
+	SATO2T.bufferTe = nil
+	SATO2T.bufferTl.Free()
+	SATO2T.bufferTl = nil
+	SATO2T.bufferTeBig.Free()
+	SATO2T.bufferTeBig = nil
+	SATO2T.bufferTlBig.Free()
+	SATO2T.bufferTlBig = nil
+}
 
 // write torque to dst and increment NEvals
 func torqueAto(dst *data.Slice) {

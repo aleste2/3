@@ -77,7 +77,7 @@ const (
 	LLBJH = 27
 	LLB2T = 29
 
-	LLB2TOST = 30
+	//LLB2TOST = 30
 
 	LLGJH = 50
 
@@ -145,11 +145,11 @@ func SetSolver(typ int) {
 		LLBeq = true
 		LLB2Tf = true
 		LLBJHf = false
-	case LLB2TOST:
-		stepper = new(HeunLLB2TOSC)
-		LLBeq = true
-		LLB2Tf = true
-		OSC = true
+	/*case LLB2TOST:
+	stepper = new(HeunLLB2TOSC)
+	LLBeq = true
+	LLB2Tf = true
+	OSC = true*/
 
 	case LLGJH:
 		stepper = new(LLGJHSolver)
@@ -188,7 +188,7 @@ func SetSolver(typ int) {
 
 		// Thermal only solvers
 	case HEUNJHONLY:
-		stepper = new(HeunJH)
+		stepper = new(OnlyJH)
 	case ONLY2T:
 		stepper = new(Only2T)
 

@@ -13,20 +13,21 @@ var (
 	Qext = NewExcitation("Qext", "W/m3", "External Heating")
 
 	// For Joule heating
-	Langevin                    = 0
-	JHThermalnoise              = true
-	ScaleNoiseLLB     float64   = 1.0 // reduce noise in LLB
-	TSubsteps                   = 3
-	TOversteps                  = 1
-	TOverstepsCounter           = 0
-	flagOST                     = 0
-	TempJH            LocalTemp // Local temperature
-	Kthermal          = NewScalarParam("Kthermal", "W/(m·K)", "Thermal conductivity")
-	Cthermal          = NewScalarParam("Cthermal", "J/(Kg·K)", "Specific heat capacity")
-	Resistivity       = NewScalarParam("Resistivity", "Ohm·m", "Electric resistivity")
-	Density           = NewScalarParam("Density", "Kg/m3", "Mass density")
-	TSubs             = NewScalarParam("TSubs", "K", "Substrate Temperature")
-	TauSubs           = NewScalarParam("TauSubs", "s", "Substrate difussion time")
+	Langevin               = 0
+	JHThermalnoise         = true
+	ScaleNoiseLLB  float64 = 1.0 // reduce noise in LLB
+	TSubsteps              = 3
+	//TOversteps                  = 1
+	//TOverstepsCounter           = 0
+	//flagOST                     = 0
+	//TempJH            LocalTemp // Local temperature
+	//	Kthermal          = NewScalarParam("Kthermal", "W/(m·K)", "Thermal conductivity")
+	Kthermal    = NewScalarParam("Kthermal", "J/(m3·K)", "Electron Heat capacity", &kth)
+	Cthermal    = NewScalarParam("Cthermal", "J/(Kg·K)", "Specific heat capacity")
+	Resistivity = NewScalarParam("Resistivity", "Ohm·m", "Electric resistivity")
+	Density     = NewScalarParam("Density", "Kg/m3", "Mass density")
+	TSubs       = NewScalarParam("TSubs", "K", "Substrate Temperature")
+	TauSubs     = NewScalarParam("TauSubs", "s", "Substrate difussion time")
 
 	// For 2T Model
 	Te LocalTemp // Electron temperature
@@ -39,10 +40,11 @@ var (
 	Gel = NewScalarParam("Gel", "W/(m3·K)", "Transfer electron-lattice")
 
 	// Trial Ke Ka type exchange for thermal resistance and different materials
-	Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity", &kel)
-	Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity", &kll)
+	Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity", &kll)
+	Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity", &kel)
 	kel exchParam // electron themal contuctivity
 	kll exchParam // lattice themal contuctivity
+	kth exchParam // lattice themal contuctivity
 
 	// For circular dichroism (only 3T model)
 	CD = NewVectorParam("CD", "", "Laser beam direction and Circular Dichroism magnitude")
@@ -50,10 +52,10 @@ var (
 
 func init() {
 	// For JH (see at the end)
-	DeclROnly("TempJH", AsScalarField(&TempJH), "Local Temperature (K)")
-	TempJH.name = "Local_Temperature"
+	//DeclROnly("TempJH", AsScalarField(&TempJH), "Local Temperature (K)")
+	//TempJH.name = "Local_Temperature"
 	DeclFunc("RestartJH", StartJH, "Equals Temperature to substrate")
-	DeclFunc("GetTemp", GetCell, "Gets cell temperature")
+	//DeclFunc("GetTemp", GetCell, "Gets cell temperature")
 
 	// For 2T
 	DeclFunc("Restart2T", Start2T, "Equals Temperatures to substrate")
@@ -72,92 +74,21 @@ func init() {
 	//DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
 	//DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
 	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
-	DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
+	//DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
 	DeclVar("ScaleNoiseLLB", &ScaleNoiseLLB, "Thermal noise scale")
 
 	// For new thermal difussion
 	kel.init(Ke)
 	kll.init(Kl)
+	kth.init(Kthermal)
 	DeclFunc("ext_InterExchangeKe", InterExchangeKe, "Sets electron thermal difussion between two regions.")
 	DeclFunc("ext_InterExchangeKl", InterExchangeKl, "Sets lattice thermal difussion between two regions.")
-	DeclFunc("PrintAex", printAex, "Equals Temperatures to substrate")
-	DeclFunc("PrintKe", printKe, "Equals Temperatures to substrate")
-	DeclFunc("PrintKl", printKl, "Equals Temperatures to substrate")
-	DeclFunc("PrintAex1", printAex1, "Equals Temperatures to substrate")
 }
 
 // Sets electron thermal difussion between two regions
 func InterExchangeKe(region1, region2 int, value float64) {
 	kel.setInter(region1, region2, value)
 	kel.update()
-}
-
-func printAex() {
-	lex2.update()
-
-	ex := lex2.parent.cpuLUT()
-	for i := 0; i < NREGION; i++ {
-		exi := ex[0][i]
-		for j := i; j < NREGION; j++ {
-			exj := ex[0][j]
-			I := symmidx(i, j)
-			if (i < 2) && (j < 2) {
-				print(" Ex (", i, ",", j, ")=", lex2.lut[I], "", lex2.scale[I], "", lex2.inter[I], "", exchAverage(exi, exj), "\n")
-			}
-		}
-	}
-
-}
-
-func printAex1() {
-	//lex21.update()
-
-	ex := lex21.parent.cpuLUT()
-	for i := 0; i < NREGION; i++ {
-		exi := ex[0][i]
-		for j := i; j < NREGION; j++ {
-			exj := ex[0][j]
-			I := symmidx(i, j)
-			if (i < 2) && (j < 2) {
-				print(" Ex (", i, ",", j, ")=", lex21.lut[I], "", lex21.scale[I], "", lex21.inter[I], "", exchAverage(exi, exj), "\n")
-			}
-		}
-	}
-
-}
-
-func printKe() {
-	kel.update()
-
-	ex := kel.parent.cpuLUT()
-	for i := 0; i < NREGION; i++ {
-		exi := ex[0][i]
-		for j := i; j < NREGION; j++ {
-			exj := ex[0][j]
-			I := symmidx(i, j)
-			if (i < 2) && (j < 2) {
-				print(" Ex (", i, ",", j, ")=", kel.lut[I], "", kel.scale[I], "", kel.inter[I], "", exchAverage(exi, exj), "\n")
-			}
-		}
-	}
-
-}
-
-func printKl() {
-	kll.update()
-
-	ex := kll.parent.cpuLUT()
-	for i := 0; i < NREGION; i++ {
-		exi := ex[0][i]
-		for j := i; j < NREGION; j++ {
-			exj := ex[0][j]
-			I := symmidx(i, j)
-			if (i < 2) && (j < 2) {
-				print(" Ex (", i, ",", j, ")=", kll.lut[I], "", kll.scale[I], "", kll.inter[I], "", exchAverage(exi, exj), "\n")
-			}
-		}
-	}
-
 }
 
 // Sets lattice thermal difussion between two regions
@@ -294,9 +225,9 @@ func (b *LocalTemp) GetCell(ix, iy, iz int) float32 {
 	return cuda.GetCell(b.temp, 0, ix, iy, iz)
 }
 
-func GetCell(ix, iy, iz int) float64 {
-	return float64(TempJH.GetCell(ix, iy, iz))
-}
+//func GetCell(ix, iy, iz int) float64 {
+//	return float64(TempJH.GetCell(ix, iy, iz))
+//}
 
 func GetTe(ix, iy, iz int) float64 {
 	return float64(Te.GetCell(ix, iy, iz))

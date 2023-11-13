@@ -8,16 +8,27 @@ import (
 )
 
 // Heun solver for LLB equation + joule heating + 2T model.
-type LLGJHSolver struct{}
+type LLGJHSolver struct {
+	bufferTe    *data.Slice // buffer for slow Te evolucion
+	bufferTeBig *data.Slice // buffer for Te evolution
+}
 
-// Adaptive HeunLLB2T method, can be used as solver.Step
-func (_ *LLGJHSolver) Step() {
+// Adaptive RK4+Newton2T method, can be used as solver.Step
+func (SLLGJH *LLGJHSolver) Step() {
 
 	m := M.Buffer()
 	size := m.Size()
 
 	if FixDt != 0 {
 		Dt_si = FixDt
+	}
+
+	// first step ever: one-time buffer Tel init and eval
+	if SLLGJH.bufferTe == nil {
+		size := Te.Mesh().Size()
+		SLLGJH.bufferTe = cuda.NewSlice(1, size)
+		SLLGJH.bufferTeBig = cuda.NewSlice(1, size)
+		cuda.Madd2(SLLGJH.bufferTeBig, Te.temp, Te.temp, 1, 0)
 	}
 
 	t0 := Time
@@ -69,21 +80,7 @@ func (_ *LLGJHSolver) Step() {
 		setMaxTorque(k4)
 
 		if LLBJHf == true {
-			if TOversteps == 1 {
-				//StepJH(float32(Dt_si))
-				for iter := 0; iter < TSubsteps; iter++ {
-					StepJH(float32(Dt_si) / float32(TSubsteps))
-					//Time += Dt_si / float64(TSubsteps)
-				}
-			}
-			if TOversteps > 1 {
-				TOverstepsCounter++
-				if TOverstepsCounter >= TOversteps {
-					StepJH(float32(Dt_si * float64(TOversteps)))
-					TOverstepsCounter = 0
-				}
-			}
-
+			AdaptativeNewtonStepJH(float32(Dt_si), SLLGJH.bufferTe, SLLGJH.bufferTeBig)
 		} else {
 			// undo bad step
 			util.Assert(FixDt == 0)
@@ -93,7 +90,11 @@ func (_ *LLGJHSolver) Step() {
 			adaptDt(math.Pow(MaxErr/err, 1./5.))
 		}
 	}
-
 }
 
-func (_ *LLGJHSolver) Free() {}
+func (SLLGJH *LLGJHSolver) Free() {
+	SLLGJH.bufferTe.Free()
+	SLLGJH.bufferTe = nil
+	SLLGJH.bufferTeBig.Free()
+	SLLGJH.bufferTeBig = nil
+}

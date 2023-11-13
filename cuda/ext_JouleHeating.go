@@ -7,7 +7,7 @@ import (
 
 // Thermal equation for 1T model
 
-func Evaldt0(temp0, dt0, m *data.Slice, Kth, Cth, Dth, Tsubsth, Tausubsth, res, Qext, J MSlice, mesh *data.Mesh, vol *data.Slice) {
+func Evaldt0(temp0, dt0, m *data.Slice, Kth SymmLUT, Cth, Dth, Tsubsth, Tausubsth, res, Qext, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes) {
 	c := mesh.CellSize()
 	N := mesh.Size()
 	//	pbc := mesh.PBC_code()
@@ -18,7 +18,8 @@ func Evaldt0(temp0, dt0, m *data.Slice, Kth, Cth, Dth, Tsubsth, Tausubsth, res, 
 	k_evaldt0_async(
 		temp0.DevPtr(0), dt0.DevPtr(0),
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
-		Kth.DevPtr(0), Kth.Mul(0),
+		//Kth.DevPtr(0), Kth.Mul(0),
+		unsafe.Pointer(Kth),
 		Cth.DevPtr(0), Cth.Mul(0),
 		Dth.DevPtr(0), Dth.Mul(0),
 		Tsubsth.DevPtr(0), Tsubsth.Mul(0),
@@ -30,6 +31,7 @@ func Evaldt0(temp0, dt0, m *data.Slice, Kth, Cth, Dth, Tsubsth, Tausubsth, res, 
 		J.DevPtr(Z), J.Mul(Z),
 		float32(c[X]), float32(c[Y]), float32(c[Z]), NN[X], NN[Y], NN[Z],
 		vol.DevPtr(0),
+		regions.Ptr,
 		cfg)
 }
 

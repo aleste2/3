@@ -36,6 +36,16 @@ func (AFLLB *HeunLLBAFUnified) Step() {
 		}
 	}
 
+	if LLBJHf == true {
+		if AFLLB.bufferTe == nil {
+			size := Te.Mesh().Size()
+			AFLLB.bufferTe = cuda.NewSlice(1, size)
+			AFLLB.bufferTeBig = cuda.NewSlice(1, size)
+			cuda.Madd2(AFLLB.bufferTe, AFLLB.bufferTe, AFLLB.bufferTe, 0, 0) // bufferTe to 0
+			cuda.Madd2(AFLLB.bufferTeBig, Te.temp, Te.temp, 1, 0)
+		}
+	}
+
 	// For renorm
 	y01 := cuda.Buffer(VECTOR, y1.Size())
 	defer cuda.Recycle(y01)
@@ -128,23 +138,22 @@ func (AFLLB *HeunLLBAFUnified) Step() {
 			}
 		}
 		if LLB2Tf == true {
-			//for iter := 0; iter < TSubsteps; iter++ {
-			//	NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
-			//}
 			AdaptativeNewtonStep2T(float32(Dt_si), AFLLB.bufferTe, AFLLB.bufferTl, AFLLB.bufferTeBig, AFLLB.bufferTlBig)
 		}
 
 		if LLBJHf == true {
-			if TOversteps == 1 {
-				StepJH(float32(Dt_si))
-			}
-			if TOversteps > 1 {
-				TOverstepsCounter++
-				if TOverstepsCounter >= TOversteps {
-					StepJH(float32(Dt_si * float64(TOversteps)))
-					TOverstepsCounter = 0
+			/*
+				if TOversteps == 1 {
+					StepJH(float32(Dt_si))
 				}
-			}
+				if TOversteps > 1 {
+					TOverstepsCounter++
+					if TOverstepsCounter >= TOversteps {
+						StepJH(float32(Dt_si * float64(TOversteps)))
+						TOverstepsCounter = 0
+					}
+				}*/
+			AdaptativeNewtonStepJH(float32(Dt_si), AFLLB.bufferTe, AFLLB.bufferTeBig)
 		}
 
 		NSteps++

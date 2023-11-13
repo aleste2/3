@@ -35,6 +35,16 @@ func (LLB *HeunLLBFerroUnified) Step() {
 		}
 	}
 
+	if LLBJHf == true {
+		if LLB.bufferTe == nil {
+			size := Te.Mesh().Size()
+			LLB.bufferTe = cuda.NewSlice(1, size)
+			LLB.bufferTeBig = cuda.NewSlice(1, size)
+			cuda.Madd2(LLB.bufferTe, LLB.bufferTe, LLB.bufferTe, 0, 0) // bufferTe to 0
+			cuda.Madd2(LLB.bufferTeBig, Te.temp, Te.temp, 1, 0)
+		}
+	}
+
 	// For renorm
 	y01 := cuda.Buffer(VECTOR, y1.Size())
 	defer cuda.Recycle(y01)
@@ -99,18 +109,19 @@ func (LLB *HeunLLBFerroUnified) Step() {
 
 		if LLBJHf == true {
 			//			StepJH(float32(Dt_si))
-
-			if TOversteps == 1 {
-				StepJH(float32(Dt_si))
-			}
-			if TOversteps > 1 {
-				TOverstepsCounter++
-				if TOverstepsCounter >= TOversteps {
-					StepJH(float32(Dt_si * float64(TOversteps)))
-					TOverstepsCounter = 0
+			/*
+				if TOversteps == 1 {
+					StepJH(float32(Dt_si))
 				}
-			}
-
+				if TOversteps > 1 {
+					TOverstepsCounter++
+					if TOverstepsCounter >= TOversteps {
+						StepJH(float32(Dt_si * float64(TOversteps)))
+						TOverstepsCounter = 0
+					}
+				}
+			*/
+			AdaptativeNewtonStepJH(float32(Dt_si), LLB.bufferTe, LLB.bufferTeBig)
 		}
 
 		NSteps++

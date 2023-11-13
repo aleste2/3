@@ -2,14 +2,15 @@
 #include "amul.h"
 #include "float3.h"
 #include "stencil.h"
-
+#include "exchange.h"
 
 extern "C"
 
  __global__ void
 evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
 	float* __restrict__ mx, float* __restrict__ my, float* __restrict__ mz,
-                float* __restrict__ Kth_, float Kth_mul,
+  //              float* __restrict__ Kth_, float Kth_mul,
+                float* __restrict__ Kth_,
                 float* __restrict__ Cth_, float Cth_mul,
                 float* __restrict__ Dth_, float Dth_mul,
                 float* __restrict__ Tsubsth_, float Tsubsth_mul,
@@ -20,7 +21,8 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
                 float* __restrict__ jy_, float jy_mul,
                 float* __restrict__ jz_, float jz_mul,
 		            float wx, float wy, float wz, int Nx, int Ny, int Nz,
-                float* __restrict__ vol
+                float* __restrict__ vol,
+                uint8_t* __restrict__ regions
                 ) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
@@ -33,6 +35,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     // central cell
     int i = idx(ix, iy, iz);
     float mm = (vol == NULL? 1.0f: vol[i]);
+    uint8_t r0 = regions[i];
     //float3 m0={mx[i], my[i], mz[i]};
 //    float mm=dot(m0,m0);
     dt0_[i]=0.0;
@@ -40,7 +43,8 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     {
 
     float3 J = vmul(jx_, jy_, jz_, jx_mul, jy_mul, jz_mul, i);
-    float Kth = amul(Kth_, Kth_mul, i);
+    //float Kth = amul(Kth_, Kth_mul, i);
+    float Kth;
     float Cth = amul(Cth_, Cth_mul, i);
     float Dth = amul(Dth_, Dth_mul, i);
     float Tsubsth = amul(Tsubsth_, Tsubsth_mul, i);
@@ -64,6 +68,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     if (mm_!=0)
     {
      tempv = temp_[i_];
+     Kth = Kth_[symidx(r0, regions[i_])];
      dt0_[i] += (Kth*(tempv-temp)/wx/wx);
     }
     }
@@ -77,6 +82,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     if (mm_!=0)
     {
      tempv = temp_[i_];
+     Kth = Kth_[symidx(r0, regions[i_])];
      dt0_[i] += (Kth*(tempv-temp)/wx/wx);
     }
     }
@@ -90,6 +96,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     if (mm_!=0)
     {
      tempv = temp_[i_];
+     Kth = Kth_[symidx(r0, regions[i_])];
      dt0_[i] += (Kth*(tempv-temp)/wy/wy);
     }
     }
@@ -104,6 +111,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
     if (mm_!=0)
     {
      tempv = temp_[i_];
+     Kth = Kth_[symidx(r0, regions[i_])];
      dt0_[i] += (Kth*(tempv-temp)/wy/wy);
     }
     }
@@ -118,7 +126,8 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
         mm_ = (vol == NULL? 1.0f: vol[i_]);
         if (mm_!=0)
         {
-	        tempv = temp_[i_];
+	       tempv = temp_[i_];
+         Kth = Kth_[symidx(r0, regions[i_])];
          dt0_[i] += (Kth*(tempv-temp)/wz/wz);
         }
         }
@@ -132,6 +141,7 @@ evaldt0(float* __restrict__  temp_,      float* __restrict__ dt0_,
         if (mm_!=0)
         {
 	        tempv = temp_[i_];
+          Kth = Kth_[symidx(r0, regions[i_])];
           dt0_[i] += (Kth*(tempv-temp)/wz/wz);
         }
         }
