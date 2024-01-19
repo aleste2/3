@@ -237,15 +237,17 @@ func GetTl(ix, iy, iz int) float64 {
 	return float64(Tl.GetCell(ix, iy, iz))
 }
 
-func RadialMask(mascara *data.Slice, xc, yc, r0 float64, Nx, Ny int) {
-	for i := 0; i < Nx; i++ {
-		for j := 0; j < Ny; j++ {
-			r := Index2Coord(i, j, 0)
-			x := r.X()
-			y := r.Y()
-			dr := math.Sqrt((x-xc)*(x-xc) + (y-yc)*(y-yc))            // Distancia al centro del Laser
-			LS := math.Exp(-4.0 * math.Log(2.0) * math.Pow(dr/r0, 2)) // Gaussian Laser Spot (circular)
-			mascara.SetVector(i, j, 0, Vector(LS, 0, 0))              // For Q_ext
+func RadialMask(mascara *data.Slice, xc, yc, r0 float64, Nx1,Nx2, Ny1,Ny2,Nz1,Nz2 int) {
+	for i := Nx1; i < Nx2; i++ {
+		for j := Ny1; j < Ny2; j++ {
+			for k := Nz1; k < Nz2; k++ {
+			  r := Index2Coord(i, j, 0)
+			  x := r.X()
+			  y := r.Y()
+			  dr := math.Sqrt((x-xc)*(x-xc) + (y-yc)*(y-yc))            // Distancia al centro del Laser
+			  LS := math.Exp(-4.0 * math.Log(2.0) * math.Pow(dr/r0, 2)) // Gaussian Laser Spot (circular)
+			  mascara.SetVector(i, j, k, Vector(LS, 0, 0))              // For Q_ext
+		  }
 		}
 	}
 

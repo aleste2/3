@@ -113,7 +113,7 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 					float mea;
 					float meb;
 
-					if (temp<TCurie) {
+					if (temp<0.9998*TCurie) {
 
 						// Calculo de m_e1,m_e2
 						float A11, A12, A21, A22;
@@ -140,6 +140,7 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 						if (mb>0.4) {x2=mb;} else {x2=0.4;}
 						y1 = NL(A11*x1+A12*x2)-x1;
 						y2 = NL(A21*x1+A22*x2)-x2;
+						float iter=0;
 						do {
   						x10 = x1; x20 = x2;
 							dL1 = DNL(A11*x1+A12*x2);
@@ -161,7 +162,8 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 							x2 = x20 + dx2;
 							y1 = NL(A11*x1+A12*x2)-x1;
 							y2 = NL(A21*x1+A22*x2)-x2;
-						} while( dx1*dx1>tolsq || dx2*dx2>tolsq );
+							iter++;
+						} while( (dx1*dx1>tolsq || dx2*dx2>tolsq)&&(iter<100) );
 						m_e1 = x1>tol ? x1 : 0.001;
 						m_e2 = x2>tol ? x2 : 0.001;
 						mea=m_e1;
