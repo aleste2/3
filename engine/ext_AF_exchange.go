@@ -60,51 +60,88 @@ func init() {
 // Adds the current exchange AFfield to dst
 func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 
+	// Write eveything new to use both subnets
 	//Sublattice 1
-	inter := !Dind1.isZero()
-	bulk := !Dbulk1.isZero()
+	inter1 := !Dind1.isZero()
+	bulk1 := !Dbulk1.isZero()
 	ms1 := Msat1.MSlice()
 	defer ms1.Recycle()
-	switch {
-	case !inter && !bulk:
-		cuda.AddExchange(dst1, M1.Buffer(), lex21.Gpu(), ms1, regions.Gpu(), M.Mesh())
-	case inter && !bulk:
-		//		cuda.AddDMI(dst1, M1.Buffer(), lex21.Gpu(), din21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-		cuda.AddDMIAF(dst1, M1.Buffer(), M2.Buffer(), lex21.Gpu(), din21.Gpu(), lex22.Gpu(), din22.Gpu(), lexll.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-	case bulk && !inter:
-		cuda.AddDMIBulk(dst1, M1.Buffer(), lex21.Gpu(), dbulk21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-	case inter && bulk:
-		util.Fatal("Cannot have induced and interfacial DMI at the same time")
-	}
-
 	//Sublattice 2
-	inter = !Dind2.isZero()
-	bulk = !Dbulk2.isZero()
-	ms2 := Msat2.MSlice()
-	defer ms2.Recycle()
-	switch {
-	case !inter && !bulk:
-		cuda.AddExchange(dst2, M2.Buffer(), lex22.Gpu(), ms2, regions.Gpu(), M.Mesh())
-	case inter && !bulk:
-		//		cuda.AddDMI(dst2, M2.Buffer(), lex22.Gpu(), din22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-		cuda.AddDMIAF(dst2, M2.Buffer(), M1.Buffer(), lex22.Gpu(), din22.Gpu(), lex21.Gpu(), din21.Gpu(), lexll.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-	case bulk && !inter:
-		cuda.AddDMIBulk(dst2, M2.Buffer(), lex22.Gpu(), dbulk22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
-	case inter && bulk:
-		util.Fatal("Cannot have induced and interfacial DMI at the same time")
-	}
-
-	//bex := Bex.MSlice()
-	//defer bex.Recycle()
+	//inter2 := !Dind1.isZero()
+	//bulk2 := !Dbulk1.isZero()
+	ms2 := Msat1.MSlice()
+	defer ms1.Recycle()
 	bex12 := Bex12.MSlice()
 	defer bex12.Recycle()
 	bex21 := Bex21.MSlice()
 	defer bex21.Recycle()
-	cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21)
-	cuda.AddExchangeAFll(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, lexll.Gpu(), regions.Gpu(), M.Mesh())
-	//cuda.AddExchange(dst1, M2.Buffer(), lexll.Gpu(), ms1, regions.Gpu(), M.Mesh())
-	//cuda.AddExchange(dst2, M1.Buffer(), lexll.Gpu(), ms2, regions.Gpu(), M.Mesh())
 
+	// Asumo que manda la red 1 si se ponen parámetros cuzados bulk dmi se va todo al carajo by now
+
+	switch {
+	case !inter1 && !bulk1:
+		cuda.AddExchange(dst1, M1.Buffer(), lex21.Gpu(), ms1, regions.Gpu(), M.Mesh())
+		cuda.AddExchange(dst2, M2.Buffer(), lex22.Gpu(), ms2, regions.Gpu(), M.Mesh())
+		cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21)
+		cuda.AddExchangeAFll(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, lexll.Gpu(), regions.Gpu(), M.Mesh())
+	case inter1 && !bulk1: // Ahora es un 2x1 con todos los exchanges
+		cuda.AddDMIAF(dst1, dst2, M1.Buffer(), M2.Buffer(), lex21.Gpu(), din21.Gpu(), lex22.Gpu(), din22.Gpu(), lexll.Gpu(), ms1, ms2, bex12, bex21, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+	case bulk1 && !inter1:
+		cuda.AddDMIBulk(dst1, M1.Buffer(), lex21.Gpu(), dbulk21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		cuda.AddDMIBulk(dst2, M2.Buffer(), lex22.Gpu(), dbulk22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21)
+		cuda.AddExchangeAFll(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, lexll.Gpu(), regions.Gpu(), M.Mesh())
+	case inter1 && bulk1:
+		util.Fatal("Cannot have induced and interfacial DMI at the same time")
+
+	}
+
+	/*
+		//Sublattice 1
+		inter := !Dind1.isZero()
+		bulk := !Dbulk1.isZero()
+		ms1 := Msat1.MSlice()
+		defer ms1.Recycle()
+		switch {
+		case !inter && !bulk:
+			cuda.AddExchange(dst1, M1.Buffer(), lex21.Gpu(), ms1, regions.Gpu(), M.Mesh())
+		case inter && !bulk:
+			//		cuda.AddDMI(dst1, M1.Buffer(), lex21.Gpu(), din21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+			cuda.AddDMIAF(dst1, M1.Buffer(), M2.Buffer(), lex21.Gpu(), din21.Gpu(), lex22.Gpu(), din22.Gpu(), lexll.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		case bulk && !inter:
+			cuda.AddDMIBulk(dst1, M1.Buffer(), lex21.Gpu(), dbulk21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		case inter && bulk:
+			util.Fatal("Cannot have induced and interfacial DMI at the same time")
+		}
+
+		//Sublattice 2
+		inter = !Dind2.isZero()
+		bulk = !Dbulk2.isZero()
+		ms2 := Msat2.MSlice()
+		defer ms2.Recycle()
+		switch {
+		case !inter && !bulk:
+			cuda.AddExchange(dst2, M2.Buffer(), lex22.Gpu(), ms2, regions.Gpu(), M.Mesh())
+		case inter && !bulk:
+			//		cuda.AddDMI(dst2, M2.Buffer(), lex22.Gpu(), din22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+			cuda.AddDMIAF(dst2, M2.Buffer(), M1.Buffer(), lex22.Gpu(), din22.Gpu(), lex21.Gpu(), din21.Gpu(), lexll.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		case bulk && !inter:
+			cuda.AddDMIBulk(dst2, M2.Buffer(), lex22.Gpu(), dbulk22.Gpu(), ms2, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		case inter && bulk:
+			util.Fatal("Cannot have induced and interfacial DMI at the same time")
+		}
+
+		//bex := Bex.MSlice()
+		//defer bex.Recycle()
+		bex12 := Bex12.MSlice()
+		defer bex12.Recycle()
+		bex21 := Bex21.MSlice()
+		defer bex21.Recycle()
+		cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21)
+		cuda.AddExchangeAFll(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, lexll.Gpu(), regions.Gpu(), M.Mesh())
+		//cuda.AddExchange(dst1, M2.Buffer(), lexll.Gpu(), ms1, regions.Gpu(), M.Mesh())
+		//cuda.AddExchange(dst2, M1.Buffer(), lexll.Gpu(), ms2, regions.Gpu(), M.Mesh())
+	*/
 }
 
 // Scales the heisenberg exchange interaction between region1 and 2.l
