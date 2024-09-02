@@ -63,8 +63,8 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 	}
 
 
-	float Bex12 = amul(bex12_, bex12_mul, I);	// All the other exchanges are Luts, this is intracell exchange i-j
-	float Bex21 = amul(bex21_, bex21_mul, I);	// All the other exchanges are Luts, this is intracell exchange j-i
+//	float Bex12 = amul(bex12_, bex12_mul, I);	// All the other exchanges are Luts, this is intracell exchange i-j
+//	float Bex21 = amul(bex21_, bex21_mul, I);	// All the other exchanges are Luts, this is intracell exchange j-i
 
 	{
 		// x derivatives (along length)
@@ -87,32 +87,14 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 		float Aexll = aLUT2d12[symidx(r0, r12)];	// inter-region Aexll
 		if (!is0(m1v) || !OpenBC) {	// do nothing at an open boundary
 			if (is0(m1v)) {	// neighbor missing, use BC
-				m1v.x = m10.x - (-cx * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex1 * m20.z));	// extrapolate missing m from Neumann BC's
+				m1v.x = m10.x - (-cx * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex2 * m20.z));	// extrapolate missing m from Neumann BC's
 				m1v.y = m10.y;
-				m1v.z =
-				    m10.z +
-				    (-cx *
-				     (0.5f /
-				      (Aex1 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind1 * m10.x -
-						   Dind2 * Aexll * 0.5f /
-						   Aex1 * m20.x));
+				m1v.z = m10.z + (-cx * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.x - Dind2 * Aexll * 0.5f / Aex2 * m20.x));
 			}
 			if (is0(m2v)) {	// neighbor missing, use BC
-				m2v.x = m20.x - (-cx * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex2 * m10.z));	// extrapolate missing m from Neumann BC's
+				m2v.x = m20.x - (-cx * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex1 * m10.z));	// extrapolate missing m from Neumann BC's
 				m2v.y = m20.y;
-				m2v.z =
-				    m20.z +
-				    (-cx *
-				     (0.5f /
-				      (Aex2 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind2 * m20.x -
-						   Dind1 * Aexll * 0.5f /
-						   Aex2 * m10.x));
+				m2v.z = m20.z + (-cx * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.x - Dind1 * Aexll * 0.5f / Aex1 * m10.x));
 			}
 			// Subnet1
 			// Echange by Aex1
@@ -122,7 +104,8 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h1 += Aexll / (cx * cx) * (m2v - m20);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h1 += Bex12 * m20;
+			//h1 += Bex12 * m20;
+
 			// Subnet2
 			// Echange by Aex2
 			h2 += (2.0f * Aex2 / (cx * cx)) * (m2v - m20);	// Usual exchange
@@ -131,7 +114,7 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h2 += Aexll / (cx * cx) * (m1v - m10);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h2 += Bex21 * m10;
+			//h2 += Bex21 * m10;
 		}
 	}
 
@@ -154,32 +137,14 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 		float Aexll = aLUT2d12[symidx(r0, r12)];	// inter-region Aexll
 		if (!is0(m1v) || !OpenBC) {	// do nothing at an open boundary
 			if (is0(m1v)) {	// neighbor missing, use BC
-				m1v.x = m10.x - (cx * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex1 * m20.z));	// extrapolate missing m from Neumann BC's
+				m1v.x = m10.x - (cx * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex2 * m20.z));	// extrapolate missing m from Neumann BC's
 				m1v.y = m10.y;
-				m1v.z =
-				    m10.z +
-				    (cx *
-				     (0.5f /
-				      (Aex1 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind1 * m10.x -
-						   Dind2 * Aexll * 0.5f /
-						   Aex1 * m20.x));
+				m1v.z = m10.z + (cx * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.x - Dind2 * Aexll * 0.5f / Aex2 * m20.x));
 			}
 			if (is0(m2v)) {	// neighbor missing, use BC
-				m2v.x = m20.x - (cx * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex2 * m10.z));	// extrapolate missing m from Neumann BC's
+				m2v.x = m20.x - (cx * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex1 * m10.z));	// extrapolate missing m from Neumann BC's
 				m2v.y = m20.y;
-				m2v.z =
-				    m20.z +
-				    (cx *
-				     (0.5f /
-				      (Aex2 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind2 * m20.x -
-						   Dind1 * Aexll * 0.5f /
-						   Aex2 * m10.x));
+				m2v.z = m20.z +(cx *(0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.x - Dind1 * Aexll * 0.5f / Aex1 * m10.x));
 			}
 			// Subnet1
 			// No missing neighbours
@@ -190,7 +155,8 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h1 += Aexll / (cx * cx) * (m2v - m20);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h1 += Bex12 * m20;
+			//h1 += Bex12 * m20;
+
 			// Subnet2
 			// Echange by Aex2
 			h2 += (2.0f * Aex2 / (cx * cx)) * (m2v - m20);	// Usual exchange
@@ -199,7 +165,7 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h2 += Aexll / (cx * cx) * (m1v - m10);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h2 += Bex21 * m10;
+			//h2 += Bex21 * m10;
 		}
 	}
 
@@ -224,31 +190,13 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 		if (!is0(m1v) || !OpenBC) {	// do nothing at an open boundary
 			if (is0(m1v)) {	// neighbor missing, use BC
 				m1v.x = m10.x;
-				m1v.y = m10.y - (-cy * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex1 * m20.z));	// extrapolate missing m from Neumann BC's
-				m1v.z =
-				    m10.z +
-				    (-cy *
-				     (0.5f /
-				      (Aex1 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind1 * m10.y -
-						   Dind2 * Aexll * 0.5f /
-						   Aex1 * m20.y));
+				m1v.y = m10.y - (-cy * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex2 * m20.z));	// extrapolate missing m from Neumann BC's
+				m1v.z = m10.z + (-cy * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.y - Dind2 * Aexll * 0.5f / Aex2 * m20.y));
 			}
 			if (is0(m2v)) {	// neighbor missing, use BC
 				m2v.x = m20.x;
-				m2v.y = m20.y - (-cy * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex2 * m10.z));	// extrapolate missing m from Neumann BC's
-				m2v.z =
-				    m20.z +
-				    (-cy *
-				     (0.5f /
-				      (Aex1 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind2 * m20.y -
-						   Dind1 * Aexll * 0.5f /
-						   Aex2 * m10.y));
+				m2v.y = m20.y - (-cy * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex1 * m10.z));	// extrapolate missing m from Neumann BC's
+				m2v.z = m20.z + (-cy * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.y - Dind1 * Aexll * 0.5f / Aex1 * m10.y));
 			}
 			// Subnet 1
 			// Echange by Aex1
@@ -258,7 +206,8 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h1 += Aexll / (cy * cy) * (m2v - m20);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h1 += Bex12 * m20;
+			//h1 += Bex12 * m20;
+
 			// Subnet2
 			// Echange by Aex2
 			h2 += (2.0f * Aex2 / (cy * cy)) * (m2v - m20);	// Usual exchange
@@ -267,7 +216,7 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h2 += Aexll / (cy * cy) * (m1v - m10);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h2 += Bex21 * m10;
+			//h2 += Bex21 * m10;
 		}
 	}
 
@@ -291,31 +240,13 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 		if (!is0(m1v) || !OpenBC) {	// do nothing at an open boundary
 			if (is0(m1v)) {	// neighbor missing, use BC
 				m1v.x = m10.x;
-				m1v.y = m10.y - (cy * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex1 * m20.z));	// extrapolate missing m from Neumann BC's
-				m1v.z =
-				    m10.z +
-				    (cy *
-				     (0.5f /
-				      (Aex1 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind1 * m10.y -
-						   Dind2 * Aexll * 0.5f /
-						   Aex1 * m20.y));
+				m1v.y = m10.y - (cy * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.z - Dind2 * Aexll * 0.5f / Aex2 * m20.z));	// extrapolate missing m from Neumann BC's
+				m1v.z = m10.z + (cy * (0.5f / (Aex1 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind1 * m10.y - Dind2 * Aexll * 0.5f / Aex2 * m20.y));
 			}
 			if (is0(m2v)) {	// neighbor missing, use BC
 				m2v.x = m20.x;
-				m2v.y = m20.y - (cy * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex2 * m10.z));	// extrapolate missing m from Neumann BC's
-				m2v.z =
-				    m20.z +
-				    (cy *
-				     (0.5f /
-				      (Aex2 *
-				       (1.0f -
-					Aexll * Aexll * 0.25f / Aex1 /
-					Aex2))) * (Dind2 * m20.y -
-						   Dind1 * Aexll * 0.5f /
-						   Aex2 * m10.y));
+				m2v.y = m20.y - (cy * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.z - Dind1 * Aexll * 0.5f / Aex1 * m10.z));	// extrapolate missing m from Neumann BC's
+				m2v.z = m20.z + (cy * (0.5f / (Aex2 * (1.0f - Aexll * Aexll * 0.25f / Aex1 / Aex2))) * (Dind2 * m20.y - Dind1 * Aexll * 0.5f / Aex1 * m10.y));
 			}
 			// Subnet 1
 			// Echange by Aex1
@@ -325,7 +256,8 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h1 += Aexll / (cy * cy) * (m2v - m20);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h1 += Bex12 * m20;
+			//h1 += Bex12 * m20;
+
 			// Subnet 1
 			// Echange by Aex2
 			h2 += (2.0f * Aex2 / (cy * cy)) * (m2v - m20);	// Usual exchange
@@ -334,7 +266,7 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h2 += Aexll / (cy * cy) * (m1v - m10);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h2 += Bex21 * m10;
+			//h2 += Bex21 * m10;
 		}
 	}
 
@@ -357,13 +289,13 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h1 += Aexll / (cz * cz) * (m2v - m20);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h1 += Bex12 * m20;
+			//h1 += Bex12 * m20;
 			// Subnet 1
 			h2 += (2.0f * Aex2 / (cz * cz)) * (m2v - m20);	// Exchange only
 			// Echange by Aexll
 			h2 += Aexll / (cz * cz) * (m1v - m10);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h2 += Bex21 * m10;
+			//h2 += Bex21 * m10;
 		}
 
 		// top neighbor
@@ -383,13 +315,13 @@ adddmiAF(float *__restrict__ dst1x, float *__restrict__ dst1y,
 			// Echange by Aexll
 			h1 += Aexll / (cz * cz) * (m2v - m20);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h1 += Bex12 * m20;
+			//h1 += Bex12 * m20;
 			// Subnet 2
 			h2 += (2.0f * Aex2 / (cz * cz)) * (m2v - m20);	// Exchange only
 			// Echange by Aexll
 			h2 += Aexll / (cz * cz) * (m1v - m10);	// Exchange between lattices (derivative)
 			// Intracell exchange (between sublatices, local, no derivatives)
-			h2 += Bex21 * m10;
+			//h2 += Bex21 * m10;
 		}
 	}
 

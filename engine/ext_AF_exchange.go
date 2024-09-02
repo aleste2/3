@@ -69,8 +69,8 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 	//Sublattice 2
 	//inter2 := !Dind1.isZero()
 	//bulk2 := !Dbulk1.isZero()
-	ms2 := Msat1.MSlice()
-	defer ms1.Recycle()
+	ms2 := Msat2.MSlice()
+	defer ms2.Recycle()
 	bex12 := Bex12.MSlice()
 	defer bex12.Recycle()
 	bex21 := Bex21.MSlice()
@@ -85,6 +85,7 @@ func AddExchangeFieldAF(dst1, dst2 *data.Slice) {
 		cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21)
 		cuda.AddExchangeAFll(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, lexll.Gpu(), regions.Gpu(), M.Mesh())
 	case inter1 && !bulk1: // Ahora es un 2x1 con todos los exchanges
+		cuda.AddExchangeAFCell(dst1, dst2, M1.Buffer(), M2.Buffer(), ms1, ms2, bex12, bex21) //Linea añadida 29/07/2024
 		cuda.AddDMIAF(dst1, dst2, M1.Buffer(), M2.Buffer(), lex21.Gpu(), din21.Gpu(), lex22.Gpu(), din22.Gpu(), lexll.Gpu(), ms1, ms2, bex12, bex21, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case bulk1 && !inter1:
 		cuda.AddDMIBulk(dst1, M1.Buffer(), lex21.Gpu(), dbulk21.Gpu(), ms1, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
