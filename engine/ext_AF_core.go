@@ -350,7 +350,7 @@ func (b *thermField) updateAF(i int) {
 
 	// keep constant during time step
 	if NSteps == b.step && Dt_si == b.dt && solvertype < 6 {
-     return
+		return
 	}
 
 	if FixDt == 0 {
@@ -540,9 +540,7 @@ func RenormAFBri(y01, y02 *data.Slice, dt, GammaLL1, GammaLL2 float32) {
 
 }
 
-
 // Magnetoelastic functions for subnet 1 and 2
-
 
 //Subnet 1
 func AddMagnetoelasticField1(dst *data.Slice) {
