@@ -75,6 +75,21 @@ var (
 	// Direct moment induction
 	deltaM = NewScalarParam("deltaM", "a.u.", "Moment indiced by laser")
 
+	// For magnetoelastic
+	B11        = NewScalarParam("B11", "J/m3", "First magneto-elastic coupling constant subnet 1")
+	B21        = NewScalarParam("B21", "J/m3", "Second magneto-elastic coupling constantsubnet 1")
+	B_mel1     = NewVectorField("B_mel1", "T", "Magneto-elastic filed subnet 1", AddMagnetoelasticField1)
+	F_mel1     = NewVectorField("F_mel1", "N/m3", "Magneto-elastic force density subnet 1", GetMagnetoelasticForceDensity1)
+	Edens_mel1 = NewScalarField("Edens_mel1", "J/m3", "Magneto-elastic energy density subnet 1", AddMagnetoelasticEnergyDensity1)
+	E_mel1     = NewScalarValue("E_mel1", "J", "Magneto-elastic energy", GetMagnetoelasticEnergy1)
+
+	B12        = NewScalarParam("B12", "J/m3", "First magneto-elastic coupling constant subnet 2")
+	B22        = NewScalarParam("B22", "J/m3", "Second magneto-elastic coupling constant subnet 2")
+	B_mel2     = NewVectorField("B_mel2", "T", "Magneto-elastic filed subnet 2", AddMagnetoelasticField2)
+	F_mel2     = NewVectorField("F_mel2", "N/m3", "Magneto-elastic force density subnet 2", GetMagnetoelasticForceDensity2)
+	Edens_mel2 = NewScalarField("Edens_mel2", "J/m3", "Magneto-elastic energy density subnet 2", AddMagnetoelasticEnergyDensity2)
+	E_mel2     = NewScalarValue("E_mel2", "J", "Magneto-elastic energy subnet 2", GetMagnetoelasticEnergy2)
+
 	// M and neel vectors
 	MAFg  = NewVectorField("MAFg", "A/m", "Moment AF", GmagnetizationAF)
 	Neelg = NewVectorField("Neelg", "A/m", "Neel moment AF", GneelAF)
@@ -168,6 +183,8 @@ func torqueFnAF(dst1, dst2 *data.Slice) {
 	}
 	AddExchangeFieldAF(dst1, dst2)
 	AddAnisotropyFieldAF(dst1, dst2)
+	AddMagnetoelasticField1(dst1)
+	AddMagnetoelasticField2(dst2)
 	//AddAFMExchangeField(dst)  // AFM Exchange non adjacent layers
 	B_ext.AddTo(dst1)
 	B_ext.AddTo(dst2)
@@ -333,7 +350,7 @@ func (b *thermField) updateAF(i int) {
 
 	// keep constant during time step
 	if NSteps == b.step && Dt_si == b.dt && solvertype < 6 {
-		return
+     return
 	}
 
 	if FixDt == 0 {
@@ -366,8 +383,8 @@ func (b *thermField) updateAF(i int) {
 
 	temp := Temp.MSlice()
 	defer temp.Recycle()
-	alpha0 := Alpha.MSlice()
-	defer alpha0.Recycle()
+	//alpha0 := Alpha.MSlice()
+	//defer alpha0.Recycle()
 	Noise_scale := 1.0
 	if JHThermalnoise == false {
 		Noise_scale = 0.0
@@ -376,7 +393,7 @@ func (b *thermField) updateAF(i int) {
 	} // To cancel themal noise if needed
 	for i := 0; i < 3; i++ {
 		b.generator.GenerateNormal(uintptr(noise.DevPtr(0)), int64(N), mean, stddev)
-		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha0, ScaleNoiseLLB)
+		cuda.SetTemperature(dst.Comp(i), noise, k2_VgammaDt*Noise_scale, ms, temp, alpha, ScaleNoiseLLB)
 	}
 	b.step = NSteps
 	b.dt = Dt_si
@@ -521,4 +538,274 @@ func RenormAFBri(y01, y02 *data.Slice, dt, GammaLL1, GammaLL2 float32) {
 
 	cuda.LLBRenormAFBri(y01, y02, M1.Buffer(), M2.Buffer(), temp, alpha, alpha1, alpha2, Tcurie, Msat, Msat1, Msat2, X_TM, NV, MU1, MU2, J0AA, J0BB, J0AB, dt, GammaLL1, GammaLL2, Ja, Jb)
 
+}
+
+
+// Magnetoelastic functions for subnet 1 and 2
+
+
+//Subnet 1
+func AddMagnetoelasticField1(dst *data.Slice) {
+	haveMel := B11.nonZero() || B21.nonZero()
+	if !haveMel {
+		return
+	}
+
+	Exx := exx.MSlice()
+	defer Exx.Recycle()
+
+	Eyy := eyy.MSlice()
+	defer Eyy.Recycle()
+
+	Ezz := ezz.MSlice()
+	defer Ezz.Recycle()
+
+	Exy := exy.MSlice()
+	defer Exy.Recycle()
+
+	Exz := exz.MSlice()
+	defer Exz.Recycle()
+
+	Eyz := eyz.MSlice()
+	defer Eyz.Recycle()
+
+	b11 := B11.MSlice()
+	defer b11.Recycle()
+
+	b21 := B21.MSlice()
+	defer b21.Recycle()
+
+	ms1 := Msat1.MSlice()
+	defer ms1.Recycle()
+
+	cuda.AddMagnetoelasticField(dst, M1.Buffer(),
+		Exx, Eyy, Ezz,
+		Exy, Exz, Eyz,
+		b11, b21, ms1)
+}
+
+func GetMagnetoelasticForceDensity1(dst *data.Slice) {
+	haveMel := B11.nonZero() || B21.nonZero()
+	if !haveMel {
+		return
+	}
+
+	util.AssertMsg(B11.IsUniform() && B21.IsUniform(), "Magnetoelastic: B11, B21 must be uniform")
+
+	b11 := B11.MSlice()
+	defer b11.Recycle()
+
+	b21 := B21.MSlice()
+	defer b21.Recycle()
+
+	cuda.GetMagnetoelasticForceDensity(dst, M1.Buffer(),
+		b11, b21, M1.Mesh())
+}
+
+func AddMagnetoelasticEnergyDensity1(dst *data.Slice) {
+	haveMel := B11.nonZero() || B21.nonZero()
+	if !haveMel {
+		return
+	}
+
+	buf := cuda.Buffer(B_mel1.NComp(), B_mel1.Mesh().Size())
+	defer cuda.Recycle(buf)
+
+	// unnormalized magnetization:
+	Mf1 := ValueOf(M_full1)
+	defer cuda.Recycle(Mf1)
+
+	Exx := exx.MSlice()
+	defer Exx.Recycle()
+
+	Eyy := eyy.MSlice()
+	defer Eyy.Recycle()
+
+	Ezz := ezz.MSlice()
+	defer Ezz.Recycle()
+
+	Exy := exy.MSlice()
+	defer Exy.Recycle()
+
+	Exz := exz.MSlice()
+	defer Exz.Recycle()
+
+	Eyz := eyz.MSlice()
+	defer Eyz.Recycle()
+
+	b11 := B11.MSlice()
+	defer b11.Recycle()
+
+	b21 := B21.MSlice()
+	defer b21.Recycle()
+
+	ms1 := Msat1.MSlice()
+	defer ms1.Recycle()
+
+	zeromel := zeroMel.MSlice()
+	defer zeromel.Recycle()
+
+	// 1st
+	cuda.Zero(buf)
+	cuda.AddMagnetoelasticField(buf, M1.Buffer(),
+		Exx, Eyy, Ezz,
+		Exy, Exz, Eyz,
+		b11, zeromel, ms1)
+	cuda.AddDotProduct(dst, -1./2., buf, Mf1)
+
+	// 1nd
+	cuda.Zero(buf)
+	cuda.AddMagnetoelasticField(buf, M1.Buffer(),
+		Exx, Eyy, Ezz,
+		Exy, Exz, Eyz,
+		zeromel, b21, ms1)
+	cuda.AddDotProduct(dst, -1./1., buf, Mf1)
+}
+
+// Returns magneto-ell energy in joules.
+func GetMagnetoelasticEnergy1() float64 {
+	haveMel := B11.nonZero() || B21.nonZero()
+	if !haveMel {
+		return float64(0.0)
+	}
+
+	buf := cuda.Buffer(1, Mesh().Size())
+	defer cuda.Recycle(buf)
+
+	cuda.Zero(buf)
+	AddMagnetoelasticEnergyDensity1(buf)
+	return cellVolume() * float64(cuda.Sum(buf))
+}
+
+// Subnet 2
+func AddMagnetoelasticField2(dst *data.Slice) {
+	haveMel := B12.nonZero() || B22.nonZero()
+	if !haveMel {
+		return
+	}
+
+	Exx := exx.MSlice()
+	defer Exx.Recycle()
+
+	Eyy := eyy.MSlice()
+	defer Eyy.Recycle()
+
+	Ezz := ezz.MSlice()
+	defer Ezz.Recycle()
+
+	Exy := exy.MSlice()
+	defer Exy.Recycle()
+
+	Exz := exz.MSlice()
+	defer Exz.Recycle()
+
+	Eyz := eyz.MSlice()
+	defer Eyz.Recycle()
+
+	b12 := B12.MSlice()
+	defer b12.Recycle()
+
+	b22 := B22.MSlice()
+	defer b22.Recycle()
+
+	ms2 := Msat2.MSlice()
+	defer ms2.Recycle()
+
+	cuda.AddMagnetoelasticField(dst, M2.Buffer(),
+		Exx, Eyy, Ezz,
+		Exy, Exz, Eyz,
+		b12, b22, ms2)
+}
+
+func GetMagnetoelasticForceDensity2(dst *data.Slice) {
+	haveMel := B12.nonZero() || B22.nonZero()
+	if !haveMel {
+		return
+	}
+
+	util.AssertMsg(B12.IsUniform() && B22.IsUniform(), "Magnetoelastic: B12, B22 must be uniform")
+
+	b12 := B2.MSlice()
+	defer b12.Recycle()
+
+	b22 := B22.MSlice()
+	defer b22.Recycle()
+
+	cuda.GetMagnetoelasticForceDensity(dst, M2.Buffer(),
+		b12, b22, M2.Mesh())
+}
+
+func AddMagnetoelasticEnergyDensity2(dst *data.Slice) {
+	haveMel := B12.nonZero() || B22.nonZero()
+	if !haveMel {
+		return
+	}
+
+	buf := cuda.Buffer(B_mel2.NComp(), B_mel2.Mesh().Size())
+	defer cuda.Recycle(buf)
+
+	// unnormalized magnetization:
+	Mf2 := ValueOf(M_full2)
+	defer cuda.Recycle(Mf2)
+
+	Exx := exx.MSlice()
+	defer Exx.Recycle()
+
+	Eyy := eyy.MSlice()
+	defer Eyy.Recycle()
+
+	Ezz := ezz.MSlice()
+	defer Ezz.Recycle()
+
+	Exy := exy.MSlice()
+	defer Exy.Recycle()
+
+	Exz := exz.MSlice()
+	defer Exz.Recycle()
+
+	Eyz := eyz.MSlice()
+	defer Eyz.Recycle()
+
+	b12 := B12.MSlice()
+	defer b12.Recycle()
+
+	b22 := B22.MSlice()
+	defer b22.Recycle()
+
+	ms2 := Msat2.MSlice()
+	defer ms2.Recycle()
+
+	zeromel := zeroMel.MSlice()
+	defer zeromel.Recycle()
+
+	// 1st
+	cuda.Zero(buf)
+	cuda.AddMagnetoelasticField(buf, M2.Buffer(),
+		Exx, Eyy, Ezz,
+		Exy, Exz, Eyz,
+		b12, zeromel, ms2)
+	cuda.AddDotProduct(dst, -1./2., buf, Mf2)
+
+	// 1nd
+	cuda.Zero(buf)
+	cuda.AddMagnetoelasticField(buf, M2.Buffer(),
+		Exx, Eyy, Ezz,
+		Exy, Exz, Eyz,
+		zeromel, b22, ms2)
+	cuda.AddDotProduct(dst, -1./1., buf, Mf2)
+}
+
+// Returns magneto-ell energy in joules.
+func GetMagnetoelasticEnergy2() float64 {
+	haveMel := B12.nonZero() || B22.nonZero()
+	if !haveMel {
+		return float64(0.0)
+	}
+
+	buf := cuda.Buffer(1, Mesh().Size())
+	defer cuda.Recycle(buf)
+
+	cuda.Zero(buf)
+	AddMagnetoelasticEnergyDensity2(buf)
+	return cellVolume() * float64(cuda.Sum(buf))
 }
