@@ -95,6 +95,9 @@ const (
 	ATOHEUN   = 150
 	ATOHEUN2T = 151
 	ATORK23   = 152
+
+	// My magnetoelastics solvers
+	ELASTIC = 200
 )
 
 func SetSolver(typ int) {
@@ -203,7 +206,14 @@ func SetSolver(typ int) {
 	case ATORK23:
 		stepper = new(AtoRK23)
 		Ato = true
+
+		// Elastic solver
+	case ELASTIC:
+		//stepper = new(ElasticEuler)
+		stepper = new(ElasticRK4)
+
 	}
+
 	solvertype = typ
 }
 
