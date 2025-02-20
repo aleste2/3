@@ -35,6 +35,7 @@ var (
 	AFf    = false
 	OSC    = false
 	Ato    = false
+	MEf    = false
 )
 
 func init() {
@@ -97,7 +98,8 @@ const (
 	ATORK23   = 152
 
 	// My magnetoelastics solvers
-	ELASTIC = 200
+	ELASTIC  = 200
+	MELASTIC = 201
 )
 
 func SetSolver(typ int) {
@@ -112,6 +114,7 @@ func SetSolver(typ int) {
 	LLB3Tf = false
 	LLB2Tf = false
 	AFf = false
+	MEf = false
 
 	switch typ {
 	default:
@@ -211,6 +214,9 @@ func SetSolver(typ int) {
 	case ELASTIC:
 		//stepper = new(ElasticEuler)
 		stepper = new(ElasticRK4)
+	case MELASTIC:
+		MEf = true
+		stepper = new(MagElasticEuler)
 
 	}
 

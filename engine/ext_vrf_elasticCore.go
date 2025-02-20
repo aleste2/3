@@ -9,18 +9,23 @@ import (
 
 // Epecemos usando tipos definidos y ya veremos luego. Inicialmente 2D
 var (
-	C11   = NewScalarExcitation("C11", "", "Elastic parameter C11")
-	C12   = NewScalarExcitation("C12", "", "Elastic parameter C12")
-	C44   = NewScalarExcitation("C44", "", "Elastic parameter C44")
-	Rho   = NewScalarExcitation("rho", "Kg/m3", "Mass density")
-	Force = NewScalarExcitation("force", "N/m3", "Force density")
-	Eta   = NewScalarExcitation("eta", "", "Damping elastic")
-	R     magnetization // displacement (m)
-	U     magnetization // speed (m/s)
-	Sigma magnetization // sigma (xx,yy xy) // 2D by now
+	C11       = NewScalarExcitation("C11", "", "Elastic parameter C11")
+	C12       = NewScalarExcitation("C12", "", "Elastic parameter C12")
+	C44       = NewScalarExcitation("C44", "", "Elastic parameter C44")
+	Rho       = NewScalarExcitation("rho", "Kg/m3", "Mass density")
+	Force     = NewScalarExcitation("force", "N/m3", "Force density")
+	Eta       = NewScalarExcitation("eta", "", "Damping elastic")
+	R         magnetization // displacement (m)
+	U         magnetization // speed (m/s)
+	Sigma     magnetization // sigma (xx,yy xy) // 2D by now
+	B_ME      = NewVectorField("B_ME", "T", "Dynamic Magneto-elastic field", AddMEField)
+	Strain    = NewVectorField("Strain", "", "Dynamic Strain", AddStrainField)
+	Edens_mME = NewScalarField("Edens_mME", "J/m3", "mME energy density", AddmMEEnergyDensity)
+	E_mME     = NewScalarValue("E_mME", "J", "mME energy", GetmMEEnergy)
 )
 
 func init() {
+	registerEnergy(GetmMEEnergy, AddmMEEnergyDensity)
 	DeclLValue("r", &R, `Displacement (m)`)
 	DeclLValue("u", &U, `Speed (m/s)`)
 	DeclLValue("sigma", &Sigma, `Stress`)
@@ -159,21 +164,90 @@ func (_ *ElasticRK4) Step() {
 
 func (_ *ElasticRK4) Free() {}
 
-func Calc_du(dst *data.Slice) {
+// Magnetoelastic solver
+type MagElasticEuler struct {
+	mold   *data.Slice // m at previous step
+	deltat float32
+}
 
+// Euler method, can be used as solver.Step.
+func (EulerME *MagElasticEuler) Step() {
+	m := M.Buffer()
+	size := m.Size()
+	m_0 := cuda.Buffer(3, size)
+	defer cuda.Recycle(m_0)
+	data.Copy(m_0, m)
+
+	// upon resize: remove wrongly sized k1
+	//if EulerME.mold.Size() != size {
+	//	EulerME.Free()
+	//	EulerME.mold = nil
+	//}
+	// first step ever: one-time k1 init and eval
+	if EulerME.mold == nil {
+		EulerME.mold = cuda.NewSlice(3, size)
+		data.Copy(EulerME.mold, m)
+		EulerME.deltat = float32(FixDt)
+	}
+
+	m0 := M.Buffer()
+	r0 := R.Buffer()
+	u0 := U.Buffer()
+	sigma0 := Sigma.Buffer()
+
+	Dt_si = FixDt
+
+	dm := cuda.Buffer(VECTOR, m0.Size())
+	defer cuda.Recycle(dm)
+	du := cuda.Buffer(VECTOR, u0.Size())
+	defer cuda.Recycle(du)
+	dsigma := cuda.Buffer(VECTOR, sigma0.Size())
+	defer cuda.Recycle(dsigma)
+
+	dt := float32(Dt_si)
+	dtm := float32(Dt_si * GammaLL)
+	/*
+		Calc_du(du)
+		cuda.Madd2(u0, u0, du, 1, dt) // v = v + dt * dv
+		cuda.Madd2(r0, r0, u0, 1, dt) // x = x + dt * v
+		Calc_dsigmam(dsigma, EulerME.mold, float32(EulerME.deltat))
+		cuda.Madd2(sigma0, sigma0, dsigma, 1, dt) // s = s + dt * ds
+		torqueFn(dm)
+		setMaxTorque(dm)
+		cuda.Madd2(m0, m0, dm, 1, dtm) // y = y + dt * dy
+		M.normalize()
+	*/
+
+	torqueFn(dm)
+	setMaxTorque(dm)
+	cuda.Madd2(m0, m0, dm, 1, dtm) // y = y + dt * dy
+	M.normalize()
+	Calc_du(du)
+	cuda.Madd2(u0, u0, du, 1, dt) // v = v + dt * dv
+	cuda.Madd2(r0, r0, u0, 1, dt) // x = x + dt * v
+	Calc_dsigmam(dsigma, dm, float32(1.0/GammaLL))
+	cuda.Madd2(sigma0, sigma0, dsigma, 1, dt) // s = s + dt * ds
+
+	Time += Dt_si
+	data.Copy(EulerME.mold, m_0)
+	EulerME.deltat = float32(FixDt)
+	NSteps++
+
+}
+
+func (EulerMe *MagElasticEuler) Free() {
+	EulerMe.mold.Free()
+	EulerMe.mold = nil
+}
+
+// Etoelastic calculators
+func Calc_du(dst *data.Slice) {
 	eta := Eta.MSlice()
 	defer eta.Recycle()
 	rho := Rho.MSlice()
 	defer rho.Recycle()
 	force := Force.MSlice()
 	defer force.Recycle()
-
-	//c11 := C11.MSlice()
-	//defer c11.Recycle()
-	//c12 := C12.MSlice()
-	//defer c12.Recycle()
-	//c44 := C44.MSlice()
-	//defer c44.Recycle()
 
 	u := U.Buffer()
 	sigma := Sigma.Buffer()
@@ -183,14 +257,6 @@ func Calc_du(dst *data.Slice) {
 }
 
 func Calc_dsigma(dst *data.Slice) {
-
-	//eta := Eta.MSlice()
-	//defer eta.Recycle()
-	//rho := Rho.MSlice()
-	//defer rho.Recycle()
-	//force := Force.MSlice()
-	//defer force.Recycle()
-
 	c11 := C11.MSlice()
 	defer c11.Recycle()
 	c12 := C12.MSlice()
@@ -199,8 +265,83 @@ func Calc_dsigma(dst *data.Slice) {
 	defer c44.Recycle()
 
 	u := U.Buffer()
-	//sigma := Sigma.Buffer()
 
 	cuda.CalcDSigma(dst, u, c11, c12, c44, M.Mesh())
 	NEvals++
+}
+
+// Magnetoelastic calculators
+func Calc_dsigmam(dst, mold *data.Slice, deltat float32) {
+	c11 := C11.MSlice()
+	defer c11.Recycle()
+	c12 := C12.MSlice()
+	defer c12.Recycle()
+	c44 := C44.MSlice()
+	defer c44.Recycle()
+	b1 := B1.MSlice()
+	defer b1.Recycle()
+	b2 := B2.MSlice()
+	defer b2.Recycle()
+
+	u := U.Buffer()
+	m := M.Buffer()
+	//mold := EulerMe.mold
+	//deltat := EulerMe.deltat
+
+	cuda.CalcDSigmam(dst, u, c11, c12, c44, b1, b2, M.Mesh(), m, mold, deltat)
+	NEvals++
+}
+
+// ME Field
+
+func AddMEField(dst *data.Slice) {
+	haveMel := B1.nonZero() || B2.nonZero()
+	if !haveMel {
+		return
+	}
+
+	c11 := C11.MSlice()
+	defer c11.Recycle()
+	c12 := C12.MSlice()
+	defer c12.Recycle()
+	c44 := C44.MSlice()
+	defer c44.Recycle()
+	b1 := B1.MSlice()
+	defer b1.Recycle()
+	b2 := B2.MSlice()
+	defer b2.Recycle()
+	ms := Msat.MSlice()
+	defer ms.Recycle()
+
+	//	cuda.AddMEField2(dst, M.Buffer(), R.Buffer(),
+	cuda.AddMEField2(dst, M.Buffer(), Sigma.Buffer(),
+		c11, c12, c44,
+		b1, b2, ms, M.Mesh())
+}
+
+func AddStrainField(dst *data.Slice) {
+	cuda.AddStrain(dst, R.Buffer(), M.Mesh())
+}
+
+func AddmMEEnergyDensity(dst *data.Slice) {
+	buf := cuda.Buffer(B_ME.NComp(), Mesh().Size())
+	defer cuda.Recycle(buf)
+
+	// unnormalized magnetization:
+	Mf := ValueOf(M_full)
+	defer cuda.Recycle(Mf)
+
+	cuda.Zero(buf)
+	AddMEField(buf)
+	cuda.AddDotProduct(dst, -1./2., buf, Mf)
+
+}
+
+func GetmMEEnergy() float64 {
+	buf := cuda.Buffer(1, Mesh().Size())
+	defer cuda.Recycle(buf)
+
+	cuda.Zero(buf)
+	AddmMEEnergyDensity(buf)
+	return cellVolume() * float64(cuda.Sum(buf))
 }

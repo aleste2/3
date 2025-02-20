@@ -13,7 +13,11 @@ func SetEffectiveField(dst *data.Slice) {
 	SetDemagField(dst)    // set to B_demag...
 	AddExchangeField(dst) // ...then add other terms
 	AddAnisotropyField(dst)
-	AddMagnetoelasticField(dst)
+	if MEf == true {
+		AddMEField(dst)
+	} else {
+		AddMagnetoelasticField(dst)
+	}
 	AddAFMExchangeField(dst) // AFM Exchange non adjacent layers Victor mod
 	B_ext.AddTo(dst)
 	//print(OSC,"\n")
