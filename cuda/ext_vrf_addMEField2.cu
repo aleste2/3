@@ -22,8 +22,8 @@ addMEField2(float* __restrict__  dstx, float* __restrict__  dsty, float* __restr
     int I = idx(ix, iy, iz);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
-		return;
-	}
+		  return;
+	  }
 
     float C11 = amul(c11_, c11_mul, I);
     float C12 = amul(c12_, c12_mul, I);
@@ -36,7 +36,6 @@ addMEField2(float* __restrict__  dstx, float* __restrict__  dsty, float* __restr
     float lambda111=-1.0f/3.0f*B2/C44;
 
     dstx[I]+=-3.0f/Ms*(lambda100*sigmaxx[I]*mx[I]+lambda111*sigmaxy[I]*my[I]);
-    dsty[I]+=-3.0f/Ms*(lambda100*sigmaxy[I]*mx[I]+lambda111*sigmayy[I]*my[I]);
+    dsty[I]+=-3.0f/Ms*(lambda111*sigmaxy[I]*mx[I]+lambda100*sigmayy[I]*my[I]);
     dstz[I]+=0.0f;
-    //if (I==200) printf("Entro %e \n",dstx[I]);
-    }
+   }

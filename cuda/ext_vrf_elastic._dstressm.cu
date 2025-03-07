@@ -14,8 +14,8 @@ calc_Sigmam(float* __restrict__  dstx, float* __restrict__  dsty, float* __restr
     float* __restrict__ b2_, float b2_mul,
 	float wx, float wy, float wz, int Nx, int Ny, int Nz,
     float* __restrict__  mx, float* __restrict__  my, float* __restrict__  mz,
-    float* __restrict__  moldx, float* __restrict__  moldy, float* __restrict__  moldz,
-    float deltat)
+    float* __restrict__  dMx, float* __restrict__  dMy, float* __restrict__  dMz,
+    float scale)
 
 	{
 
@@ -23,7 +23,14 @@ calc_Sigmam(float* __restrict__  dstx, float* __restrict__  dsty, float* __restr
 	int iy = blockIdx.y * blockDim.y + threadIdx.y;
 	int iz = blockIdx.z * blockDim.z + threadIdx.z;
 	int I = idx(ix, iy, iz);
-	if (ix == 0 || iy == 0|| ix >= Nx || iy >= Ny || iz >= Nz) { // add iz==0&&Nz>1 in the future
+	if (ix == 0 || iy == 0) { // add iz==0&&Nz>1 in the future
+        dstx[I]=0.0f;
+        dsty[I]=0.0f;
+        dstz[I]=0.0f;
+		return;
+	}
+
+    if (ix >= Nx || iy >= Ny || iz >= Nz) { // add iz==0&&Nz>1 in the future
 		return;
 	}
 
@@ -38,14 +45,17 @@ calc_Sigmam(float* __restrict__  dstx, float* __restrict__  dsty, float* __restr
 
 	float vx_v=0.0f;
 	float vy_v=0.0f;
-    //float dmx = (mx[I]-moldx[I])/deltat;
-    //float dmy = (my[I]-moldy[I])/deltat;
-    float dmx = moldx[I]/deltat;  // Now deltat is 1/GammaLL for direct calculation of dm/dt from torque
-    float dmy = moldy[I]/deltat;
-    //float dmz = (mz-moldz)/deltat;
+
+    float dmx = dMx[I];  
+    float dmy = dMy[I];
+
+    float gammaLL=1.7595e11;
+    dmx=dmx*gammaLL;
+    dmy=dmy*gammaLL;
 
     float dxvx,dxvy,dyvx,dyvy;
 
+    // Derivadas a primer orden
 	int J;
 	J=idx(ix-1,iy,iz); // Stress 0 en nx+1 
 	vx_v=ux[J];
@@ -59,10 +69,7 @@ calc_Sigmam(float* __restrict__  dstx, float* __restrict__  dsty, float* __restr
     dyvx=(vx0-vx_v)*wy;
     dyvy=(vy0-vy_v)*wy;
 
-	dstx[I]=C11*dxvx+C12*dyvy-2.0f*B1*mx[I]*dmx;
+ 	dstx[I]=C11*dxvx+C12*dyvy-2.0f*B1*mx[I]*dmx;
 	dsty[I]=C11*dyvy+C12*dxvx-2.0f*B1*my[I]*dmy;
 	dstz[I]=C44*(dyvx+dxvy)-2.0f*B2*(mx[I]*dmy+my[I]*dmx);
-
-    //if (I==257) printf("%e %e \n",dmx,dmy);
-
 }

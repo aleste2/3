@@ -106,3 +106,33 @@ func AddStrain(dst, r *data.Slice, mesh *data.Mesh) {
 		r.DevPtr(X), r.DevPtr(Y), r.DevPtr(Z),
 		wx, wy, wz, N[X], N[Y], N[Z], cfg)
 }
+
+func AddStrain2(dst, S *data.Slice, c11, c12, c44 MSlice, mesh *data.Mesh) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_addStrain2_async(dst.DevPtr(X), dst.DevPtr(Y), dst.DevPtr(Z),
+		S.DevPtr(X), S.DevPtr(Y), S.DevPtr(Z),
+		c11.DevPtr(0), c11.Mul(0),
+		c12.DevPtr(0), c12.Mul(0),
+		c44.DevPtr(0), c44.Mul(0),
+		N, cfg)
+}
+
+// Kinetic Energy
+
+func KineticEnergy(dst, du *data.Slice, rho MSlice, mesh *data.Mesh) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_KineticEnergy_async(dst.DevPtr(X),
+		du.DevPtr(X), du.DevPtr(Y), du.DevPtr(Z), rho.DevPtr(0), N, cfg)
+}
+
+// Elastic Energy
+
+func ElasticEnergy(dst, strain *data.Slice, mesh *data.Mesh, c1, c2, c3 MSlice) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_ElasticEnergy_async(dst.DevPtr(X),
+		strain.DevPtr(X), strain.DevPtr(Y), strain.DevPtr(Z),
+		c1.DevPtr(0), c1.Mul(0), c2.DevPtr(0), c2.Mul(0), c3.DevPtr(0), c3.Mul(0), N, cfg)
+}

@@ -216,7 +216,7 @@ func SetSolver(typ int) {
 		stepper = new(ElasticRK4)
 	case MELASTIC:
 		MEf = true
-		stepper = new(MagElasticEuler)
+		stepper = new(MERK4s)
 
 	}
 

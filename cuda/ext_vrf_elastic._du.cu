@@ -21,14 +21,14 @@ calc_DU(float* __restrict__  dstx, float* __restrict__  dsty, float* __restrict_
 	if (ix >= Nx || iy >= Ny || iz >= Nz) {
 		return;
 	}
-/*
+
 	if (ix == 0) {  // x=0 is fixed
 		dstx[I]=0.0f;
 		dsty[I]=0.0f;
 		dstz[I]=0.0f;
 		return;
 	}
-*/
+
     float Eta = amul(eta_, eta_mul, I);
     float Rho = amul(rho_, rho_mul, I);
 	float Force = amul(force_, force_mul, I);
@@ -61,12 +61,4 @@ calc_DU(float* __restrict__  dstx, float* __restrict__  dsty, float* __restrict_
 	dstx[I]=(dxsigmaxx+dysigmaxy-Eta*ux[I]+Force)/Rho;
 	dsty[I]=(dysigmayy+dxsigmaxy-Eta*uy[I])/Rho;
 	dstz[I]=0.0f;
-	
-	if (ix == 0 && iy==0 && ix==0) {  // x=0 is fixed
-		dstx[I]=0.0f;
-		dsty[I]=0.0f;
-		dstz[I]=0.0f;
-	}
-
-	//if (ix==0) {dstx[I]=0.0f;dsty[I]=0.0f;dstz[I]=0.0f;}
 }
