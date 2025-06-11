@@ -36,7 +36,7 @@ var (
 )
 
 func init() {
-	registerEnergy(GetmMEEnergy, AddmMEEnergyDensity)
+	//registerEnergy(GetmMEEnergy, AddmMEEnergyDensity)
 	DeclLValue("r", &R, `Displacement (m)`)
 	DeclLValue("u", &U, `Speed (m/s)`)
 	DeclLValue("sigma", &Sigma, `Stress`)
@@ -389,6 +389,16 @@ func AddStrainField2(dst *data.Slice) {
 	c44 := C44.MSlice()
 	defer c44.Recycle()
 	cuda.AddStrain2(dst, Sigma.Buffer(), c11, c12, c44, M.Mesh())
+}
+
+func AddStrainField3(dst *data.Slice) {
+	c11 := C11.MSlice()
+	defer c11.Recycle()
+	c12 := C12.MSlice()
+	defer c12.Recycle()
+	c44 := C44.MSlice()
+	defer c44.Recycle()
+	cuda.AddStrain3(dst, Sigma.Buffer(), c11, c12, c44, M.Mesh())
 }
 
 func AddmMEEnergyDensity(dst *data.Slice) {

@@ -32,8 +32,10 @@ addMEField2(float* __restrict__  dstx, float* __restrict__  dsty, float* __restr
     float B2 = amul(b2_, b2_mul, I);
     float Ms = amul(ms_, ms_mul, I);
 
-    float lambda100=-2.0f/3.0f*B1/(C11-C12);
-    float lambda111=-1.0f/3.0f*B2/C44;
+    float lambda100=0;
+    if ((C11-C12)!=0) lambda100=-2.0f/3.0f*B1/(C11-C12);
+    float lambda111=0;
+    if (C44!=0) lambda111=-1.0f/3.0f*B2/C44;
 
     dstx[I]+=-3.0f/Ms*(lambda100*sigmaxx[I]*mx[I]+lambda111*sigmaxy[I]*my[I]);
     dsty[I]+=-3.0f/Ms*(lambda111*sigmaxy[I]*mx[I]+lambda100*sigmayy[I]*my[I]);

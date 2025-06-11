@@ -1,8 +1,9 @@
 package cuda
 
 import (
-	"github.com/mumax/3/data"
 	"unsafe"
+
+	"github.com/mumax/3/data"
 )
 
 // Thermal equation for 1T model
@@ -71,4 +72,13 @@ func Evaldt02T(temp0e, dt0e, temp0l, dt0l, m *data.Slice, Ke SymmLUT, Ce MSlice,
 		vol.DevPtr(0),
 		regions.Ptr,
 		cfg)
+}
+
+// Thermal energy 2T
+
+func Add2TThermalEnergyDensity(dst, Te, Tl *data.Slice, Ce, Cl MSlice) {
+	N := dst.Len()
+	cfg := make1DConf(N)
+	k_addthermalenergydensity_async(dst.DevPtr(X),
+		Te.DevPtr(0), Tl.DevPtr(0), Ce.DevPtr(0), Ce.Mul(0), Cl.DevPtr(0), Cl.Mul(0), N, cfg)
 }

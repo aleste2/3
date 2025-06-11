@@ -1,10 +1,11 @@
 package engine
 
 import (
+	"math"
+
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/util"
-	"math"
 )
 
 // Newton solver joule heating only equation. Added buffers for slow evolution
@@ -142,6 +143,7 @@ func AdaptativeNewtonStep2T(dt float32, bufferTe, bufferTl, bufferTeBig, bufferT
 		Time -= float64(dt)
 	}
 	UpdateTeTl(te, tl, bufferTeBig, bufferTe, bufferTlBig, bufferTl)
+	NSteps++
 }
 
 // Update Te and Tl with buffers

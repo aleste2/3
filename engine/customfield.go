@@ -36,11 +36,17 @@ func init() {
 	DeclFunc("Masked", Masked, "Mask quantity with shape")
 	DeclFunc("Normalized", Normalized, "Normalize quantity")
 	DeclFunc("RemoveCustomFields", RemoveCustomFields, "Removes all custom fields again")
+	DeclFunc("RemoveCustomEnergies", RemoveCustomEnergies, "Removes all custom energies")
 }
 
-//Removes all customfields
+// Removes all customfields
 func RemoveCustomFields() {
 	customTerms = nil
+}
+
+// Removes all customenergies
+func RemoveCustomEnergies() {
+	customEnergies = nil
 }
 
 // AddFieldTerm adds an effective field function (returning Teslas) to B_eff.
@@ -180,7 +186,8 @@ func (q *mulmv) NComp() int {
 
 // DotProduct creates a new quantity that is the dot product of
 // quantities a and b. E.g.:
-// 	DotProct(&M, &B_ext)
+//
+//	DotProct(&M, &B_ext)
 func Dot(a, b Quantity) Quantity {
 	return &dotProduct{fieldOp{a, b, 1}}
 }
@@ -196,7 +203,8 @@ func (d *dotProduct) EvalTo(dst *data.Slice) {
 
 // CrossProduct creates a new quantity that is the cross product of
 // quantities a and b. E.g.:
-// 	CrossProct(&M, &B_ext)
+//
+//	CrossProct(&M, &B_ext)
 func Cross(a, b Quantity) Quantity {
 	return &crossProduct{fieldOp{a, b, 3}}
 }

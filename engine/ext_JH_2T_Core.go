@@ -5,6 +5,7 @@ import (
 	"github.com/mumax/3/cuda/curand"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/mag"
+
 	//"github.com/mumax/3/util"
 	"math"
 )
@@ -48,6 +49,10 @@ var (
 
 	// For circular dichroism (only 3T model)
 	CD = NewVectorParam("CD", "", "Laser beam direction and Circular Dichroism magnitude")
+
+	// Thermal energy
+	Edens_2T = NewScalarField("Edens_2T", "J/m3", "2T Thermal energy density", Add2TThermalEnergyDensity)
+	E_2T     = NewScalarValue("E_2T", "J", "2T Theraml energy", Get2TThermalEnergy)
 )
 
 func init() {
@@ -251,4 +256,23 @@ func RadialMask(mascara *data.Slice, xc, yc, r0 float64, Nx1, Nx2, Ny1, Ny2, Nz1
 		}
 	}
 
+}
+
+func Add2TThermalEnergyDensity(dst *data.Slice) {
+	Cel := Ce.MSlice()
+	defer Cel.Recycle()
+	Clat := Cl.MSlice()
+	defer Clat.Recycle()
+	te := Te.temp
+	tl := Tl.temp
+	cuda.Add2TThermalEnergyDensity(dst, te, tl, Cel, Clat)
+}
+
+func Get2TThermalEnergy() float64 {
+	buf := cuda.Buffer(1, Mesh().Size())
+	defer cuda.Recycle(buf)
+
+	cuda.Zero(buf)
+	Add2TThermalEnergyDensity(buf)
+	return cellVolume() * float64(cuda.Sum(buf))
 }
