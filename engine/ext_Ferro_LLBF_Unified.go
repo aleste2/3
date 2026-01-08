@@ -1,10 +1,11 @@
 package engine
 
 import (
+	"math"
+
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/util"
-	"math"
 )
 
 // Heun solver for Ferro LLB equation + joule heating + 2T model.
@@ -92,38 +93,24 @@ func (LLB *HeunLLBFerroUnified) Step() {
 
 	// Rewrite to calculate step 2
 	torqueFnFerroLLBUnified(dy11, Hth1a, Hth2a)
-
 	err := cuda.MaxVecDiff(dy1, dy11) * float64(dt)
-
 	// adjust next time step
 	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
 		// step OK
-		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt, -0.5*dt) //****
-
-		if LLB2Tf == true {
-			//for iter := 0; iter < TSubsteps; iter++ {
-			//				NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
-			AdaptativeNewtonStep2T(float32(Dt_si), LLB.bufferTe, LLB.bufferTl, LLB.bufferTeBig, LLB.bufferTlBig)
-			//}
+		if sdf == true {
+			musStep(dy11, dy1)
+			TTMplus(dy11, dy1, LLB.bufferTe, LLB.bufferTeBig, float32(Dt_si))
 		}
-
+		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt, -0.5*dt) //****
+		if LLB2Tf == true {
+			AdaptativeNewtonStep2T(float32(Dt_si), LLB.bufferTe, LLB.bufferTl, LLB.bufferTeBig, LLB.bufferTlBig)
+		}
+		if sdf == true { // Moment contribution
+			MusMoment(float32(float32(Dt_si))) // dt in SI units
+		}
 		if LLBJHf == true {
-			//			StepJH(float32(Dt_si))
-			/*
-				if TOversteps == 1 {
-					StepJH(float32(Dt_si))
-				}
-				if TOversteps > 1 {
-					TOverstepsCounter++
-					if TOverstepsCounter >= TOversteps {
-						StepJH(float32(Dt_si * float64(TOversteps)))
-						TOverstepsCounter = 0
-					}
-				}
-			*/
 			AdaptativeNewtonStepJH(float32(Dt_si), LLB.bufferTe, LLB.bufferTeBig)
 		}
-
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
 		setLastErr(err)
@@ -162,6 +149,10 @@ func torqueFnFerroLLBUnified(dst1 *data.Slice, hth1a, hth2a *data.Slice) {
 	//AddAFMExchangeField(dst)  // AFM Exchange non adjacent layers
 	B_ext.AddTo(dst1)
 	AddCustomField(dst1)
+
+	if sdf == true { // Moment contribution
+		//AddMusEffectiveField(dst1)
+	}
 
 	// Add to sublattice 1 and 2
 	alpha := Alpha.MSlice()

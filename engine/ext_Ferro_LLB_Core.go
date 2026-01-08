@@ -15,8 +15,8 @@ var (
 
 )
 
-func unit() {
-	DeclFunc("SetM", SetM, "Adjust m to temperature")
+func init() {
+	DeclFunc("Setm", SetM, "Adjust m to temperature")
 	DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
 	DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
 }

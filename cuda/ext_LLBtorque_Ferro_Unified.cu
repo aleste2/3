@@ -127,6 +127,8 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
 			float h_perp_scalea=sqrt((alphaperpA-alphaparA)/(alpha*alphaperpA*alphaperpA));
 			float h_par_scalea=sqrt(alphaparA/alpha);
 
+//			if (i==1) printf("%e %e %e %e\n",heffa.z,H1.z, (ma-mea)/mea,mz1[i]);
+
 			H1=H1+heffa;
 
 			float3 htot1=H1+h_perp_scalea*hth1a;

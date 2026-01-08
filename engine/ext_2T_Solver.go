@@ -16,7 +16,7 @@ type Only2T struct {
 	bufferTlBig *data.Slice // buffer for Tl evolution
 }
 
-// Adaptive HeunJH method, can be used as solver.Step
+// Adaptive Newton 2T method, can be used as solver.Step
 func (S2T *Only2T) Step() {
 
 	if FixDt != 0 {
@@ -97,12 +97,21 @@ func AdaptativeNewtonStep2T(dt float32, bufferTe, bufferTl, bufferTeBig, bufferT
 	DeltaTl := cuda.Buffer(1, size)
 	defer cuda.Recycle(DeltaTl)
 
+
+	scaletausubs:=0.0	
+	// New scaling tausubs
+	if (Time<Lasttsubs) {Lasttsubs=Time}
+	if (Time-Lasttsubs)>1e-13 {
+		scaletausubs=(Time-Lasttsubs)/FixDt
+	}
+
 	// Recalculate Te,Tl
 	UpdateTeTl(te, tl, bufferTeBig, bufferTe, bufferTlBig, bufferTl)
-	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
+	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(),Clat, Gellat, Dth,
+	 Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu(),float32(scaletausubs))
 	err := cuda.MaxAbs(DeltaTe)
 
-	toleranceT := 1.0
+	toleranceT := 0.001
 	minStepTe := 0.1
 	Substeps := 1
 	if err*dt < float32(toleranceT) {
@@ -130,18 +139,28 @@ func AdaptativeNewtonStep2T(dt float32, bufferTe, bufferTl, bufferTeBig, bufferT
 		}
 		print(Substeps," ",math.Ceil(float64(float32(err * dt)/float32(toleranceT))),"\n")*/
 		Substeps = int(math.Ceil(float64(float32(err*dt) / float32(toleranceT))))
+		if Substeps > 1000 {
+			Substeps = 1000
+		}
+		//print("Entro: ", Substeps, "\n")
 		for iSubsteps := 0; iSubsteps < Substeps; iSubsteps++ {
 			//cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
 			//cuda.Madd2(te, te, DeltaTe, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			//cuda.Madd2(tl, tl, DeltaTl, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			UpdateTeTl(te, tl, bufferTeBig, bufferTe, bufferTlBig, bufferTl)
-			cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
+			cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(),Clat, Gellat, Dth,
+			 Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu(),float32(scaletausubs))
 			cuda.Madd2(bufferTeBig, bufferTeBig, DeltaTe, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			cuda.Madd2(bufferTlBig, bufferTlBig, DeltaTl, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			Time += float64(dt / float32(Substeps))
 		}
 		Time -= float64(dt)
+		//print("Salgo\n")
 	}
+
+if (scaletausubs>0) {
+	Lasttsubs=Time
+}
 	UpdateTeTl(te, tl, bufferTeBig, bufferTe, bufferTlBig, bufferTl)
 	NSteps++
 }

@@ -24,7 +24,8 @@ initmLLBJH(float* __restrict__  mx, float* __restrict__  my, float* __restrict__
         {
 	 if (temp<=TCurie)  // T<Tc
          {
-         	float me=pow(1.0f-pow(temp/TCurie,3.49f),0.54f);
+       	//float me=pow(1.0f-pow(temp/TCurie,3.49f),0.54f);
+        float me=pow(1.0f-pow(temp/TCurie,1.23318f),0.433936f);
 		mx[i]=mx[i]*(me/pow(m2,0.5f));
 		my[i]=my[i]*(me/pow(m2,0.5f));
 		mz[i]=mz[i]*(me/pow(m2,0.5f));

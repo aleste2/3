@@ -30,6 +30,8 @@ var (
 	TSubs       = NewScalarParam("TSubs", "K", "Substrate Temperature")
 	TauSubs     = NewScalarParam("TauSubs", "s", "Substrate difussion time")
 
+	Lasttsubs=0.0
+
 	// For 2T Model
 	Te LocalTemp // Electron temperature
 	Tl LocalTemp // lattice temperature
@@ -65,9 +67,9 @@ func init() {
 	// For 2T
 	DeclFunc("Restart2T", Start2T, "Equals Temperatures to substrate")
 	DeclROnly("Te", AsScalarField(&Te), "Electron Local Temperature (K)")
-	Te.name = "Local_Temperature_Electrons"
+	Te.name = "Te"
 	DeclROnly("Tl", AsScalarField(&Tl), "Lattice Local Temperature (K)")
-	Tl.name = "Local_Temperature_Phonons"
+	Tl.name = "Tl"
 	DeclFunc("GetTe", GetTe, "Gets electron cell temperature")
 	DeclFunc("GetTl", GetTl, "Gets lattice cell temperature")
 	DeclFunc("SetTl", SetTlToTe, "Set Tl to Te")
@@ -188,6 +190,7 @@ func (b *thermField) LLBupdate() {
 func StartJH() {
 	//TempJH.JHSetLocalTemp()
 	Te.JHSetLocalTemp()
+	Lasttsubs=0.0
 }
 
 func Start2T() {

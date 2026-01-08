@@ -8,7 +8,8 @@ import (
 
 // Thermal equation for 1T model
 
-func Evaldt0(temp0, dt0, m *data.Slice, Kth SymmLUT, Cth, Dth, Tsubsth, Tausubsth, res, Qext, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes) {
+func Evaldt0(temp0, dt0, m *data.Slice, Kth SymmLUT, Cth, Dth, Tsubsth,
+	 Tausubsth, res, Qext, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes) {
 	c := mesh.CellSize()
 	N := mesh.Size()
 	//	pbc := mesh.PBC_code()
@@ -38,7 +39,8 @@ func Evaldt0(temp0, dt0, m *data.Slice, Kth SymmLUT, Cth, Dth, Tsubsth, Tausubst
 
 // Thermal equation for 2T model
 
-func Evaldt02T(temp0e, dt0e, temp0l, dt0l, m *data.Slice, Ke SymmLUT, Ce MSlice, Kl SymmLUT, Cl, Gel, Dth, Tsubsth, Tausubsth, res, Qext, CD, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes) {
+func Evaldt02T(temp0e, dt0e, temp0l, dt0l, m *data.Slice, Ke SymmLUT, Ce MSlice, Kl SymmLUT, Cl, Gel, Dth,
+	 Tsubsth, Tausubsth, res, Qext, CD, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes,scaletausubs float32) {
 	c := mesh.CellSize()
 	N := mesh.Size()
 	//	pbc := mesh.PBC_code()
@@ -46,7 +48,8 @@ func Evaldt02T(temp0e, dt0e, temp0l, dt0l, m *data.Slice, Ke SymmLUT, Ce MSlice,
 
 	NN := mesh.Size()
 
-	k_evaldt02T_async(
+	k_evaldt02TBC2_async(
+		//	k_evaldt02T_async(
 		temp0e.DevPtr(0), dt0e.DevPtr(0),
 		temp0l.DevPtr(0), dt0l.DevPtr(0),
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
@@ -71,6 +74,7 @@ func Evaldt02T(temp0e, dt0e, temp0l, dt0l, m *data.Slice, Ke SymmLUT, Ce MSlice,
 		float32(c[X]), float32(c[Y]), float32(c[Z]), NN[X], NN[Y], NN[Z],
 		vol.DevPtr(0),
 		regions.Ptr,
+		scaletausubs,
 		cfg)
 }
 

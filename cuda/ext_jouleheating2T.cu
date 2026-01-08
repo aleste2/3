@@ -30,7 +30,8 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
                 float* __restrict__ jz_, float jz_mul,
             		float wx, float wy, float wz, int Nx, int Ny, int Nz,
                 float* __restrict__ vol,
-                uint8_t* __restrict__ regions
+                uint8_t* __restrict__ regions,
+                float scaletausubs
                 ) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
@@ -210,9 +211,9 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 // Missing constants
     dt0e_[i]=dt0e_[i]/Ce;
     dt0l_[i]=dt0l_[i]/Cl;
-
-    if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
-
+    if (scaletausubs>0) {
+    if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-scaletausubs*(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
+    }
     }
     else{
       tempe_[i]=0;

@@ -36,6 +36,7 @@ var (
 	OSC    = false
 	Ato    = false
 	MEf    = false
+	sdf    = false
 )
 
 func init() {
@@ -74,9 +75,10 @@ const (
 	DORMANDPRINCE  = 5
 	FEHLBERG       = 6
 
-	LLB   = 26
-	LLBJH = 27
-	LLB2T = 29
+	LLB     = 26
+	LLBJH   = 27
+	LLB2T   = 29
+	LLB2Tsd = 30
 
 	//LLB2TOST = 30
 
@@ -100,6 +102,9 @@ const (
 	// My magnetoelastics solvers
 	ELASTIC  = 200
 	MELASTIC = 201
+
+	// M3TMPlus solver
+	M3TM = 250
 )
 
 func SetSolver(typ int) {
@@ -115,6 +120,7 @@ func SetSolver(typ int) {
 	LLB2Tf = false
 	AFf = false
 	MEf = false
+	sdf = false
 
 	switch typ {
 	default:
@@ -151,6 +157,19 @@ func SetSolver(typ int) {
 		LLBeq = true
 		LLB2Tf = true
 		LLBJHf = false
+	case LLB2Tsd:
+		//stepper = new(HeunLLB2T)
+		stepper = new(HeunLLBFerroUnified)
+		LLBeq = true
+		LLB2Tf = true
+		LLBJHf = false
+		sdf = true
+	case M3TM:
+		stepper = new(EulerM3TMs)
+		LLB2Tf = true
+		LLBJHf = false
+		sdf = true
+
 	/*case LLB2TOST:
 	stepper = new(HeunLLB2TOSC)
 	LLBeq = true
