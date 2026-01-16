@@ -61,25 +61,24 @@ func musStep(dy11, dy1 *data.Slice) {
 
 	// Newton step
 
-/*
-// Forced  Substeps
-        Substeps:=2000
-		time0 := Time
-		for iSubsteps := 0; iSubsteps < Substeps; iSubsteps++ {
-			cuda.MusStep(dmus1, dt, M.Buffer(), mus1, Rhosd, Tausf, dbar, sigmabar, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
-			cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)/float32(Substeps))                                                          // y = y + dt * dy
-			Time += float64(float32(Dt_si) / float32(Substeps))
-			//print("Substes: ", iSubsteps, "\n")
-		}
-		Time = time0
+	/*
+	   // Forced  Substeps
+	           Substeps:=2000
+	   		time0 := Time
+	   		for iSubsteps := 0; iSubsteps < Substeps; iSubsteps++ {
+	   			cuda.MusStep(dmus1, dt, M.Buffer(), mus1, Rhosd, Tausf, dbar, sigmabar, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
+	   			cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)/float32(Substeps))                                                          // y = y + dt * dy
+	   			Time += float64(float32(Dt_si) / float32(Substeps))
+	   			//print("Substes: ", iSubsteps, "\n")
+	   		}
+	   		Time = time0
 
 
 
 
-//
-*/
+	   //
+	*/
 
-	
 	cuda.MusStep(dmus1, dt, M.Buffer(), mus1, Rhosd, Tausf, dbar, sigmabar, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
 	err := cuda.MaxVecNorm(dmus1)
 	tolerancemu := 1.0e-24
@@ -104,10 +103,8 @@ func musStep(dy11, dy1 *data.Slice) {
 		Time = time0
 		//print("Salgo\n")
 
-		
 	}
 
-	
 }
 
 func TTMplus(dy11, dy1, LLBbufferTe, LLBbufferTeBig *data.Slice, dt float32) {

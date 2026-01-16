@@ -22,11 +22,9 @@ evalM3TMtorque(float* __restrict__ dstx, float* __restrict__ dsty, float* __rest
         float GammaLL=1.7595e11;
 
         if ((Tc>0.01)&&(mx[i]*mx[i]+my[i]*my[i]+mz[i]*mz[i]>0)) {
-            //if (i==1) {printf("Entro mz:%e musz:%e Te:%e\n",mz[i],musz[i],Te[i]);}
-           if (Tc<500) {printf("%e \n",Tc);}
-            dstx[i]=0;//*(mx[i]-musx[i]/(2.0f*Kb*Tc))/Tausd*(1-mx[i]/tanh((2*mx[i]*Kb*Tc-musx[i])/(2*Kb*Te[i])));
-            dsty[i]=0;//*(my[i]-musy[i]/(2.0f*Kb*Tc))/Tausd*(1-my[i]/tanh((2*my[i]*Kb*Tc-musy[i])/(2*Kb*Te[i])));
-            dstz[i]=(mz[i]-musz[i]/(2.0f*Kb*Tc))/Tausd*(1-mz[i]/tanh((2*mz[i]*Kb*Tc-musz[i])/(2*Kb*Te[i])))/GammaLL;
+            if (mx[i]!=0) {dstx[i]=(mx[i]-musx[i]/(2.0f*Kb*Tc))/Tausd*(1-mx[i]/tanh((2*mx[i]*Kb*Tc-musx[i])/(2*Kb*Te[i])))/GammaLL;} else{dstx[i]=0;}
+            if (my[i]!=0) {dsty[i]=(my[i]-musy[i]/(2.0f*Kb*Tc))/Tausd*(1-my[i]/tanh((2*my[i]*Kb*Tc-musy[i])/(2*Kb*Te[i])))/GammaLL;} else{dsty[i]=0;}
+            if (mz[i]!=0) {dstz[i]=(mz[i]-musz[i]/(2.0f*Kb*Tc))/Tausd*(1-mz[i]/tanh((2*mz[i]*Kb*Tc-musz[i])/(2*Kb*Te[i])))/GammaLL;} else {dstz[i]=0;}
         } else {
             dstx[i] = 0;
             dsty[i] = 0;

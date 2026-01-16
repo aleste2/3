@@ -30,15 +30,15 @@ func MusStep(dmus *data.Slice, dt0 float32, m, mus *data.Slice, Rhosd, Tausf, db
 		cfg)
 }
 
-func TTMplus(dy11, dy1, LLBbufferTe, LLBbufferTeBig, m *data.Slice, Tc, rho, Ce MSlice, dt float32) {
+func TTMplus(dy11, dy1, Te, m *data.Slice, Tc, rho, Ce MSlice, dt float32) {
 
-	N := LLBbufferTe.Len()
+	N := Te.Len()
 
 	cfg := make1DConf(N)
 	k_ttmplus_async(
 		dy11.DevPtr(X), dy11.DevPtr(Y), dy11.DevPtr(Z),
 		dy1.DevPtr(X), dy1.DevPtr(Y), dy1.DevPtr(Z),
-		LLBbufferTe.DevPtr(X), LLBbufferTeBig.DevPtr(X),
+		Te.DevPtr(X),
 		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
 		Tc.DevPtr(0), Tc.Mul(0),
 		rho.DevPtr(0), rho.Mul(0),

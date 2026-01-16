@@ -97,18 +97,19 @@ func AdaptativeNewtonStep2T(dt float32, bufferTe, bufferTl, bufferTeBig, bufferT
 	DeltaTl := cuda.Buffer(1, size)
 	defer cuda.Recycle(DeltaTl)
 
-
-	scaletausubs:=0.0	
+	scaletausubs := 0.0
 	// New scaling tausubs
-	if (Time<Lasttsubs) {Lasttsubs=Time}
-	if (Time-Lasttsubs)>1e-13 {
-		scaletausubs=(Time-Lasttsubs)/FixDt
+	if Time < Lasttsubs {
+		Lasttsubs = Time
+	}
+	if (Time - Lasttsubs) > 1e-13 {
+		scaletausubs = (Time - Lasttsubs) / FixDt
 	}
 
 	// Recalculate Te,Tl
 	UpdateTeTl(te, tl, bufferTeBig, bufferTe, bufferTlBig, bufferTl)
-	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(),Clat, Gellat, Dth,
-	 Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu(),float32(scaletausubs))
+	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat, Dth,
+		Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu(), float32(scaletausubs))
 	err := cuda.MaxAbs(DeltaTe)
 
 	toleranceT := 0.001
@@ -148,8 +149,8 @@ func AdaptativeNewtonStep2T(dt float32, bufferTe, bufferTl, bufferTeBig, bufferT
 			//cuda.Madd2(te, te, DeltaTe, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			//cuda.Madd2(tl, tl, DeltaTl, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			UpdateTeTl(te, tl, bufferTeBig, bufferTe, bufferTlBig, bufferTl)
-			cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(),Clat, Gellat, Dth,
-			 Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu(),float32(scaletausubs))
+			cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat, Dth,
+				Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu(), float32(scaletausubs))
 			cuda.Madd2(bufferTeBig, bufferTeBig, DeltaTe, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			cuda.Madd2(bufferTlBig, bufferTlBig, DeltaTl, 1, dt/float32(Substeps)) // temp = temp + dt * dtemp0
 			Time += float64(dt / float32(Substeps))
@@ -158,9 +159,9 @@ func AdaptativeNewtonStep2T(dt float32, bufferTe, bufferTl, bufferTeBig, bufferT
 		//print("Salgo\n")
 	}
 
-if (scaletausubs>0) {
-	Lasttsubs=Time
-}
+	if scaletausubs > 0 {
+		Lasttsubs = Time
+	}
 	UpdateTeTl(te, tl, bufferTeBig, bufferTe, bufferTlBig, bufferTl)
 	NSteps++
 }

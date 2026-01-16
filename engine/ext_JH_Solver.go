@@ -40,6 +40,7 @@ func (SJH *OnlyJH) Free() {
 	SJH.bufferTeBig.Free()
 	SJH.bufferTeBig = nil
 }
+
 /*
 func AdaptativeNewtonStepJHold(dt float32, bufferTe, bufferTeBig *data.Slice) {
 
@@ -70,7 +71,7 @@ func AdaptativeNewtonStepJHold(dt float32, bufferTe, bufferTeBig *data.Slice) {
 	DeltaTl := cuda.Buffer(1, size)
 	defer cuda.Recycle(DeltaTl)
 
-    scaletausubs=0.0	
+    scaletausubs=0.0
 	// New scaling tausubs
 	if (t-lasttsubs)>1e-13 {
 		scaletausubs=(t-lasttsubs)/FixDT
@@ -117,7 +118,7 @@ func AdaptativeNewtonStepJHold(dt float32, bufferTe, bufferTeBig *data.Slice) {
 		Time -= float64(dt)
 	}
 
-	
+
 	UpdateTe(te, bufferTeBig, bufferTe)
 }
 */
@@ -125,8 +126,6 @@ func AdaptativeNewtonStepJHold(dt float32, bufferTe, bufferTeBig *data.Slice) {
 func UpdateTe(Te, bufferTeBig, bufferTe *data.Slice) {
 	cuda.Madd2(Te, bufferTe, bufferTeBig, 1, 1)
 }
-
-
 
 func AdaptativeNewtonStepJH(dt float32, bufferTe, bufferTeBig *data.Slice) {
 
@@ -161,7 +160,7 @@ func AdaptativeNewtonStepJH(dt float32, bufferTe, bufferTeBig *data.Slice) {
 	UpdateTe(te, bufferTeBig, bufferTe)
 	//	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat, Dth, Tsubsth, Tausubsth, res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
 	cuda.Evaldt0(te, DeltaTe, M.Buffer(), kth.Gpu(), Cth, Dth, Tsubsth, Tausubsth,
-	 res, Qext, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
+		res, Qext, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
 	err := cuda.MaxAbs(DeltaTe)
 
 	toleranceT := 1.0
@@ -198,6 +197,5 @@ func AdaptativeNewtonStepJH(dt float32, bufferTe, bufferTeBig *data.Slice) {
 		Time -= float64(dt)
 	}
 
-	
 	UpdateTe(te, bufferTeBig, bufferTe)
 }

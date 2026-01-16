@@ -30,7 +30,7 @@ var (
 	TSubs       = NewScalarParam("TSubs", "K", "Substrate Temperature")
 	TauSubs     = NewScalarParam("TauSubs", "s", "Substrate difussion time")
 
-	Lasttsubs=0.0
+	Lasttsubs = 0.0
 
 	// For 2T Model
 	Te LocalTemp // Electron temperature
@@ -190,7 +190,7 @@ func (b *thermField) LLBupdate() {
 func StartJH() {
 	//TempJH.JHSetLocalTemp()
 	Te.JHSetLocalTemp()
-	Lasttsubs=0.0
+	Lasttsubs = 0.0
 }
 
 func Start2T() {

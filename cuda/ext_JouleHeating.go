@@ -9,7 +9,7 @@ import (
 // Thermal equation for 1T model
 
 func Evaldt0(temp0, dt0, m *data.Slice, Kth SymmLUT, Cth, Dth, Tsubsth,
-	 Tausubsth, res, Qext, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes) {
+	Tausubsth, res, Qext, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes) {
 	c := mesh.CellSize()
 	N := mesh.Size()
 	//	pbc := mesh.PBC_code()
@@ -40,7 +40,7 @@ func Evaldt0(temp0, dt0, m *data.Slice, Kth SymmLUT, Cth, Dth, Tsubsth,
 // Thermal equation for 2T model
 
 func Evaldt02T(temp0e, dt0e, temp0l, dt0l, m *data.Slice, Ke SymmLUT, Ce MSlice, Kl SymmLUT, Cl, Gel, Dth,
-	 Tsubsth, Tausubsth, res, Qext, CD, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes,scaletausubs float32) {
+	Tsubsth, Tausubsth, res, Qext, CD, J MSlice, mesh *data.Mesh, vol *data.Slice, regions *Bytes, scaletausubs float32) {
 	c := mesh.CellSize()
 	N := mesh.Size()
 	//	pbc := mesh.PBC_code()
