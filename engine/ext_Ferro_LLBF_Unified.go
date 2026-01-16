@@ -1,19 +1,14 @@
 package engine
 
 import (
-	"math"
-
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/util"
+	"math"
 )
 
 // Heun solver for Ferro LLB equation + joule heating + 2T model.
 type HeunLLBFerroUnified struct {
-	bufferTe    *data.Slice // buffer for slow Te evolucion
-	bufferTl    *data.Slice // buffer for slow Tl evolucion
-	bufferTeBig *data.Slice // buffer for slow Te evolucion
-	bufferTlBig *data.Slice // buffer for slow Tl evolucion
 }
 
 // Adaptive HeunLLB2T method, can be used as solver.Step
@@ -21,37 +16,11 @@ func (LLB *HeunLLBFerroUnified) Step() {
 
 	y1 := M.Buffer()
 
-	// Temperature Buffers
-	if LLB2Tf == true {
-		if LLB.bufferTe == nil {
-			size := Te.Mesh().Size()
-			LLB.bufferTe = cuda.NewSlice(1, size)
-			LLB.bufferTl = cuda.NewSlice(1, size)
-			LLB.bufferTeBig = cuda.NewSlice(1, size)
-			LLB.bufferTlBig = cuda.NewSlice(1, size)
-			cuda.Madd2(LLB.bufferTe, LLB.bufferTe, LLB.bufferTe, 0, 0) // bufferTe to 0
-			cuda.Madd2(LLB.bufferTl, LLB.bufferTl, LLB.bufferTl, 0, 0) // bufferTl to 0
-			cuda.Madd2(LLB.bufferTeBig, Te.temp, Te.temp, 1, 0)
-			cuda.Madd2(LLB.bufferTlBig, Tl.temp, Tl.temp, 1, 0)
-		}
-	}
-
-	if LLBJHf == true {
-		if LLB.bufferTe == nil {
-			size := Te.Mesh().Size()
-			LLB.bufferTe = cuda.NewSlice(1, size)
-			LLB.bufferTeBig = cuda.NewSlice(1, size)
-			cuda.Madd2(LLB.bufferTe, LLB.bufferTe, LLB.bufferTe, 0, 0) // bufferTe to 0
-			cuda.Madd2(LLB.bufferTeBig, Te.temp, Te.temp, 1, 0)
-		}
-	}
-
 	// For renorm
 	y01 := cuda.Buffer(VECTOR, y1.Size())
 	defer cuda.Recycle(y01)
 
 	cuda.Madd2(y01, y1, y01, 1, 0) // y = y + dt * dy
-	//
 
 	dy1 := cuda.Buffer(VECTOR, y1.Size())
 	defer cuda.Recycle(dy1)
@@ -99,17 +68,17 @@ func (LLB *HeunLLBFerroUnified) Step() {
 		// step OK
 		if sdf == true {
 			musStep(dy11, dy1)
-			TTMplus(dy11, dy1, LLB.bufferTe, LLB.bufferTeBig, float32(Dt_si))
+			TTMplus(dy11, dy1, Te.temp, float32(Dt_si))
 		}
 		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt, -0.5*dt) //****
 		if LLB2Tf == true {
-			AdaptativeNewtonStep2T(float32(Dt_si), LLB.bufferTe, LLB.bufferTl, LLB.bufferTeBig, LLB.bufferTlBig)
+			AdaptativeFTCSStep2T(float32(Dt_si))
 		}
 		if sdf == true { // Moment contribution
-			MusMoment(float32(float32(Dt_si))) // dt in SI units
+			MusMoment(float32(Dt_si)) // dt in SI units
 		}
 		if LLBJHf == true {
-			AdaptativeNewtonStepJH(float32(Dt_si), LLB.bufferTe, LLB.bufferTeBig)
+			AdaptativeFTCSSstepJH(float32(Dt_si))
 		}
 		NSteps++
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
@@ -126,17 +95,9 @@ func (LLB *HeunLLBFerroUnified) Step() {
 }
 
 func (LLB *HeunLLBFerroUnified) Free() {
-	LLB.bufferTe.Free()
-	LLB.bufferTe = nil
-	LLB.bufferTl.Free()
-	LLB.bufferTl = nil
-	LLB.bufferTeBig.Free()
-	LLB.bufferTeBig = nil
-	LLB.bufferTlBig.Free()
-	LLB.bufferTlBig = nil
 }
 
-// Torque for antiferro LLB 2T
+// Torque for ferro LLB 2T
 
 // write torque to dst and increment NEvals
 // Now everything here to use 2 lattices at the same time
@@ -149,10 +110,6 @@ func torqueFnFerroLLBUnified(dst1 *data.Slice, hth1a, hth2a *data.Slice) {
 	//AddAFMExchangeField(dst)  // AFM Exchange non adjacent layers
 	B_ext.AddTo(dst1)
 	AddCustomField(dst1)
-
-	if sdf == true { // Moment contribution
-		//AddMusEffectiveField(dst1)
-	}
 
 	// Add to sublattice 1 and 2
 	alpha := Alpha.MSlice()

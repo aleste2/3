@@ -212,7 +212,7 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     dt0e_[i]=dt0e_[i]/Ce;
     dt0l_[i]=dt0l_[i]/Cl;
     if (scaletausubs>0) {
-    if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-scaletausubs*(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
+//    if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-scaletausubs*(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
     }
     }
     else{

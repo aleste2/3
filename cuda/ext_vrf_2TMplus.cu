@@ -7,16 +7,11 @@
 extern "C"
 
 
-
-
-
-
-
  __global__ void
 ttmplus(
     float* __restrict__ dy11x, float* __restrict__ dy11y, float* __restrict__ dy11z,
     float* __restrict__ dy1x, float* __restrict__ dy1y, float* __restrict__ dy1z,
-    float* __restrict__  LLBbufferTe, float* __restrict__  LLBbufferTeBig,
+    float* __restrict__  Te_,
     float* __restrict__ mx, float* __restrict__ my, float* __restrict__ mz,
     float* __restrict__ Tc_, float Tc_mul,
     float* __restrict__ rho_, float rho_mul,
@@ -48,11 +43,11 @@ ttmplus(
         float Tc = amul(Tc_, Tc_mul, i);
         float rho = amul(rho_, rho_mul, i);
 
-        float Te=LLBbufferTe[i]+LLBbufferTeBig[i];
+        float Te=Te_[i];
         float Ce = amul(Ce_, Ce_mul, i);
         if (Te!=0) {Ce=Ce*Te/300.0;} else {Ce=Ce*1.0/300.0;}  // To account for temperature dependence. Cl is almost constat at T>TD
 
-        LLBbufferTe[i]+=(2.0f*kb*Tc*rho*mmold*dmdt*dt)/Ce;
+        Te_[i]+=(2.0f*kb*Tc*rho*mmold*dmdt*dt)/Ce;
 
      }
     }

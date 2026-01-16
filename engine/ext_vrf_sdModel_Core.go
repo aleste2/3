@@ -107,7 +107,7 @@ func musStep(dy11, dy1 *data.Slice) {
 
 }
 
-func TTMplus(dy11, dy1, LLBbufferTe, LLBbufferTeBig *data.Slice, dt float32) {
+func TTMplus(dy11, dy1, Te *data.Slice, dt float32) {
 	Tc := TCurie.MSlice()
 	defer Tc.Recycle()
 	Rho := rhov.MSlice()
@@ -115,7 +115,7 @@ func TTMplus(dy11, dy1, LLBbufferTe, LLBbufferTeBig *data.Slice, dt float32) {
 	Cel := Ce.MSlice()
 	defer Cel.Recycle()
 
-	cuda.TTMplus(dy11, dy1, LLBbufferTe, LLBbufferTeBig, M.Buffer(), Tc, Rho, Cel, dt)
+	cuda.TTMplus(dy11, dy1, Te, M.Buffer(), Tc, Rho, Cel, dt)
 }
 
 func MusMoment(dt float32) {

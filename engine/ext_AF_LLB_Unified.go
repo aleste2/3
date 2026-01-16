@@ -9,10 +9,6 @@ import (
 
 // Heun solver for LLB equation + joule heating + 2T model.
 type HeunLLBAFUnified struct {
-	bufferTe    *data.Slice // buffer for slow Te evolucion
-	bufferTl    *data.Slice // buffer for slow Tl evolucion
-	bufferTeBig *data.Slice // buffer for slow Te evolucion
-	bufferTlBig *data.Slice // buffer for slow Tl evolucion
 }
 
 // Adaptive HeunLLB2T method, can be used as solver.Step
@@ -20,31 +16,6 @@ func (AFLLB *HeunLLBAFUnified) Step() {
 
 	y1 := M1.Buffer()
 	y2 := M2.Buffer()
-
-	// Temperature Buffers
-	if LLB2Tf == true {
-		if AFLLB.bufferTe == nil {
-			size := Te.Mesh().Size()
-			AFLLB.bufferTe = cuda.NewSlice(1, size)
-			AFLLB.bufferTl = cuda.NewSlice(1, size)
-			AFLLB.bufferTeBig = cuda.NewSlice(1, size)
-			AFLLB.bufferTlBig = cuda.NewSlice(1, size)
-			cuda.Madd2(AFLLB.bufferTe, AFLLB.bufferTe, AFLLB.bufferTe, 0, 0) // bufferTe to 0
-			cuda.Madd2(AFLLB.bufferTl, AFLLB.bufferTl, AFLLB.bufferTl, 0, 0) // bufferTl to 0
-			cuda.Madd2(AFLLB.bufferTeBig, Te.temp, Te.temp, 1, 0)
-			cuda.Madd2(AFLLB.bufferTlBig, Tl.temp, Tl.temp, 1, 0)
-		}
-	}
-
-	if LLBJHf == true {
-		if AFLLB.bufferTe == nil {
-			size := Te.Mesh().Size()
-			AFLLB.bufferTe = cuda.NewSlice(1, size)
-			AFLLB.bufferTeBig = cuda.NewSlice(1, size)
-			cuda.Madd2(AFLLB.bufferTe, AFLLB.bufferTe, AFLLB.bufferTe, 0, 0) // bufferTe to 0
-			cuda.Madd2(AFLLB.bufferTeBig, Te.temp, Te.temp, 1, 0)
-		}
-	}
 
 	// For renorm
 	y01 := cuda.Buffer(VECTOR, y1.Size())
@@ -54,7 +25,6 @@ func (AFLLB *HeunLLBAFUnified) Step() {
 
 	cuda.Madd2(y01, y1, y01, 1, 0) // y = y + dt * dy
 	cuda.Madd2(y02, y2, y02, 1, 0) // y = y + dt * dy
-	//
 
 	dy1 := cuda.Buffer(VECTOR, y1.Size())
 	defer cuda.Recycle(dy1)
@@ -138,22 +108,11 @@ func (AFLLB *HeunLLBAFUnified) Step() {
 			}
 		}
 		if LLB2Tf == true {
-			AdaptativeNewtonStep2T(float32(Dt_si), AFLLB.bufferTe, AFLLB.bufferTl, AFLLB.bufferTeBig, AFLLB.bufferTlBig)
+			AdaptativeFTCSStep2T(float32(Dt_si))
 		}
 
 		if LLBJHf == true {
-			/*
-				if TOversteps == 1 {
-					StepJH(float32(Dt_si))
-				}
-				if TOversteps > 1 {
-					TOverstepsCounter++
-					if TOverstepsCounter >= TOversteps {
-						StepJH(float32(Dt_si * float64(TOversteps)))
-						TOverstepsCounter = 0
-					}
-				}*/
-			AdaptativeNewtonStepJH(float32(Dt_si), AFLLB.bufferTe, AFLLB.bufferTeBig)
+			AdaptativeFTCSSstepJH(float32(Dt_si))
 		}
 
 		NSteps++
@@ -172,15 +131,6 @@ func (AFLLB *HeunLLBAFUnified) Step() {
 }
 
 func (AFLLB *HeunLLBAFUnified) Free() {
-	AFLLB.bufferTe.Free()
-	AFLLB.bufferTe = nil
-	AFLLB.bufferTl.Free()
-	AFLLB.bufferTl = nil
-	AFLLB.bufferTeBig.Free()
-	AFLLB.bufferTeBig = nil
-	AFLLB.bufferTlBig.Free()
-	AFLLB.bufferTlBig = nil
-
 }
 
 // Torque for antiferro LLB 2T

@@ -1,13 +1,14 @@
 package engine
 
 import (
+	"math"
+	"math/rand"
+
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/cuda/curand"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/mag"
 	"github.com/mumax/3/util"
-	"math"
-	"math/rand"
 )
 
 var (
@@ -405,12 +406,7 @@ func (SATO2T *HeunAto2T) Step() {
 		adaptDt(math.Pow(MaxErr/err, 1./2.))
 		setLastErr(err)
 		setMaxTorque(dy)
-		AdaptativeNewtonStep2T(float32(Dt_si), SATO2T.bufferTe, SATO2T.bufferTl, SATO2T.bufferTeBig, SATO2T.bufferTlBig)
-		/*
-			for iter := 0; iter < TSubsteps; iter++ {
-				NewtonStep2T(float32(Dt_si) / float32(TSubsteps))
-			}
-		*/
+		AdaptativeFTCSStep2T(float32(Dt_si))
 	} else {
 		// undo bad step
 		util.Assert(FixDt == 0)

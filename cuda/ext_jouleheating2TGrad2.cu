@@ -235,7 +235,7 @@ evaldt02Tgrad2(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     dt0e_[i]=dt0e_[i]/Ce;
     dt0l_[i]=dt0l_[i]/Cl;
 
-    if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
+//    if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
 
     }
     else{

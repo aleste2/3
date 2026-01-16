@@ -17,32 +17,20 @@ var (
 	Langevin               = 0
 	JHThermalnoise         = true
 	ScaleNoiseLLB  float64 = 1.0 // reduce noise in LLB
-	TSubsteps              = 3
-	//TOversteps                  = 1
-	//TOverstepsCounter           = 0
-	//flagOST                     = 0
-	//TempJH            LocalTemp // Local temperature
-	//	Kthermal          = NewScalarParam("Kthermal", "W/(m·K)", "Thermal conductivity")
-	Kthermal    = NewScalarParam("Kthermal", "J/(m3·K)", "Electron Heat capacity", &kth)
-	Cthermal    = NewScalarParam("Cthermal", "J/(Kg·K)", "Specific heat capacity")
-	Resistivity = NewScalarParam("Resistivity", "Ohm·m", "Electric resistivity")
-	Density     = NewScalarParam("Density", "Kg/m3", "Mass density")
-	TSubs       = NewScalarParam("TSubs", "K", "Substrate Temperature")
-	TauSubs     = NewScalarParam("TauSubs", "s", "Substrate difussion time")
+	Resistivity            = NewScalarParam("Resistivity", "Ohm·m", "Electric resistivity")
+	TSubs                  = NewScalarParam("TSubs", "K", "Substrate Temperature")
+	TauSubs                = NewScalarParam("TauSubs", "s", "Substrate difussion time")
+	FixDtT         float64 = 0
+	//DeltaTTausubs float64 = 1e-12
 
 	Lasttsubs = 0.0
 
 	// For 2T Model
-	Te LocalTemp // Electron temperature
-	Tl LocalTemp // lattice temperature
-	// Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity")
-	// Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity")
-	//Ks  = NewScalarParam("Ks", "W/(m·K)", "Spin thermal conductivity")
+	Te  LocalTemp // Electron temperature
+	Tl  LocalTemp // lattice temperature
 	Ce  = NewScalarParam("Ce", "J/(m3·K)", "Electron Heat capacity")
 	Cl  = NewScalarParam("Cl", "J/(m3·K)", "Lattice Heat capacity")
 	Gel = NewScalarParam("Gel", "W/(m3·K)", "Transfer electron-lattice")
-
-	// Trial Ke Ka type exchange for thermal resistance and different materials
 	Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity", &kll)
 	Ke  = NewScalarParam("Ke", "W/(m·K)", "Electron thermal conductivity", &kel)
 	kel exchParam // electron themal contuctivity
@@ -58,12 +46,7 @@ var (
 )
 
 func init() {
-	// For JH (see at the end)
-	//DeclROnly("TempJH", AsScalarField(&TempJH), "Local Temperature (K)")
-	//TempJH.name = "Local_Temperature"
 	DeclFunc("RestartJH", StartJH, "Equals Temperature to substrate")
-	//DeclFunc("GetTemp", GetCell, "Gets cell temperature")
-
 	// For 2T
 	DeclFunc("Restart2T", Start2T, "Equals Temperatures to substrate")
 	DeclROnly("Te", AsScalarField(&Te), "Electron Local Temperature (K)")
@@ -75,19 +58,15 @@ func init() {
 	DeclFunc("SetTl", SetTlToTe, "Set Tl to Te")
 
 	DeclFunc("RadialMask", RadialMask, "Gaussian mask")
-
-	//DeclFunc("SetM", SetM, "Adjust m to temperature")
 	DeclTVar("JHThermalnoise", &JHThermalnoise, "Enable/disable thermal noise")
-	//DeclTVar("Langevin", &Langevin, "Set M(T) to Langevin instead of Brillouin with J=1/2")
-	//DeclTVar("RenormLLB", &RenormLLB, "Enable/disable remormalize m in LLB")
-	DeclVar("TSubsteps", &TSubsteps, "Number of substeps for Thermal equation")
-	//DeclVar("TOversteps", &TOversteps, "Number of oversteps for JH")
-	DeclVar("ScaleNoiseLLB", &ScaleNoiseLLB, "Thermal noise scale")
+	DeclVar("FixDtT", &FixDtT, "Time step for 2T model")
+	//DeclVar("DeltaTTausubs", &DeltaTTausubs, "Characteristic time step for substrate relaxation")
+	DeclVar("ScaleNoiseLLB", &ScaleNoiseLLB, "LLB Thermal noise Scaling")
 
 	// For new thermal difussion
 	kel.init(Ke)
 	kll.init(Kl)
-	kth.init(Kthermal)
+	//kth.init(Kthermal)
 	DeclFunc("ext_InterExchangeKe", InterExchangeKe, "Sets electron thermal difussion between two regions.")
 	DeclFunc("ext_InterExchangeKl", InterExchangeKl, "Sets lattice thermal difussion between two regions.")
 }
