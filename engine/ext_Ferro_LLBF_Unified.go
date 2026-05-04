@@ -1,10 +1,11 @@
 package engine
 
 import (
+	"math"
+
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/util"
-	"math"
 )
 
 // Heun solver for Ferro LLB equation + joule heating + 2T model.
@@ -50,7 +51,6 @@ func (LLB *HeunLLBFerroUnified) Step() {
 	util.Assert(dt > 0)
 
 	// stage 1
-
 	// Rewrite to calculate m step 1
 	torqueFnFerroLLBUnified(dy1, Hth1a, Hth2a)
 	cuda.Madd2(y1, y1, dy1, 1, dt) // y = y + dt * dy
@@ -66,6 +66,8 @@ func (LLB *HeunLLBFerroUnified) Step() {
 	// adjust next time step
 	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
 		// step OK
+
+		// TTM+ by rho
 		if sdf == true {
 			musStep(dy11, dy1)
 			TTMplus(dy11, dy1, Te.temp, float32(Dt_si))
@@ -74,6 +76,7 @@ func (LLB *HeunLLBFerroUnified) Step() {
 		if LLB2Tf == true {
 			AdaptativeFTCSStep2T(float32(Dt_si))
 		}
+
 		if sdf == true { // Moment contribution
 			MusMoment(float32(Dt_si)) // dt in SI units
 		}

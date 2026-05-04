@@ -3,6 +3,7 @@
 #include "float3.h"
 #include "stencil.h"
 #include "exchange.h"
+//#include "math.h"
 
 extern "C"
 
@@ -25,6 +26,8 @@ evaldt02TBC2(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
                 float* __restrict__ jx_, float jx_mul,
                 float* __restrict__ jy_, float jy_mul,
                 float* __restrict__ jz_, float jz_mul,
+                float* __restrict__ Tc_, float Tc_mul,
+                float* __restrict__ Cs_, float Cs_mul,
             		float wx, float wy, float wz, int Nx, int Ny, int Nz,
                 float* __restrict__ vol,
                 uint8_t* __restrict__ regions
@@ -59,8 +62,23 @@ evaldt02TBC2(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     float res = amul(res_, res_mul, i);
     float Qext = amul(Qext_, Qext_mul, i);
 
+    float Tcurie = amul(Tc_, Tc_mul, i);
+    float Cs=amul(Cs_, Cs_mul, i);
+
+    
     float Te = tempe_[i];
     if (Te!=0) {Ce=Ce*Te/300.0;} else {Ce=Ce*1.0/300.0;}  // To account for temperature dependence. Cl is almost constat at T>TD
+    // New add Cs to Ce
+    if (Tcurie!=0) {
+      if (Te<Tcurie) {
+        Cs=Cs*pow(Te/Tcurie,10);
+      } else {
+        Cs=Cs*pow(Tcurie/Te,20);
+      }
+    }
+
+    //    if (i==0) printf("%e %e\n",Ce,Cs);
+    Ce=Ce+Cs;
     float Tl = templ_[i];
 
     //int i_;    // neighbor index

@@ -5,7 +5,6 @@
 #include "exchange.h"
 
 extern "C"
-
  __global__ void
 evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 	float* __restrict__  templ_,      float* __restrict__ dt0l_,
@@ -17,9 +16,9 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
                 float* __restrict__ Kl_,
                 float* __restrict__ Cl_, float Cl_mul,
                 float* __restrict__ Gel_, float Gel_mul,
-                float* __restrict__ Dth_, float Dth_mul,
-                float* __restrict__ Tsubsth_, float Tsubsth_mul,
-                float* __restrict__ Tausubsth_, float Tausubsth_mul,
+//                float* __restrict__ Dth_, float Dth_mul,
+//                float* __restrict__ Tsubsth_, float Tsubsth_mul,
+//                float* __restrict__ Tausubsth_, float Tausubsth_mul,
                 float* __restrict__ res_, float res_mul,
                 float* __restrict__ Qext_, float Qext_mul,
 	              float* __restrict__ cdx_, float cdx_mul,
@@ -30,8 +29,8 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
                 float* __restrict__ jz_, float jz_mul,
             		float wx, float wy, float wz, int Nx, int Ny, int Nz,
                 float* __restrict__ vol,
-                uint8_t* __restrict__ regions,
-                float scaletausubs
+                uint8_t* __restrict__ regions
+                //float scaletausubs
                 ) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
@@ -60,12 +59,12 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
     float Ce = amul(Ce_, Ce_mul, i);
     //float Kl = amul(Kl_, Kl_mul, i);
     float Cl = amul(Cl_, Cl_mul, i);
-    float Dth = amul(Dth_, Dth_mul, i);
+//    float Dth = amul(Dth_, Dth_mul, i);
     float Gel = amul(Gel_, Gel_mul, i);
     float3 cd = vmul(cdx_, cdy_, cdz_, cdx_mul, cdy_mul, cdz_mul, i);
 
-    float Tsubsth = amul(Tsubsth_, Tsubsth_mul, i);
-    float Tausubsth = amul(Tausubsth_, Tausubsth_mul, i);
+//    float Tsubsth = amul(Tsubsth_, Tsubsth_mul, i);
+//    float Tausubsth = amul(Tausubsth_, Tausubsth_mul, i);
     float res = amul(res_, res_mul, i);
     float Qext = amul(Qext_, Qext_mul, i);
 
@@ -211,9 +210,9 @@ evaldt02T(float* __restrict__  tempe_,      float* __restrict__ dt0e_,
 // Missing constants
     dt0e_[i]=dt0e_[i]/Ce;
     dt0l_[i]=dt0l_[i]/Cl;
-    if (scaletausubs>0) {
+//    if (scaletausubs>0) {
 //    if (Tausubsth!=0) {dt0l_[i]=dt0l_[i]-scaletausubs*(templ-Tsubsth)/Tausubsth; }  // Substrate effect on lattice?
-    }
+//    }
     }
     else{
       tempe_[i]=0;

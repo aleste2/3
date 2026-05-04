@@ -29,6 +29,7 @@ var (
 	Te  LocalTemp // Electron temperature
 	Tl  LocalTemp // lattice temperature
 	Ce  = NewScalarParam("Ce", "J/(m3·K)", "Electron Heat capacity")
+	Cs  = NewScalarParam("Cs", "J/(m3·K)", "Spin Heat capacity")
 	Cl  = NewScalarParam("Cl", "J/(m3·K)", "Lattice Heat capacity")
 	Gel = NewScalarParam("Gel", "W/(m3·K)", "Transfer electron-lattice")
 	Kl  = NewScalarParam("Kl", "W/(m·K)", "Lattice thermal conductivity", &kll)

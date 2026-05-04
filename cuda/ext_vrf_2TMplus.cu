@@ -36,7 +36,7 @@ ttmplus(
         float mnewz=mz[i]+(dt*GammaLL)*(dy11z[i]*0.5f-0.5f*dy1z[i]); // LL constant!
         float mmnew=sqrt(mnewx*mnewx+mnewy*mnewy+mnewz*mnewz);
         float mmold=sqrt(moldx*moldx+moldy*moldy+moldz*moldz);
-        float dmdt=0*(mmnew-mmold)/dt;
+        float dmdt=(mmnew-mmold)/dt;
 
 
         float kb=1.380649e-23;

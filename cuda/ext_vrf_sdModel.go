@@ -47,6 +47,21 @@ func TTMplus(dy11, dy1, Te, m *data.Slice, Tc, rho, Ce MSlice, dt float32) {
 		N, cfg)
 }
 
+func TTMplusU(u0, u1, Te *data.Slice, Tc, Ce MSlice, dt float32) {
+
+	N := Te.Len()
+
+	cfg := make1DConf(N)
+	k_ttmplusU_async(
+		u0.DevPtr(0),
+		u1.DevPtr(0),
+		Te.DevPtr(X),
+		Tc.DevPtr(0), Tc.Mul(0),
+		dt,
+		Ce.DevPtr(0), Ce.Mul(0),
+		N, cfg)
+}
+
 func AddMagneticmoment(m, mus *data.Slice, Tc, Tausd MSlice, dt float32) {
 	N := m.Len()
 

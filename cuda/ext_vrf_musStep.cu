@@ -9,17 +9,17 @@ extern "C"
 evalmusStep(float* __restrict__ dmusx, float* __restrict__ dmusy, float* __restrict__ dmusz,
 	float* __restrict__ mx, float* __restrict__ my, float* __restrict__ mz,
     float* __restrict__ musx, float* __restrict__ musy, float* __restrict__ musz,
-                float* __restrict__ rhosd_, float rhosd_mul,
-                float* __restrict__ tausf_, float tausf_mul,
-                float* __restrict__ dbar_, float dbar_mul,
-                float* __restrict__ sigmabar_, float sigmabar_mul,
-                float* __restrict__ dy11x, float* __restrict__ dy11y, float* __restrict__ dy11z,
-                float* __restrict__ dy1x, float* __restrict__ dy1y, float* __restrict__ dy1z,
-                float dt,
-           		float wx, float wy, float wz, int Nx, int Ny, int Nz,
-                float* __restrict__ vol,
-                uint8_t* __restrict__ regions
-                ) {
+    float* __restrict__ rhosd_, float rhosd_mul,
+    float* __restrict__ tausf_, float tausf_mul,
+    float* __restrict__ dbar_, float dbar_mul,
+    float* __restrict__ sigmabar_, float sigmabar_mul,
+    float* __restrict__ dy11x, float* __restrict__ dy11y, float* __restrict__ dy11z,
+    float* __restrict__ dy1x, float* __restrict__ dy1y, float* __restrict__ dy1z,
+    float dt,
+    float wx, float wy, float wz, int Nx, int Ny, int Nz,
+    float* __restrict__ vol,
+    uint8_t* __restrict__ regions
+    ) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
     int iy = blockIdx.y * blockDim.y + threadIdx.y;

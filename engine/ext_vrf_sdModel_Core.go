@@ -118,6 +118,14 @@ func TTMplus(dy11, dy1, Te *data.Slice, dt float32) {
 	cuda.TTMplus(dy11, dy1, Te, M.Buffer(), Tc, Rho, Cel, dt)
 }
 
+func TTMplusU(u0, u1, Te *data.Slice, dt float32) {
+	Tc := TCurie.MSlice()
+	defer Tc.Recycle()
+	Cel := Ce.MSlice()
+	defer Cel.Recycle()
+	cuda.TTMplusU(u0, u1, Te, Tc, Cel, dt)
+}
+
 func MusMoment(dt float32) {
 	Tc := TCurie.MSlice()
 	defer Tc.Recycle()

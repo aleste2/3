@@ -1,9 +1,10 @@
 package engine
 
 import (
+	"math"
+
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/util"
-	"math"
 )
 
 // FCTS 2T method, can be used as solver.Step
@@ -37,6 +38,9 @@ func AdaptativeFTCSStep2T(dt float32) {
 	Cel := Ce.MSlice()
 	defer Cel.Recycle()
 
+	Cspin := Cs.MSlice()
+	defer Cspin.Recycle()
+
 	Clat := Cl.MSlice()
 	defer Clat.Recycle()
 
@@ -57,6 +61,9 @@ func AdaptativeFTCSStep2T(dt float32) {
 	CD := CD.MSlice()
 	defer CD.Recycle()
 
+	Tcurie := TCurie.MSlice()
+	defer Tcurie.Recycle()
+
 	// Buffers
 	DeltaTe := cuda.Buffer(1, size)
 	defer cuda.Recycle(DeltaTe)
@@ -73,7 +80,7 @@ func AdaptativeFTCSStep2T(dt float32) {
 	// Estimate time step and addapt if needed
 	Substeps := 1
 	cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat,
-		res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
+		res, Qext, CD, j, Tcurie, Cspin, M.Mesh(), geometry.Gpu(), regions.Gpu())
 	toleranceT := 0.001
 	err := cuda.MaxAbs(DeltaTe)
 	if err*float32(dtT) > float32(toleranceT) {
@@ -89,7 +96,7 @@ func AdaptativeFTCSStep2T(dt float32) {
 	// Recalculate Te,Tl
 	for i := 0; i < int(nsteps); i++ {
 		cuda.Evaldt02T(te, DeltaTe, tl, DeltaTl, y, kel.Gpu(), Cel, kll.Gpu(), Clat, Gellat,
-			res, Qext, CD, j, M.Mesh(), geometry.Gpu(), regions.Gpu())
+			res, Qext, CD, j, Tcurie, Cspin, M.Mesh(), geometry.Gpu(), regions.Gpu())
 		//err := cuda.MaxAbs(DeltaTe)
 		cuda.Madd2(te, te, DeltaTe, 1, float32(dtT)) // temp = temp + dt * dtemp0
 		cuda.Madd2(tl, tl, DeltaTl, 1, float32(dtT)) // temp = temp + dt * dtemp0
