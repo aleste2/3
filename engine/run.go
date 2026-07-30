@@ -95,9 +95,11 @@ const (
 	ONLY2T     = 208
 
 	// Atomistic solvers
-	ATOHEUN   = 150
-	ATOHEUN2T = 151
-	ATORK23   = 152
+	ATOHEUN     = 150
+	ATOHEUN2T   = 151
+	ATORK23     = 152
+	ATOHEUNsd   = 160
+	ATOROTATION = 161
 
 	// My magnetoelastics solvers
 	ELASTIC  = 200
@@ -219,14 +221,30 @@ func SetSolver(typ int) {
 
 		//      atomistic Solvers
 	case ATOHEUN:
-		stepper = new(HeunAto)
+		stepper = new(UnifiedAto)
+		LLB2Tf = false
+		//stepper = new(HeunAto)
 		Ato = true
 	case ATOHEUN2T:
-		stepper = new(HeunAto2T)
+		//stepper = new(HeunAto2T)
+		stepper = new(UnifiedAto)
 		LLB2Tf = true
 		Ato = true
 	case ATORK23:
 		stepper = new(AtoRK23)
+		Ato = true
+	case ATOHEUNsd:
+		stepper = new(UnifiedAto)
+		LLB2Tf = true
+		LLBJHf = false
+		sdf = true
+		Ato = true
+
+	case ATOROTATION:
+		stepper = new(RotationAto)
+		LLB2Tf = false
+		LLBJHf = false
+		sdf = false
 		Ato = true
 
 		// Elastic solver

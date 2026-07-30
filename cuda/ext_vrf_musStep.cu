@@ -13,6 +13,7 @@ evalmusStep(float* __restrict__ dmusx, float* __restrict__ dmusy, float* __restr
     float* __restrict__ tausf_, float tausf_mul,
     float* __restrict__ dbar_, float dbar_mul,
     float* __restrict__ sigmabar_, float sigmabar_mul,
+    float* __restrict__ tauJ_, float tauJ_mul,
     float* __restrict__ dy11x, float* __restrict__ dy11y, float* __restrict__ dy11z,
     float* __restrict__ dy1x, float* __restrict__ dy1y, float* __restrict__ dy1z,
     float dt,
@@ -229,11 +230,23 @@ evalmusStep(float* __restrict__ dmusx, float* __restrict__ dmusy, float* __restr
         uy=my[i]/norm;
         uz=mz[i]/norm;
     }
+
+
+    float TauJ=amul(tauJ_, tauJ_mul, i);
+    float3 torque=make_float3(0.0f, 0.0f, 0.0f);
+
+    if ((TauJ!=0)&&(mmold!=0)) {
+        //printf("Entro\n");
+        float3 m=make_float3(mx[i], my[i], mz[i]);
+        float3 mu=make_float3(musx[i], musy[i], musz[i]);
+
+        torque = -1.00f/(TauJ*mmold) *(cross(mu, m)+cross(m,cross(mu,m)));
+    }
     //if (i==8) printf("mu_s:%e Lap: %e deltam: %e mnew:%e mold:%e\n", musz[i], lapmu,deltam,mmnew,mmold);
     //dmusz[i]=GammaLL*rhosd*dy1z[i] - musz[i] / tausf + Ddiff*(lapmu);
-    dmusx[i]=ux*rhosd*dmdt - musx[i] / tausf + Ddiff*(lapmux);
-    dmusy[i]=uy*rhosd*dmdt - musy[i] / tausf + Ddiff*(lapmuy);
-    dmusz[i]=uz*rhosd*dmdt - musz[i] / tausf + Ddiff*(lapmuz);
+    dmusx[i]=ux*rhosd*dmdt - musx[i] / tausf + Ddiff*(lapmux)+torque.x;
+    dmusy[i]=uy*rhosd*dmdt - musy[i] / tausf + Ddiff*(lapmuy)+torque.y;
+    dmusz[i]=uz*rhosd*dmdt - musz[i] / tausf + Ddiff*(lapmuz)+torque.z;
 
     //dmusx[i]=GammaLL*rhosd*dy1x[i] - musx[i] / tausf + Ddiff*(lapmux);
     //dmusy[i]=GammaLL*rhosd*dy1y[i] - musy[i] / tausf + Ddiff*(lapmuy);

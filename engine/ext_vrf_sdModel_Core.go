@@ -19,17 +19,135 @@ var (
 	rhov     = NewScalarParam("rhov", "1/m3", "Density volumen")
 	B_mus    = NewVectorField("B_mus", "T", "Spin field", AddSpinField)
 	Jspin    = NewVectorField("Js", "A/m2", "Spin current", AddJspin)
+
+	Jsx = NewVectorField("Jsx", "A/m2", "Spin current x polarized", CalcJsx)
+	Jsy = NewVectorField("Jsy", "A/m2", "Spin current y polarized", CalcJsy)
+	Jsz = NewVectorField("Jsz", "A/m2", "Spin current z polarized", CalcJsz)
+
+	TauJ        = NewScalarParam("TauJ", "s", "Spin rotation relaxation time")
+	LambdaJ     = NewScalarParam("LambdaJ", "m", "Spin accumulation torque Length")
+	Betta       = NewScalarParam("Betta", "a.u.", "No adiabatic torque spin accumulation")
+	NewTorqueMu = false
 )
 
 func init() {
 	DeclLValue("mus", &mus, `Spin Acummulation (J)`)
 	DeclFunc("InitsdModel", InitsdModel, "Init sd Model")
+	DeclVar("NewTorqueMu", &NewTorqueMu, "Enables/disables New Torque in Spin acumulation")
 }
 
 func InitsdModel() {
 	mus.alloc()
 	mus.name = "mu_s"
 	cuda.Zero(mus.Buffer())
+}
+
+func musStepm(m, dy11, dy1 *data.Slice) {
+
+	// Add to sublattice 1 and 2
+	Rhosd := rhosd.MSlice()
+	defer Rhosd.Recycle()
+	Tausf := tausf.MSlice()
+	defer Tausf.Recycle()
+	dbar := Dbar.MSlice()
+	defer dbar.Recycle()
+	sigmabar := Sigmabar.MSlice()
+	defer sigmabar.Recycle()
+	tauJ := TauJ.MSlice()
+	defer tauJ.Recycle()
+
+	if mus.Buffer() == nil {
+		mus.alloc()
+		cuda.Zero(mus.Buffer())
+	}
+
+	// Buffers for sd model
+	mus1 := mus.Buffer()
+	dmus1 := cuda.Buffer(VECTOR, mus1.Size())
+	defer cuda.Recycle(dmus1)
+
+	if FixDt != 0 {
+		Dt_si = FixDt
+	}
+	dt := float32(Dt_si * GammaLL)
+
+	cuda.MusStep(dmus1, dt, m, mus1, Rhosd, Tausf, dbar, sigmabar, tauJ, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
+	err := cuda.MaxVecNorm(dmus1)
+	tolerancemu := 1.0e-24
+	if err*Dt_si < tolerancemu { //Good Step
+		//print(err*Dt_si, "\n")
+		cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)) // y = y + dt * dy
+	} else { // Substeps
+		//print("Entro\n")
+		time0 := Time
+		//print("Substeps\n")
+		Substeps := int(math.Ceil(float64(float32(err*Dt_si) / float32(tolerancemu))))
+		if Substeps > 254 {
+			Substeps = 255
+		}
+		//print("Substeps: ", Substeps, "\n")
+		for iSubsteps := 0; iSubsteps < Substeps; iSubsteps++ {
+			cuda.MusStep(dmus1, dt, m, mus1, Rhosd, Tausf, dbar, sigmabar, tauJ, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
+			cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)/float32(Substeps))                                                       // y = y + dt * dy
+			Time += float64(float32(Dt_si) / float32(Substeps))
+			//print("Substes: ", iSubsteps, "\n")
+		}
+		Time = time0
+	}
+}
+
+func musStepm2(m, dy11, dy1 *data.Slice) {
+
+	// Add to sublattice 1 and 2
+	Rhosd := rhosd.MSlice()
+	defer Rhosd.Recycle()
+	Tausf := tausf.MSlice()
+	defer Tausf.Recycle()
+	dbar := Dbar.MSlice()
+	defer dbar.Recycle()
+	sigmabar := Sigmabar.MSlice()
+	defer sigmabar.Recycle()
+	tauJ := TauJ.MSlice()
+	defer tauJ.Recycle()
+
+	if mus.Buffer() == nil {
+		mus.alloc()
+		cuda.Zero(mus.Buffer())
+	}
+
+	// Buffers for sd model
+	mus1 := mus.Buffer()
+	dmus1 := cuda.Buffer(VECTOR, mus1.Size())
+	defer cuda.Recycle(dmus1)
+
+	if FixDt != 0 {
+		Dt_si = FixDt
+	}
+	dt := float32(Dt_si * GammaLL)
+
+	cuda.MusStep2(dmus1, dt, m, mus1, Rhosd, Tausf, dbar, sigmabar, tauJ, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
+	err := cuda.MaxVecNorm(dmus1)
+	tolerancemu := 1.0e-24
+	if err*Dt_si < tolerancemu { //Good Step
+		//print(err*Dt_si, "\n")
+		cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)) // y = y + dt * dy
+	} else { // Substeps
+		//print("Entro\n")
+		time0 := Time
+		//print("Substeps\n")
+		Substeps := int(math.Ceil(float64(float32(err*Dt_si) / float32(tolerancemu))))
+		if Substeps > 254 {
+			Substeps = 255
+		}
+		//print("Substeps: ", Substeps, "\n")
+		for iSubsteps := 0; iSubsteps < Substeps; iSubsteps++ {
+			cuda.MusStep(dmus1, dt, m, mus1, Rhosd, Tausf, dbar, sigmabar, tauJ, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
+			cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)/float32(Substeps))                                                       // y = y + dt * dy
+			Time += float64(float32(Dt_si) / float32(Substeps))
+			//print("Substes: ", iSubsteps, "\n")
+		}
+		Time = time0
+	}
 }
 
 func musStep(dy11, dy1 *data.Slice) {
@@ -43,6 +161,8 @@ func musStep(dy11, dy1 *data.Slice) {
 	defer dbar.Recycle()
 	sigmabar := Sigmabar.MSlice()
 	defer sigmabar.Recycle()
+	tauJ := TauJ.MSlice()
+	defer tauJ.Recycle()
 
 	if mus.Buffer() == nil {
 		mus.alloc()
@@ -79,7 +199,7 @@ func musStep(dy11, dy1 *data.Slice) {
 	   //
 	*/
 
-	cuda.MusStep(dmus1, dt, M.Buffer(), mus1, Rhosd, Tausf, dbar, sigmabar, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
+	cuda.MusStep(dmus1, dt, M.Buffer(), mus1, Rhosd, Tausf, dbar, sigmabar, tauJ, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
 	err := cuda.MaxVecNorm(dmus1)
 	tolerancemu := 1.0e-24
 	if err*Dt_si < tolerancemu { //Good Step
@@ -95,8 +215,8 @@ func musStep(dy11, dy1 *data.Slice) {
 		}
 		//print("Substeps: ", Substeps, "\n")
 		for iSubsteps := 0; iSubsteps < Substeps; iSubsteps++ {
-			cuda.MusStep(dmus1, dt, M.Buffer(), mus1, Rhosd, Tausf, dbar, sigmabar, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
-			cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)/float32(Substeps))                                                          // y = y + dt * dy
+			cuda.MusStep(dmus1, dt, M.Buffer(), mus1, Rhosd, Tausf, dbar, sigmabar, tauJ, dy11, dy1, M.Mesh(), geometry.Gpu(), regions.Gpu()) // overwrite dst with torque
+			cuda.Madd2(mus1, mus1, dmus1, 1, float32(Dt_si)/float32(Substeps))                                                                // y = y + dt * dy
 			Time += float64(float32(Dt_si) / float32(Substeps))
 			//print("Substes: ", iSubsteps, "\n")
 		}
@@ -134,6 +254,18 @@ func MusMoment(dt float32) {
 	cuda.AddMagneticmoment(M.Buffer(), mus.Buffer(), Tc, Tauds, dt)
 }
 
+func MusTorque(dt float32) {
+	sigmabar := Sigmabar.MSlice()
+	defer sigmabar.Recycle()
+	Ms := Msat.MSlice()
+	defer Ms.Recycle()
+	lambdaJ := LambdaJ.MSlice()
+	defer lambdaJ.Recycle()
+	betta := LambdaJ.MSlice()
+	defer betta.Recycle()
+	cuda.AddMusTorque(M.Buffer(), mus.Buffer(), Ms, sigmabar, lambdaJ, betta, dt)
+}
+
 func AddMusEffectiveField(dst *data.Slice) {
 	Tc := TCurie.MSlice()
 	defer Tc.Recycle()
@@ -150,4 +282,23 @@ func AddJspin(dst *data.Slice) {
 	sbar := Sigmabar.MSlice()
 	defer sbar.Recycle()
 	cuda.AddJspin(dst, mus.Buffer(), sbar, M.Mesh(), geometry.Gpu())
+}
+
+// Full tensor Js
+func CalcJsx(dst *data.Slice) {
+	sbar := Sigmabar.MSlice()
+	defer sbar.Recycle()
+	cuda.CalcJsi(dst, mus.Buffer(), sbar, M.Mesh(), geometry.Gpu(), 0)
+}
+
+func CalcJsy(dst *data.Slice) {
+	sbar := Sigmabar.MSlice()
+	defer sbar.Recycle()
+	cuda.CalcJsi(dst, mus.Buffer(), sbar, M.Mesh(), geometry.Gpu(), 1)
+}
+
+func CalcJsz(dst *data.Slice) {
+	sbar := Sigmabar.MSlice()
+	defer sbar.Recycle()
+	cuda.CalcJsi(dst, mus.Buffer(), sbar, M.Mesh(), geometry.Gpu(), 2)
 }

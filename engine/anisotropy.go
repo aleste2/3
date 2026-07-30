@@ -16,7 +16,7 @@ var (
 	Kc3        = NewScalarParam("Kc3", "J/m3", "3rd order cubic anisotropy constant")
 	AnisU      = NewVectorParam("anisU", "", "Uniaxial anisotropy direction")
 	AnisC1     = NewVectorParam("anisC1", "", "Cubic anisotropy direction #1")
-	AnisC2     = NewVectorParam("anisC2", "", "Cubic anisotorpy directon #2")
+	AnisC2     = NewVectorParam("anisC2", "", "Cubic anisotropy direction #2")
 	B_anis     = NewVectorField("B_anis", "T", "Anisotropy field", AddAnisotropyField)
 	Edens_anis = NewScalarField("Edens_anis", "J/m3", "Anisotropy energy density", AddAnisotropyEnergyDensity)
 	E_anis     = NewScalarValue("E_anis", "J", "total anisotropy energy", GetAnisotropyEnergy)
@@ -113,7 +113,7 @@ func AddAnisotropyEnergyDensity(dst *data.Slice) {
 		addCubicAnisotropyFrom(buf, M, Msat, sZero, Kc2, sZero, AnisC1, AnisC2)
 		cuda.AddDotProduct(dst, -1./6., buf, Mf)
 
-		// 3nd
+		// 3rd
 		cuda.Zero(buf)
 		addCubicAnisotropyFrom(buf, M, Msat, sZero, sZero, Kc3, AnisC1, AnisC2)
 		cuda.AddDotProduct(dst, -1./8., buf, Mf)

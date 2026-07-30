@@ -1,8 +1,12 @@
 #! /bin/bash
 
+# Optional arguments.
+# Example usage: ./run.bash "/home/me/mumax/mumax3"
+MUMAX="${1:-$GOPATH/bin/mumax3}"
+echo "Using the mumax3 executable at: ${MUMAX}"
+
 set -e
 
-mumax3 -vet *.mx3
+$MUMAX -vet *.mx3
 
-mumax3 -paranoid=false -failfast -cache /tmp -f -http "" *.go *.mx3
-
+$MUMAX -paranoid=false -failfast -cache /tmp -http "" -f *.go *.mx3

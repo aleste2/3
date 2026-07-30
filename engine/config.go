@@ -3,9 +3,10 @@ package engine
 // Utilities for setting magnetic configurations.
 
 import (
-	"github.com/mumax/3/data"
 	"math"
 	"math/rand"
+
+	"github.com/mumax/3/data"
 )
 
 func init() {
@@ -20,6 +21,8 @@ func init() {
 	DeclFunc("RandomMagSeed", RandomMagSeed, "Random magnetization with given seed")
 	DeclFunc("Conical", Conical, "Conical state for given wave vector, cone direction, and cone angle")
 	DeclFunc("Helical", Helical, "Helical state for given wave vector")
+	DeclFunc("HopfionCompactSupport", HopfionCompactSupport, "Hopfion texture from skyrmion, with compact support (smooth and magnetization exactly along z-axis outside of finite region)")
+	DeclFunc("CurrentMag", CurrentMag, "Returns the current magnetization as a Config. E.g. CurrentMag().Add(0.1, RandomMagSeed(123)) will return a Config with the current magnetization plus some noise.")
 }
 
 // Magnetic configuration returns m vector for position (x,y,z)
@@ -50,7 +53,8 @@ func randomDir(rng *rand.Rand) data.Vector {
 }
 
 // Returns a uniform magnetization state. E.g.:
-// 	M = Uniform(1, 0, 0)) // saturated along X
+//
+//	M = Uniform(1, 0, 0)) // saturated along X
 func Uniform(mx, my, mz float64) Config {
 	return func(x, y, z float64) data.Vector {
 		return data.Vector{mx, my, mz}
@@ -137,9 +141,10 @@ func noNaN(v data.Vector, pol int) data.Vector {
 // (mxwall, mywall, mzwall) is the magnetization in the wall. The wall is smoothed over a few cells so it will
 // easily relax to its ground state.
 // E.g.:
-// 	TwoDomain(1,0,0,  0,1,0,  -1,0,0) // head-to-head domains with transverse (Néel) wall
-// 	TwoDomain(1,0,0,  0,0,1,  -1,0,0) // head-to-head domains with perpendicular (Bloch) wall
-// 	TwoDomain(0,0,1,  1,0,0,   0,0,-1)// up-down domains with Bloch wall
+//
+//	TwoDomain(1,0,0,  0,1,0,  -1,0,0) // head-to-head domains with transverse (Néel) wall
+//	TwoDomain(1,0,0,  0,0,1,  -1,0,0) // head-to-head domains with perpendicular (Bloch) wall
+//	TwoDomain(0,0,1,  1,0,0,   0,0,-1)// up-down domains with Bloch wall
 func TwoDomain(mx1, my1, mz1, mxwall, mywall, mzwall, mx2, my2, mz2 float64) Config {
 	ww := 2 * Mesh().CellSize()[X] // wall width in cells
 	return func(x, y, z float64) data.Vector {
@@ -187,8 +192,79 @@ func Helical(q data.Vector) Config {
 	return Conical(q, q, math.Pi/2)
 }
 
+func HopfionCompactSupport(major_radius, minor_radius float64) Config {
+	return func(x, y, z float64) data.Vector {
+
+		psi := math.Atan2(y, x)
+		rho := math.Sqrt(math.Pow(z, 2) + math.Pow(x*math.Cos(psi)+y*math.Sin(psi)-major_radius, 2))
+
+		Theta := 0.0
+		Phi := 0.0
+
+		if rho < minor_radius {
+			phi := math.Atan2(z, x*math.Cos(psi)+y*math.Sin(psi)-major_radius)
+			Phi = -phi + psi
+			Theta = math.Pi * math.Exp(1.0-1.0/(1.0-math.Pow(rho/minor_radius, 2)))
+		}
+
+		mx := math.Cos(Phi) * math.Sin(Theta)
+		my := math.Sin(Phi) * math.Sin(Theta)
+		mz := math.Cos(Theta)
+
+		return data.Vector{mx, my, mz}
+	}
+}
+
+func CurrentMag() Config {
+
+	d := Mesh().CellSize()
+	size := Mesh().Size()
+
+	Nx, Ny, Nz := size[X], size[Y], size[Z]
+
+	Lx := float64(Nx) * d[X]
+	Ly := float64(Ny) * d[Y]
+	Lz := float64(Nz) * d[Z]
+
+	mSlice := (&M).Buffer().HostCopy()
+
+	return func(x, y, z float64) data.Vector {
+
+		ix := int(math.Floor((x + 0.5*Lx) / d[X]))
+		iy := int(math.Floor((y + 0.5*Ly) / d[Y]))
+		iz := int(math.Floor((z + 0.5*Lz) / d[Z]))
+
+		if ix < 0 {
+			ix = 0
+		}
+		if ix >= Nx {
+			ix = Nx - 1
+		}
+		if iy < 0 {
+			iy = 0
+		}
+		if iy >= Ny {
+			iy = Ny - 1
+		}
+		if iz < 0 {
+			iz = 0
+		}
+		if iz >= Nz {
+			iz = Nz - 1
+		}
+
+		return data.Vector{
+			mSlice.Get(X, ix, iy, iz),
+			mSlice.Get(Y, ix, iy, iz),
+			mSlice.Get(Z, ix, iy, iz),
+		}
+	}
+
+}
+
 // Transl returns a translated copy of configuration c. E.g.:
-// 	M = Vortex(1, 1).Transl(100e-9, 0, 0)  // vortex with center at x=100nm
+//
+//	M = Vortex(1, 1).Transl(100e-9, 0, 0)  // vortex with center at x=100nm
 func (c Config) Transl(dx, dy, dz float64) Config {
 	return func(x, y, z float64) data.Vector {
 		return c(x-dx, y-dy, z-dz)
@@ -218,7 +294,9 @@ func (c Config) RotZ(θ float64) Config {
 
 // Returns a new magnetization equal to c + weight * other.
 // E.g.:
-// 	Uniform(1, 0, 0).Add(0.2, RandomMag())
+//
+//	Uniform(1, 0, 0).Add(0.2, RandomMag())
+//
 // for a uniform state with 20% random distortion.
 func (c Config) Add(weight float64, other Config) Config {
 	return func(x, y, z float64) data.Vector {

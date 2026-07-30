@@ -9,10 +9,12 @@ var (
 	TotalShift, TotalYShift                    float64                        // accumulated window shift (X and Y) in meter
 	ShiftMagL, ShiftMagR, ShiftMagU, ShiftMagD data.Vector                    // when shifting m, put these value at the left/right edge.
 	ShiftM, ShiftGeom, ShiftRegions            bool        = true, true, true // should shift act on magnetization, geometry, regions?
+	EdgeCarryShift                             bool        = false            // Use the values of M at the border for the new cells
 )
 
 func init() {
 	DeclFunc("Shift", Shift, "Shifts the simulation by +1/-1 cells along X")
+	DeclVar("EdgeCarryShift", &EdgeCarryShift, "Whether to use the current magnetization at the border for the cells inserted by Shift (default=false)")
 	DeclVar("ShiftMagL", &ShiftMagL, "Upon shift, insert this magnetization from the left")
 	DeclVar("ShiftMagR", &ShiftMagR, "Upon shift, insert this magnetization from the right")
 	DeclVar("ShiftMagU", &ShiftMagU, "Upon shift, insert this magnetization from the top")
@@ -20,7 +22,7 @@ func init() {
 	DeclVar("ShiftM", &ShiftM, "Whether Shift() acts on magnetization")
 	DeclVar("ShiftGeom", &ShiftGeom, "Whether Shift() acts on geometry")
 	DeclVar("ShiftRegions", &ShiftRegions, "Whether Shift() acts on regions")
-	DeclVar("TotalShift", &TotalShift, "Amount by which the simulation has been shifted (m).")
+	DeclVar("TotalShift", &TotalShift, "Amount by which the simulation has been shifted along the x-axis (m).")
 }
 
 // position of the window lab frame
@@ -32,11 +34,6 @@ func Shift(dx int) {
 	TotalShift += float64(dx) * Mesh().CellSize()[X] // needed to re-init geom, regions
 	if ShiftM {
 		shiftMag(M.Buffer(), dx) // TODO: M.shift?
-		if AFf == true {
-			shiftMag(M1.Buffer(), dx)
-			shiftMagM2(M1.Buffer(), dx)
-		}
-
 	}
 	if ShiftRegions {
 		regions.shift(dx)
@@ -45,10 +42,6 @@ func Shift(dx int) {
 		geometry.shift(dx)
 	}
 	M.normalize()
-	if AFf == true {
-		M1.normalize()
-		M2.normalize()
-	}
 }
 
 func shiftMag(m *data.Slice, dx int) {
@@ -56,17 +49,11 @@ func shiftMag(m *data.Slice, dx int) {
 	defer cuda.Recycle(m2)
 	for c := 0; c < m.NComp(); c++ {
 		comp := m.Comp(c)
-		cuda.ShiftX(m2, comp, dx, float32(ShiftMagL[c]), float32(ShiftMagR[c]))
-		data.Copy(comp, m2) // str0 ?
-	}
-}
-
-func shiftMagM2(m *data.Slice, dx int) {
-	m2 := cuda.Buffer(1, m.Size())
-	defer cuda.Recycle(m2)
-	for c := 0; c < m.NComp(); c++ {
-		comp := m.Comp(c)
-		cuda.ShiftX(m2, comp, dx, float32(-ShiftMagL[c]), float32(-ShiftMagR[c]))
+		if EdgeCarryShift {
+			cuda.ShiftEdgeCarryX(m2, comp, m.Comp((c+1)%3), m.Comp((c+2)%3), dx, float32(ShiftMagL[c]), float32(ShiftMagR[c]))
+		} else {
+			cuda.ShiftX(m2, comp, dx, float32(ShiftMagL[c]), float32(ShiftMagR[c]))
+		}
 		data.Copy(comp, m2) // str0 ?
 	}
 }
@@ -76,10 +63,6 @@ func YShift(dy int) {
 	TotalYShift += float64(dy) * Mesh().CellSize()[Y] // needed to re-init geom, regions
 	if ShiftM {
 		shiftMagY(M.Buffer(), dy)
-		if AFf == true {
-			shiftMagY(M1.Buffer(), dy)
-			shiftMagYM2(M1.Buffer(), dy)
-		}
 	}
 	if ShiftRegions {
 		regions.shiftY(dy)
@@ -88,10 +71,6 @@ func YShift(dy int) {
 		geometry.shiftY(dy)
 	}
 	M.normalize()
-	if AFf == true {
-		M1.normalize()
-		M2.normalize()
-	}
 }
 
 func shiftMagY(m *data.Slice, dy int) {
@@ -99,17 +78,11 @@ func shiftMagY(m *data.Slice, dy int) {
 	defer cuda.Recycle(m2)
 	for c := 0; c < m.NComp(); c++ {
 		comp := m.Comp(c)
-		cuda.ShiftY(m2, comp, dy, float32(ShiftMagU[c]), float32(ShiftMagD[c]))
-		data.Copy(comp, m2) // str0 ?
-	}
-}
-
-func shiftMagYM2(m *data.Slice, dy int) {
-	m2 := cuda.Buffer(1, m.Size())
-	defer cuda.Recycle(m2)
-	for c := 0; c < m.NComp(); c++ {
-		comp := m.Comp(c)
-		cuda.ShiftY(m2, comp, dy, float32(-ShiftMagU[c]), float32(-ShiftMagD[c]))
+		if EdgeCarryShift {
+			cuda.ShiftEdgeCarryY(m2, comp, m.Comp((c+1)%3), m.Comp((c+2)%3), dy, float32(ShiftMagU[c]), float32(ShiftMagD[c]))
+		} else {
+			cuda.ShiftY(m2, comp, dy, float32(ShiftMagU[c]), float32(ShiftMagD[c]))
+		}
 		data.Copy(comp, m2) // str0 ?
 	}
 }

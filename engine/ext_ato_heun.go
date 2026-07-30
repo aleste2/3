@@ -295,6 +295,93 @@ func fcc_init() {
 	M.normalize()
 }
 
+// Unified atomistic Heun solver.
+type UnifiedAto struct{}
+
+// Adaptive Heun method, can be used as solver.Step
+func (_ *UnifiedAto) Step() {
+	y := M.Buffer()
+	dy0 := cuda.Buffer(VECTOR, y.Size())
+	defer cuda.Recycle(dy0)
+
+	if FixDt != 0 {
+		Dt_si = FixDt
+	}
+
+	dt := float32(Dt_si * GammaLL)
+	util.Assert(dt > 0)
+
+	// Temperature giving problems
+	if (!Temp.isZero()) || (LLB2Tf == true) {
+		B_therm.updateAto()
+	}
+
+	// stage 1
+	torqueAto(dy0)
+	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
+
+	// stage 2
+	dy := cuda.Buffer(3, y.Size())
+	defer cuda.Recycle(dy)
+	Time += Dt_si
+	torqueAto(dy)
+
+	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
+
+	// adjust next time step
+	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
+		// step OK
+
+		// 2TM or JH if needed
+		if LLB2Tf == true {
+			AdaptativeFTCSStep2T(float32(Dt_si))
+			//TTMplus(dy1, dy0, Te.temp, float32(Dt_si)) // Add magnetic energy due to demag/remag
+		}
+		if LLBJHf == true {
+			AdaptativeFTCSSstepJH(float32(Dt_si))
+		}
+
+		// sd model if needed
+		if sdf == true { // Moment contribution
+			// Buffers for averages
+			mavg := cuda.Buffer(3, y.Size())
+			defer cuda.Recycle(mavg)
+			dy11avg := cuda.Buffer(3, y.Size())
+			defer cuda.Recycle(dy11avg)
+			dy1avg := cuda.Buffer(3, y.Size())
+			defer cuda.Recycle(dy1avg)
+			// Averages
+			Averager(mavg, M.Buffer())
+			Averager(dy11avg, dy)
+			Averager(dy1avg, dy0)
+			//cuda.Averager(mavg, M.Buffer(), navg)
+			//cuda.Averager(dy11avg, dy, navg)
+			//cuda.Averager(dy1avg, dy0, navg)
+			musStepm2(mavg, dy11avg, dy1avg)
+			//TTMplus(dy11, dy1, Te.temp, float32(Dt_si))
+			MusTorqueAtomu(float32(dt))
+		}
+
+		cuda.Madd3(y, y, dy, dy0, 1, 0.5*dt, -0.5*dt) //****
+		M.normalize()
+		NSteps++
+		adaptDt(math.Pow(MaxErr/err, 1./2.))
+		setLastErr(err)
+		setMaxTorque(dy)
+
+	} else {
+		// undo bad step
+		util.Assert(FixDt == 0)
+		Time -= Dt_si
+		cuda.Madd2(y, y, dy0, 1, -dt)
+		NUndone++
+		adaptDt(math.Pow(MaxErr/err, 1./3.))
+		//print("No debo entrar aqui\n")
+	}
+}
+
+func (_ *UnifiedAto) Free() {}
+
 // Adaptive Heun solver.
 type HeunAto struct{}
 
@@ -819,3 +906,119 @@ func (rk *AtoRK23) Free() {
 	rk.k11.Free()
 	rk.k11 = nil
 }
+
+// Sets dst to the full (unnormalized) magnetization in A/m
+func SetMFullAto(dst *data.Slice) {
+	// scale m by Msat...
+	msat, rM := mu.Slice()
+	if rM {
+		defer cuda.Recycle(msat)
+	}
+	for c := 0; c < 3; c++ {
+		cuda.Mul(dst.Comp(c), M.Buffer().Comp(c), msat)
+	}
+
+	// ...and by cell volume if applicable
+	vol, rV := geometry.Slice()
+	if rV {
+		defer cuda.Recycle(vol)
+	}
+	if !vol.IsNil() {
+		for c := 0; c < 3; c++ {
+			cuda.Mul(dst.Comp(c), dst.Comp(c), vol)
+		}
+	}
+
+}
+
+func MusTorqueAto(dt float32) {
+	mub := mu.MSlice()
+	defer mub.Recycle()
+
+	c := M.Mesh().CellSize()
+	avgmesh := float32((c[X] + c[Y] + c[Z]) / 3)
+	scale := float32((1.05457e-34 / (2 * 1.060218e-19)) * (avgmesh * avgmesh))
+
+	// Atomistic Js torque
+	Js := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(Js)
+	AddJspin(Js)
+
+	cuda.AddMusTorqueAto(M.Buffer(), Js, mub, scale, dt)
+}
+
+func TorqueJs(dt float32) {
+	mub := mu.MSlice()
+	defer mub.Recycle()
+
+	//c := M.Mesh().CellSize()
+	//avgmesh := float32((c[X] + c[Y] + c[Z]) / 3)
+	//scale := float32((1.05457e-34 / (2 * 1.060218e-19)) * (avgmesh * avgmesh))
+
+	// Atomistic Js torque
+	Jsx := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(Jsx)
+	Jsy := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(Jsy)
+	Jsz := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(Jsz)
+	CalcJsx(Jsx)
+	CalcJsy(Jsy)
+	CalcJsz(Jsz)
+
+	//cuda.TorqueJs(M.Buffer(), Jsx,Jsy,Jsz, mub, scale, dt)
+}
+
+func MusTorqueAtomu(dt float32) {
+	mub := mu.MSlice()
+	defer mub.Recycle()
+	pol := Pol.MSlice()
+	defer pol.Recycle()
+	epsPrime := EpsilonPrime.MSlice()
+	defer epsPrime.Recycle()
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+	cuda.AddMusTorqueAtomu(M.Buffer(), mus.Buffer(), mub, pol, epsPrime, alpha, dt)
+}
+
+// Trial evolution by rotation
+func EvolveAtomisticByRotation(dt float32) {
+	y := M.Buffer()
+	Beff := cuda.Buffer(VECTOR, y.Size())
+	defer cuda.Recycle(Beff)
+
+	//cuda.Zero(Beff)
+
+	SetEffectiveFieldAto(Beff) // calc and store B_eff
+
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+	lande := g.MSlice()
+	defer lande.Recycle()
+
+	cuda.EvolveAtomisticByRotation(y, Beff, alpha, lande, dt) // rotate m
+}
+
+// Rotation Atomistic solver.
+type RotationAto struct{}
+
+// Rotation Atomistic solver, can be used as solver.Step
+func (_ *RotationAto) Step() {
+	if FixDt != 0 {
+		Dt_si = FixDt
+	}
+	t0 := Time
+	dt := float32(Dt_si * GammaLL)
+	util.Assert(dt > 0)
+	// Temperature giving problems
+	if (!Temp.isZero()) || (LLB2Tf == true) {
+		B_therm.updateAto()
+	}
+
+	EvolveAtomisticByRotation(dt)
+	//M.normalize()
+	Time = t0 + Dt_si
+	NSteps++
+
+}
+func (_ *RotationAto) Free() {}

@@ -10,7 +10,7 @@ import (
 	"github.com/mumax/3/util"
 )
 
-const MaxRequeue = 10 // maximum number of re-queues, don't run job if re-queued to many times
+const MaxRequeue = 10 // maximum number of re-queues, don't run job if re-queued too many times
 
 // compute Job
 type Job struct {
@@ -130,7 +130,8 @@ func (j *Job) LocalPath() string {
 }
 
 // local path of input file, without host prefix. E.g.:
-// 	host:123/user/file.mx3 -> user/file.mx3
+//
+//	host:123/user/file.mx3 -> user/file.mx3
 func LocalPath(ID string) string {
 	host := JobHost(ID)
 	if len(host)+1 >= len(ID) {
@@ -171,7 +172,8 @@ func (j *Job) IsRunning() bool {
 }
 
 // Host of job with this ID (=first path element). E.g.:
-// 	host:123/user/file.mx3 -> host:123
+//
+//	host:123/user/file.mx3 -> host:123
 func JobHost(ID string) string {
 	return BaseDir(ID)
 }

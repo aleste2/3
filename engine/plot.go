@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os/exec"
 	"sync/atomic"
@@ -14,8 +14,8 @@ import (
 	"github.com/mumax/3/httpfs"
 )
 
-var nPlots int32        // counts number of active gnuplot processes
-const MAX_GNUPLOTS = 20 // maximum allowed number of gnuplot processes
+var nPlots int32       // counts number of active gnuplot processes
+const MAX_GNUPLOTS = 5 // maximum allowed number of gnuplot processes
 
 func (g *guistate) servePlot(w http.ResponseWriter, r *http.Request) {
 
@@ -77,7 +77,7 @@ func (g *guistate) servePlot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = ioutil.ReadAll(stdout)
+	out, err = io.ReadAll(stdout)
 	if handle(err) {
 		return
 	}
@@ -85,8 +85,6 @@ func (g *guistate) servePlot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/svg+xml")
 	w.Write(out)
 	g.Set("plotErr", "")
-	return
-
 }
 
 var empty_img []byte

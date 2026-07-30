@@ -1,0 +1,392 @@
+package engine
+
+// MC Core
+
+import (
+	"github.com/mumax/3/cuda"
+	"github.com/mumax/3/cuda/curand"
+	"github.com/mumax/3/data"
+)
+
+var (
+	Urnd, Xr, Yr, Zr randMC
+	AngleDist        = NewScalarField("AngleDist", "a.u", "angle MC distribution", SetAngle)
+	iteration        = 0
+	iter             = 0
+	generator        curand.Generator
+	NumberMCSteps    int
+	Ncell            =-1e0
+)
+
+func init() {
+	DeclFunc("MCsteps", MCsteps, "Monte Carlo Minimizer")
+}
+
+type randMC struct {
+	seed         int64            // seed for generator
+	generator    curand.Generator //
+	randomumbers *data.Slice      // buffer
+}
+
+// New Stepper like
+
+type MCstep struct {
+	McSteps int64
+}
+
+func (MCstep *MCstep) Step() {
+
+	// old M to restore bad chages
+	mold := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(mold)
+
+	BeffMC := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(BeffMC)
+
+	// Energy density buffers
+	uold := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(uold)
+	unew := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(unew)
+
+	// Rates
+	changed := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(changed)
+
+	// Random numbers
+	dmx := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(dmx)
+	dmy := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(dmy)
+	dmz := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(dmz)
+	du := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(du)
+	if generator == 0 {
+		generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		//print("Init Generator\n")
+	}
+	if Ncell == -1 {
+		dst := cuda.Buffer(1, M.Buffer().Size())
+		defer cuda.Recycle(dst)
+		cuda.AddDotProduct(dst,1,M.Buffer(),M.Buffer())
+		Ncell=float64(cuda.Sum(dst))
+		//print("Active cells:",Ncell,"\n")
+	}
+
+	N := Mesh().NCell()
+
+	generator.GenerateNormal(uintptr(dmx.DevPtr(0)), int64(N), 0, 1)
+	generator.GenerateNormal(uintptr(dmy.DevPtr(0)), int64(N), 0, 1)
+	generator.GenerateNormal(uintptr(dmz.DevPtr(0)), int64(N), 0, 1)
+	generator.GenerateUniform(uintptr(du.DevPtr(0)), int64(N))
+    
+    SetDemagField(BeffMC)
+	for net := 0; net < 2; net++ {
+		//SetDemagField(BeffMC)
+		MCGetU(uold, BeffMC,mold)
+		data.Copy(mold, M.Buffer())
+		MCmove(M.Buffer(), dmx, dmy, dmz, net)
+		MCGetU(unew, BeffMC,mold)
+		MCCompare(unew, uold, M.Buffer(), mold, du, net, changed)
+	}
+
+	if (NumberMCSteps%50==0) {setLastErr(100*float64(cuda.Sum(changed)/float32(N)))}
+	NumberMCSteps++
+	NSteps++
+}
+
+func (MCstep *MCstep) Free() {
+}
+
+// New MCSteps
+
+func MCsteps(steps int) {
+
+	// Save the settings we are changing...
+	prevType := solvertype
+	prevFixDt := FixDt
+	prevPrecess := Precess
+	t0 := Time
+	relaxing = true // disable temperature noise
+	// ...to restore them later
+	defer func() {
+		SetSolver(prevType)
+		FixDt = prevFixDt
+		Precess = prevPrecess
+		Time = t0
+		relaxing = false
+	}()
+
+	Precess = false // disable precession for torque calculation
+	// remove previous stepper
+	if stepper != nil {
+		stepper.Free()
+	}
+
+	stepper = new(MCstep)
+
+	NumberMCSteps = 0
+	cond := func() bool {
+		return (NumberMCSteps <= steps)
+	}
+
+	RunWhile(cond)
+	pause = true
+	stepper.Free()
+	Ncell=-1
+
+}
+
+// Old Version
+
+func MCstepsOld(steps int) {
+
+	// old M to restore bad chages
+	mold := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(mold)
+
+	BeffMC := cuda.Buffer(VECTOR, M.Buffer().Size())
+	defer cuda.Recycle(BeffMC)
+
+	// Energy density buffers
+	uold := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(uold)
+	unew := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(unew)
+
+	// Rates
+	changed := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(changed)
+
+	// Random numbers
+	dmx := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(dmx)
+	dmy := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(dmy)
+	dmz := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(dmz)
+	du := cuda.Buffer(1, M.Buffer().Size())
+	defer cuda.Recycle(du)
+	if generator == 0 {
+		generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		//print("Init Generator\n")
+	}
+
+	pause = false
+	//DoOutput()
+
+	/*
+		// Thermal switch
+		if Urnd.generator == 0 {
+			Urnd.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+			Urnd.seed = 1
+			Urnd.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+		}
+
+		// Movement
+		if Xr.generator == 0 {
+			Xr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+			Xr.seed = 2
+			Xr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+		}
+		if Yr.generator == 0 {
+			Yr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+			Yr.seed = 3
+			Yr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+		}
+		if Zr.generator == 0 {
+			Zr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+			Zr.seed = 4
+			Zr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+		}
+
+	*/
+
+	N := Mesh().NCell()
+	relaxing = true // No themal noise in MC, no sense
+
+	//SetAngle(uold)
+
+	SetDemagField(BeffMC)
+	for mcsteps := 0; mcsteps < steps; mcsteps++ {
+		iter = iter + 1
+		if iter == 50 {
+			//SetDemagField(BeffMC)
+			//f := <-Inject
+			//f()
+		}
+		if iter == 1000 {
+			iter = 0
+			print("Rate at ", NSteps+1, " MC step: ", 100*float64(cuda.Sum(changed)/float32(N)), "%\n")
+			// Activate web interface
+			/*pause = false
+			//DoOutput()
+			f := <-Inject
+			f()*/
+		}
+
+		/*
+			Urnd.generator.GenerateUniform(uintptr(Urnd.randomumbers.DevPtr(0)), int64(N))
+			Xr.generator.GenerateUniform(uintptr(Xr.randomumbers.DevPtr(0)), int64(N))
+			Xr.generator.GenerateUniform(uintptr(Yr.randomumbers.DevPtr(0)), int64(N))
+			Xr.generator.GenerateUniform(uintptr(Zr.randomumbers.DevPtr(0)), int64(N))
+		*/
+
+		/*
+			generator.GenerateUniform(uintptr(dmx.DevPtr(0)), int64(N))
+			generator.GenerateUniform(uintptr(dmy.DevPtr(0)), int64(N))
+			generator.GenerateUniform(uintptr(dmz.DevPtr(0)), int64(N))
+		*/
+		generator.GenerateNormal(uintptr(dmx.DevPtr(0)), int64(N), 0, 1)
+		generator.GenerateNormal(uintptr(dmy.DevPtr(0)), int64(N), 0, 1)
+		generator.GenerateNormal(uintptr(dmz.DevPtr(0)), int64(N), 0, 1)
+		generator.GenerateUniform(uintptr(du.DevPtr(0)), int64(N))
+
+		//SetDemagField(BeffMC)
+		for net := 0; net < 2; net++ {
+			//SetEffectiveField(BeffMC) // Only for energy as factor -1/2 or -1 for Zeeman
+			SetDemagField(BeffMC)
+			MCGetU(uold, BeffMC,mold)
+			//SetTotalEdens(uold)
+			//cuda.Zero(BeffMC)
+			//AddExchangeField(BeffMC)
+			//B_ext.AddTo(BeffMC) // Double factor for energy
+			data.Copy(mold, M.Buffer())
+			//MCGetU(uold,BeffMC)
+			//MCmove(M.Buffer(), Xr.randomumbers, Yr.randomumbers, Zr.randomumbers, net)
+			MCmove(M.Buffer(), dmx, dmy, dmz, net)
+			MCGetU(unew, BeffMC,mold)
+			//MCCompare(unew, uold, M.Buffer(), mold, Urnd.randomumbers, net, changed)
+			MCCompare(unew, uold, M.Buffer(), mold, du, net, changed)
+			//M.normalize()
+		}
+		//f := <-Inject
+		//f()
+		NSteps++
+	}
+
+	// Force Output at the end for very small MC steps
+	relaxing = false
+	//pause = false
+	//DoOutput()
+	//f := <-Inject
+	//f()
+	pause = true
+}
+
+func MCGetU(dst, BeffMC,mold *data.Slice) {
+	cuda.Zero(dst)
+	AddExchangeEnergyDensity(dst)
+	//AddExchangeEnergyDensityPlus(dst,mold)
+	AddAnisotropyEnergyDensity(dst)
+	AddMagnetoelasticEnergyDensity(dst)
+	AddCustomEnergyDensity(dst)
+	AddEdens_zeeman(dst)
+
+	if EnableDemag == true {
+		mf := ValueOf(M_full)
+		defer cuda.Recycle(mf)
+		factor := float32(-0.5)
+		//cuda.Zero(dst)
+		cuda.AddDotProduct(dst, factor, BeffMC, mf)
+	}
+}
+
+func MCmove(mnew, x, y, z *data.Slice, iteration int) {
+	cuda.MCmove(mnew, x, y, z, iteration, M.Mesh())
+}
+
+func MCCompare(unew, uold, mnew, mold, rnd *data.Slice, iteration int, changed *data.Slice) {
+
+	temp := Temp.MSlice()
+	defer temp.Recycle()
+
+	cuda.MCCompare(unew, uold, mnew, mold, rnd, temp, iteration, M.Mesh(), changed,float32(Ncell))
+}
+
+func SetAngle(dst *data.Slice) {
+	N := Mesh().NCell()
+	if Xr.generator == 0 {
+		Xr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		Xr.seed = 1
+		Xr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+	}
+	//Xr.generator.GenerateNormal(uintptr(theta.randomumbers.DevPtr(0)), int64(N), 0, 1)
+	Xr.generator.GenerateUniform(uintptr(Xr.randomumbers.DevPtr(0)), int64(N))
+
+	if Yr.generator == 0 {
+		Yr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		Yr.seed = 1
+		Yr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+	}
+	//Yr.generator.GenerateNormal(uintptr(theta.randomumbers.DevPtr(0)), int64(N), 0, 1)
+	Yr.generator.GenerateUniform(uintptr(Yr.randomumbers.DevPtr(0)), int64(N))
+
+	if Zr.generator == 0 {
+		Zr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		Zr.seed = 1
+		Zr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+	}
+	//Xr.generator.GenerateNormal(uintptr(theta.randomumbers.DevPtr(0)), int64(N), 0, 1)
+	Zr.generator.GenerateUniform(uintptr(Zr.randomumbers.DevPtr(0)), int64(N))
+
+	//Xr.generator.GenerateNormal(uintptr(theta.randomumbers.DevPtr(0)), int64(N), 0, 1)
+	Xr.generator.GenerateUniform(uintptr(Xr.randomumbers.DevPtr(0)), int64(N))
+
+	data.Copy(dst, Xr.randomumbers)
+
+}
+
+func SetRnd() {
+	N := Mesh().NCell()
+	if Xr.generator == 0 {
+		Xr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		Xr.seed = 1
+		Xr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+	}
+	//Xr.generator.GenerateNormal(uintptr(theta.randomumbers.DevPtr(0)), int64(N), 0, 1)
+	Xr.generator.GenerateUniform(uintptr(Xr.randomumbers.DevPtr(0)), int64(N))
+
+	if Yr.generator == 0 {
+		Yr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		Yr.seed = 1
+		Yr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+	}
+	//Yr.generator.GenerateNormal(uintptr(theta.randomumbers.DevPtr(0)), int64(N), 0, 1)
+	Yr.generator.GenerateUniform(uintptr(Yr.randomumbers.DevPtr(0)), int64(N))
+
+	if Zr.generator == 0 {
+		Zr.generator = curand.CreateGenerator(curand.PSEUDO_DEFAULT)
+		Zr.seed = 1
+		Zr.randomumbers = cuda.Buffer(1, M.Buffer().Size())
+	}
+	//Xr.generator.GenerateNormal(uintptr(theta.randomumbers.DevPtr(0)), int64(N), 0, 1)
+	Zr.generator.GenerateUniform(uintptr(Zr.randomumbers.DevPtr(0)), int64(N))
+	//data.Copy(dst, Xr.randomumbers)
+}
+
+func SetEdens(dst, umag *data.Slice) {
+	data.Copy(dst, umag)
+	//cuda.Zero(dst)
+	AddEdens_demag(dst)
+	AddExchangeEnergyDensity(dst)
+	AddExchangeEnergyDensity(dst) // Non local
+	AddAnisotropyEnergyDensity(dst)
+	AddMagnetoelasticEnergyDensity(dst)
+	AddCustomEnergyDensity(dst)
+	AddEdens_zeeman(dst)
+}
+
+func SetUmag(dst *data.Slice) {
+	cuda.Zero(dst)
+	AddEdens_demag(dst)
+}
+
+
+//AddUexchangePlus(U, m,mold *data.Slice, Aex SymmLUT, Msat MSlice, regions *Bytes, mesh *data.Mesh) {
+func AddExchangeEnergyDensityPlus(dst,mold *data.Slice) {
+	ms := Msat.MSlice()
+	defer ms.Recycle()
+	cuda.AddUexchangePlus(dst, M.Buffer(),mold, lex2.Gpu(), ms, regions.Gpu(), M.Mesh())
+}

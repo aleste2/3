@@ -29,7 +29,7 @@ var (
 )
 
 const (
-	MaxIPs            = 1024             // maximum number of IP address to portscan
+	MaxIPs            = 1024             // maximum number of IP addresses to portscan
 	N_SCANNERS        = 32               // number of parallel portscan goroutines
 	MAXGPU            = 16               // maximum number of GPU's to check for
 	KeepaliveInterval = 10 * time.Second // signal process liveness every KeepaliveInterval
@@ -147,7 +147,8 @@ func contains(arr []string, x string) bool {
 }
 
 // Parse port range flag. E.g.:
-// 	1234-1237 -> 1234, 1237
+//
+//	1234-1237 -> 1234, 1237
 func parsePorts() (minPort, maxPort int) {
 	p := *flag_ports
 	split := strings.Split(p, "-")

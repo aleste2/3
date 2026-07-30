@@ -1,19 +1,23 @@
 package main
 
-// File que for distributing multiple input files over GPUs.
+// File queue for distributing multiple input files over GPUs.
 
 import (
 	"flag"
 	"fmt"
-	"github.com/mumax/3/cuda/cu"
-	"github.com/mumax/3/engine"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 	"sync/atomic"
+
+	"github.com/mumax/3/cuda/cu"
+	"github.com/mumax/3/engine"
+	"github.com/mumax/3/util"
 )
 
 var (
@@ -25,6 +29,7 @@ func RunQueue(files []string) {
 	s := NewStateTab(files)
 	s.PrintTo(os.Stdout)
 	go s.ListenAndServe(*engine.Flag_port)
+	fmt.Print("//Realtime queue overview available at http://127.0.0.1", *engine.Flag_port, "\n")
 	s.Run()
 	fmt.Println(numOK.get(), "OK, ", numFailed.get(), "failed")
 	os.Exit(int(exitStatus))
@@ -80,11 +85,14 @@ func (s *stateTab) Finish(j job) {
 
 // Runs all the jobs in stateTab.
 func (s *stateTab) Run() {
-	nGPU := cu.DeviceGetCount()
-	idle := initGPUs(nGPU)
+	idle, nGPU := initGPUs()
 	for {
 		gpu := <-idle
-		addr := fmt.Sprint(":", 35368+gpu)
+		addr := ""
+		if *engine.Flag_port != "" {
+			_, p, _ := net.SplitHostPort(*engine.Flag_port)
+			addr = fmt.Sprint(":", atoi(p)+1+gpu) // +1 because Flag_port hosts overview of queue
+		}
 		j, ok := s.StartNext(addr)
 		if !ok {
 			break
@@ -99,6 +107,12 @@ func (s *stateTab) Run() {
 	for i := 1; i < nGPU; i++ {
 		<-idle
 	}
+}
+
+func atoi(a string) int {
+	i, err := strconv.Atoi(a)
+	util.PanicErr(err)
+	return i
 }
 
 type atom int32
@@ -137,16 +151,27 @@ func run(inFile string, gpu int, webAddr string) {
 	}
 }
 
-func initGPUs(nGpu int) chan int {
+// Creates a concurrent channel containing the available GPU IDs for jobs.
+// Returns the channel and the number of available GPUs for the queue.
+func initGPUs() (chan int, int) {
+	nGpu := cu.DeviceGetCount()
 	if nGpu == 0 {
 		log.Fatal("no GPUs available")
-		panic(0)
+	}
+
+	singleGPU := engine.FlagPassed("gpu")
+	if singleGPU {
+		nGpu = 1
 	}
 	idle := make(chan int, nGpu)
-	for i := 0; i < nGpu; i++ {
-		idle <- i
+	if singleGPU {
+		idle <- *engine.Flag_gpu
+	} else {
+		for i := 0; i < nGpu; i++ {
+			idle <- i
+		}
 	}
-	return idle
+	return idle, nGpu
 }
 
 func (s *stateTab) PrintTo(w io.Writer) {

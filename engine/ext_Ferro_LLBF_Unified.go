@@ -69,16 +69,24 @@ func (LLB *HeunLLBFerroUnified) Step() {
 
 		// TTM+ by rho
 		if sdf == true {
-			musStep(dy11, dy1)
-			TTMplus(dy11, dy1, Te.temp, float32(Dt_si))
+			//musStep(dy11, dy1)
+			musStepm2(y1, dy11, dy1) //y01 prevoius
+			//TTMplus(dy11, dy1, Te.temp, float32(Dt_si))
 		}
 		cuda.Madd3(y1, y1, dy11, dy1, 1, 0.5*dt, -0.5*dt) //****
 		if LLB2Tf == true {
 			AdaptativeFTCSStep2T(float32(Dt_si))
+			TTMplus(dy11, dy1, Te.temp, float32(Dt_si)) // Add magnetic energy due to demag/remag
 		}
 
 		if sdf == true { // Moment contribution
-			MusMoment(float32(Dt_si)) // dt in SI units
+			//MusMoment(float32(Dt_si)) // dt in SI units
+			if NewTorqueMu == true {
+				//MusTorque(float32(Dt_si))
+				MusTorqueAtomu(float32(dt))
+			} else {
+				MusMoment(float32(Dt_si))
+			}
 		}
 		if LLBJHf == true {
 			AdaptativeFTCSSstepJH(float32(Dt_si))

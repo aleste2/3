@@ -13,7 +13,7 @@ type Mesh struct {
 	Unit     string // unit of cellSize, default: "m"
 }
 
-// Retruns a new mesh with N0 x N1 x N2 cells of size cellx x celly x cellz.
+// Returns a new mesh with N0 x N1 x N2 cells of size cellx x celly x cellz.
 // Optional periodic boundary conditions (pbc): number of repetitions
 // in X, Y, Z direction. 0,0,0 means no periodicity.
 func NewMesh(N0, N1, N2 int, cellx, celly, cellz float64, pbc ...int) *Mesh {
@@ -53,7 +53,8 @@ func (m *Mesh) SetPBC(nx, ny, nz int) {
 }
 
 // Total number of cells, not taking into account PBCs.
-// 	N0 * N1 * N2
+//
+//	N0 * N1 * N2
 func (m *Mesh) NCell() int {
 	return m.gridSize[0] * m.gridSize[1] * m.gridSize[2]
 }

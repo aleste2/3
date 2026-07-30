@@ -20,10 +20,11 @@ import (
 func init() {
 	DeclFunc("Expect", Expect, "Used for automated tests: checks if a value is close enough to the expected value")
 	DeclFunc("ExpectV", ExpectV, "Used for automated tests: checks if a vector is close enough to the expected value")
+	DeclFunc("ExpectB", ExpectB, "Used for automated tests: checks if two booleans are equal")
 	DeclFunc("Fprintln", Fprintln, "Print to file")
 	DeclFunc("Sign", sign, "Signum function")
 	DeclFunc("Vector", Vector, "Constructs a vector with given components")
-	DeclConst("Mu0", mag.Mu0, "Permittivity of vaccum (Tm/A)")
+	DeclConst("Mu0", mag.Mu0, "Vacuum permeability (Tm/A)")
 	DeclFunc("Print", myprint, "Print to standard output")
 	DeclFunc("LoadFile", LoadFile, "Load a data file (ovf or dump)")
 	DeclFunc("Index2Coord", Index2Coord, "Convert cell index to x,y,z coordinate in meter")
@@ -33,7 +34,7 @@ func init() {
 	DeclFunc("NewScalarMask", NewScalarMask, "Makes a 3D array of scalars")
 }
 
-// Returns a new new slice (3D array) with given number of components and size.
+// Returns a new slice (3D array) with given number of components and size.
 func NewSlice(ncomp, Nx, Ny, Nz int) *data.Slice {
 	return data.NewSlice(ncomp, [3]int{Nx, Ny, Nz})
 }
@@ -68,6 +69,10 @@ func ExpectV(msg string, have, want data.Vector, maxErr float64) {
 	for c := 0; c < 3; c++ {
 		Expect(fmt.Sprintf("%v[%v]", msg, c), have[c], want[c], maxErr)
 	}
+}
+
+func ExpectB(msg string, have, want bool) {
+	Expect(msg, bool2float(have), bool2float(want), 0) // Reuse Expect() to reuse same logging
 }
 
 // Append msg to file. Used to write aggregated output of many simulations in one file.
@@ -139,7 +144,29 @@ func Index2Coord(ix, iy, iz int) data.Vector {
 	return data.Vector{x, y, z}
 }
 
+// Wraps cell index in case of PBC, otherwise returns the original value i.
+func wrapPBC(i, axis int) int {
+	mesh := Mesh()
+	PBC := mesh.PBC()[axis]
+	if PBC == 0 {
+		return i // Don't wrap
+	}
+	N := mesh.Size()[axis]
+	return ((i % N) + N) % N // Wrap in integer range [0, N-1]
+}
+
 func sign(x float64) float64 {
+	switch {
+	case x > 0:
+		return 1
+	case x < 0:
+		return -1
+	default:
+		return 0
+	}
+}
+
+func sign32(x float32) float32 {
 	switch {
 	case x > 0:
 		return 1
@@ -165,6 +192,36 @@ func paramDiv(dst, a, b [][NREGION]float32) {
 	for i := 0; i < NREGION; i++ { // not regions.maxreg
 		dst[0][i] = safediv(a[0][i], b[0][i])
 	}
+}
+
+// Converts true to 1.0, false to 0.0
+func bool2float(b bool) float64 { // A bit verbose to allow optimization by compiler
+	var i float64
+	if b {
+		i = 1
+	} else {
+		i = 0
+	}
+	return i
+}
+
+// returns an array with the prime factors of n (n >= 1)
+func primeFactors(n int) (factors []int) {
+	util.AssertMsg(n >= 1, "Can only determine prime factors of a positive integer.")
+	for n%2 == 0 { // First, get all factors 2
+		factors = append(factors, 2)
+		n = n / 2
+	}
+	for i := 3; i*i <= n; i = i + 2 { // Since n is odd now, we can skip even divisors
+		for n%i == 0 { // while i divides n, append i and divide n
+			factors = append(factors, i)
+			n = n / i
+		}
+	}
+	if n > 1 || len(factors) == 0 { // Add any remaining factor
+		factors = append(factors, n)
+	}
+	return
 }
 
 // shortcut for slicing unaddressable_vector()[:]

@@ -51,21 +51,13 @@ func SetTorque(dst *data.Slice) {
 // Sets dst to the current Landau-Lifshitz torque
 func SetLLTorque(dst *data.Slice) {
 	SetEffectiveField(dst) // calc and store B_eff
+	if Msat.hasZero() {    // Apply no torque to Msat==0 cells
+		cuda.ZeroMaskInv(dst, Msat.gpuLUT1(), regions.Gpu())
+	}
 	alpha := Alpha.MSlice()
 	defer alpha.Recycle()
 	if Precess {
-		// Chiral Torque
-		if !AlphaChiral.isZero() {
-			m := M.Buffer()
-			size := m.Size()
-			buf := cuda.Buffer(1, size)
-			defer cuda.Recycle(buf)
-			calculateAlphaChiral(buf)
-			cuda.ChiralLLTorque(dst, M.Buffer(), dst, alpha, buf) // overwrite dst with Chiral torque
-		} else {
-			cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
-		}
-
+		cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}

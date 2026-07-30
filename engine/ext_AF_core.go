@@ -542,7 +542,7 @@ func RenormAFBri(y01, y02 *data.Slice, dt, GammaLL1, GammaLL2 float32) {
 
 // Magnetoelastic functions for subnet 1 and 2
 
-//Subnet 1
+// Subnet 1
 func AddMagnetoelasticField1(dst *data.Slice) {
 	haveMel := B11.nonZero() || B21.nonZero()
 	if !haveMel {

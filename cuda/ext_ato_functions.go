@@ -1,9 +1,10 @@
 package cuda
 
 import (
+	"unsafe"
+
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/util"
-	"unsafe"
 )
 
 func Alloypar(host, alloy int, percent float64, random *data.Slice, regions unsafe.Pointer) {
@@ -147,5 +148,18 @@ func AddSlonczewskiTorque2Ato(torque, m *data.Slice, Msat, J, fixedP, alpha, pol
 		thickness.DevPtr(0), thickness.Mul(0),
 		float32(meshThickness),
 		float32(flt),
+		N, cfg)
+}
+
+func EvolveAtomisticByRotation(m, Beff *data.Slice, alpha, lande MSlice, dt float32) {
+	N := Beff.Len()
+	cfg := make1DConf(N)
+
+	k_evolveAtomisticByRotation_async(
+		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
+		Beff.DevPtr(X), Beff.DevPtr(Y), Beff.DevPtr(Z),
+		alpha.DevPtr(0), alpha.Mul(0),
+		lande.DevPtr(0), lande.Mul(0),
+		float32(dt),
 		N, cfg)
 }

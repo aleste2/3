@@ -14,6 +14,7 @@ initmLLB(float* __restrict__  mx, float* __restrict__  my, float* __restrict__  
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
 
     if (i < N) {
+        float mmin=0.001;
 
         float3 m = {mx[i], my[i], mz[i]};
         float TCurie = amul(TCurie_, TCurie_mul, i);
@@ -32,13 +33,14 @@ initmLLB(float* __restrict__  mx, float* __restrict__  my, float* __restrict__  
 				//me=pow(1.0f-pow(temp/TCurie,1.23329f),0.43392f);
                 me=pow(1.0f-pow(temp/TCurie,1.23318f),0.433936f);
 				}
+                if (me<mmin) {me=mmin;}
 		mx[i]=mx[i]*(me/pow(m2,0.5f));
 		my[i]=my[i]*(me/pow(m2,0.5f));
 		mz[i]=mz[i]*(me/pow(m2,0.5f));
          }
          else        //T>Tc
          {
-         	float me=0.0001;
+         	float me=mmin;
 		mx[i]=mx[i]*(me/pow(m2,0.5f));
 		my[i]=my[i]*(me/pow(m2,0.5f));
 		mz[i]=mz[i]*(me/pow(m2,0.5f));

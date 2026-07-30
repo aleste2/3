@@ -67,9 +67,11 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
 					torquea = 0.0f*m1;
 				} else {
 
-				if (ma<0.01) ma=0.01;
-			if (fabs(temp-TCurie)<0.001) {temp=TCurie+0.001;}  // To avoid errors arround T=Tc
-			if (temp>1.5*TCurie) temp=1.5*TCurie; // To avoid numerical problems much above TC
+				//if (ma<0.01) ma=0.01;
+				if (ma<mmin) ma=mmin;
+			//if (fabs(temp-TCurie)<0.1) {temp=TCurie+0.1;}  // To avoid errors arround T=Tc
+			if (fabs(temp-TCurie)<0.01) {temp=TCurie+0.01;}  // To avoid errors arround T=Tc
+			if (temp>5.5*TCurie) temp=1.5*TCurie; // To avoid numerical problems much above TC
 
 			float mea;
 			if (temp<TCurie) {
@@ -101,7 +103,8 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
 				xpara=(mua/kB)*0.33333333333f/(temp-TCurie);
 			}
 
-			if (xpara>0.25f) xpara=0.25f;
+			//if (xpara>0.25f) xpara=0.25f;
+			//if (xpara>1.0f) xpara=1.0f;
 			//xpara=xpara*(mua/(kB*temp));
 			//if (xpara<=1e-6) xpara=1e-6;
 
@@ -112,11 +115,11 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
 			float alphaperpA;
 			alphaparA=2.0f*alpha*temp/(3.0f*TCurie);
 			if (temp>TCurie) {
-  				heffa = -lambdaA*m1;  // Segun Vogler
+  				//heffa = -lambdaA*m1;  // Segun Vogler
 
 				//float ft=TCurie/(TCurie-temp);
 				//if (ft>1) ft=1.0f;
-				//heffa = -lambdaA*(1.0f+3.0f/5.0f*ft*ma*ma)*m1;
+				heffa = -lambdaA*(1.0f+2.0f/5.0f*ma*ma*TCurie/(temp-TCurie))*m1;  // Seems to be working ok 26/06/2026
 
 				alphaperpA=alphaparA;
 				} else {
