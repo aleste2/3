@@ -28,7 +28,7 @@ addMusTorque(
         float Msat = amul(Ms_, Ms_mul, i);
         float Sigma = amul(Sigma_, Sigma_mul, i);
         float LJ = amul(LambdaJ_, LambdaJ_mul, i);
-        float LJ2=LJ*LJ;
+        //float LJ2=LJ*LJ;
         float betta = amul(Betta_, Betta_mul, i);
         float GammaLL= 1.7595e11;
         //float qe=1.60217646E-19;

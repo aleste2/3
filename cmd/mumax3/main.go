@@ -175,6 +175,7 @@ func printVersion() {
 	engine.LogOut(fmt.Sprintf("Timestamp: %s", time.Now().Format("2006-01-02 15:04:05")))
 	engine.LogOut("(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium")
 	engine.LogOut("This is free software without any warranty. See license.txt")
+	engine.LogOut("Mod by Victor Raposo")
 	engine.LogOut("********************************************************************//")
 	engine.LogOut("  If you use mumax in any work or publication,                      //")
 	engine.LogOut("  we kindly ask you to cite the references in references.bib        //")

@@ -46,7 +46,12 @@ mccompare(
             if (temp==0) {
                 R=0.0f;
             } else {
-                R=exp(-(unew[I]-uold[I])*vol/(temp*1.38e-23));
+                float mmn=sqrt(mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I]);
+                float mmo=sqrt(moldx[I]*moldx[I]+moldy[I]*moldy[I]+moldz[I]*moldz[I]);
+                float prefactor=pow(mmn/mmo,4); // For LLB
+                //prefactor=1.0f;
+
+                R=prefactor*exp(-(unew[I]-uold[I])*vol/(temp*1.38e-23));
                 //if (I==0) printf("%e %e\n",R,(unew[I]-uold[I])*wx*wy*wz/(temp*1.38e-23));
             }
             if (rnd[I]>R) {

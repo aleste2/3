@@ -42,7 +42,8 @@ endif
 
 CUDA_VERSION := $(shell $(NVCC) --version | grep "Cuda compilation" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | head -n 1)
 
-NVCC_COMPATIBILITY_FLAGS := -std=c++03
+#NVCC_COMPATIBILITY_FLAGS := -std=c++03
+NVCC_COMPATIBILITY_FLAGS := -std=c++17
 ifneq (,$(filter 7.0 7.5 8.0,$(CUDA_VERSION)))
 	NVCC_COMPATIBILITY_FLAGS :=
 endif

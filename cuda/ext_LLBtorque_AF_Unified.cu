@@ -286,7 +286,7 @@ LLBtorqueAFUnified(float* __restrict__  t1x, float* __restrict__  t1y, float* __
 					// New exchange Unai (antelast term or the addition to H1)
 
 					// Direct laser moment induction
-					float3 mi = {0.0f,0.0f,(Qext/1e20)*deltaM};
+					float3 mi = {0.0f,0.0f,(Qext/1e20f)*deltaM};
 
 					torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a-alphaex*(Ha-Hb)+mi;
     			torqueb = -gillbb*m2xH2+gillbb*alphaparB/mb/mb*m2dotH2*m2-gillbb*alphaperpB/mb/mb*(m2xm2xHtot2)+h_par_scaleb*hth2b+alphaex*(Ha-Hb)+Msata/Msatb*mi;

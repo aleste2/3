@@ -143,7 +143,7 @@ LLBtorqueFerroUnified(float* __restrict__  t1x, float* __restrict__  t1y, float*
     		float gillba = 1.0f / (1.0f + alphaperpA * alphaperpA);
 
 			// Direct laser moment induction
-			float3 mi = {0.0f,0.0f,(Qext/1e20)*deltaM};
+			float3 mi = {0.0f,0.0f,(Qext/1e20f)*deltaM};
 
 			torquea = -gillba*m1xH1+gillba*alphaparA/ma/ma*m1dotH1*m1-gillba*alphaperpA/ma/ma*(m1xm1xHtot1)+h_par_scalea*hth2a+mi;
 		}

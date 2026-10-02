@@ -9,10 +9,60 @@ extern "C"
 
 __global__ void
 mcmove(float* __restrict__ mnewx, float* __restrict__ mnewy, float* __restrict__ mnewz,
-    float* __restrict__ x, float* __restrict__ y, float* __restrict__ z,
+    float* __restrict__ x, float* __restrict__ y, float* __restrict__ z,float* __restrict__ dmm,
     int iteration, 
     float delta,
+    float norm0,
     int Nx, int Ny, int Nz) {
+
+        
+    int ix = blockIdx.x * blockDim.x + threadIdx.x;
+    int iy = blockIdx.y * blockDim.y + threadIdx.y;
+    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+
+    if (ix >= Nx || iy >= Ny || iz >= Nz) {
+        return;
+    }
+    int I = idx(ix, iy, iz);
+    if ((mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I])==0){
+        return;
+    }
+    int change=((ix%2)^(iy%2))^(iz%2);
+    if (change==iteration) {
+
+        float mx=mnewx[I]+delta*x[I];
+        float my=mnewy[I]+delta*y[I];
+        float mz=mnewz[I]+delta*z[I];
+        float norm=sqrt(mx*mx+my*my+mz*mz);
+        if (norm==0) {
+            norm=1;
+            mx=mnewx[I];
+            my=mnewy[I];
+            mz=mnewz[I];
+        }
+
+        // LLB
+        if (norm0==0){
+            float oldm=sqrt(mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I]);
+            //float newm=(oldm+oldm*delta*(x[I]+y[I]+z[I]));
+            //float newm=oldm+0.01*(x[I]+y[I]+z[I]);
+            float newm=oldm*dmm[I];
+            if (newm>1) newm=1.0f;
+            if (newm<=0.0001) newm=0.0001;
+            norm=norm/newm;   
+        }
+
+        mnewx[I]=mx/norm;
+        mnewy[I]=my/norm;
+        mnewz[I]=mz/norm;
+
+        }
+
+ /*
+ new code
+
+
+
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
     int iy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -28,38 +78,29 @@ mcmove(float* __restrict__ mnewx, float* __restrict__ mnewy, float* __restrict__
     int change=((ix%2)^(iy%2))^(iz%2);
     if (change==iteration) {
         //if (I==0) printf("Rnd:%e %e %e %e %e %e\n",x[I],y[I],z[I],x[I+1],y[I+1],z[I+1]);
-        /*
-        float delta=0.005;
-        float sum=fabs(x[I]+y[I]+z[I]-1.5);
-        if (sum<0.005) delta=1.0;
-        float mx=mnewx[I]+delta*(x[I]-0.5);
-        float my=mnewy[I]+delta*(y[I]-0.5);
-        float mz=mnewz[I]+delta*(z[I]-0.5);
-        */
+
         //float delta=0.0025;
         float mx=mnewx[I]+delta*x[I];
         float my=mnewy[I]+delta*y[I];
         float mz=mnewz[I]+delta*z[I];
         float norm=sqrt(mx*mx+my*my+mz*mz);
-        if (norm==0) {
-            norm=1;
+
+        // LLG
+        if (norm0==1) {
+            if (norm==0) norm=1;
             mx=mnewx[I];
             my=mnewy[I];
             mz=mnewz[I];
         }
-
+        // LLB
+        //if (I==0) printf("m:%e delat:%e\n",norm, delta*(x[I]+y[I]+z[I])/norm);
+        if (norm0==0) norm=1;
+        
         mnewx[I]=mx/norm;
         mnewy[I]=my/norm;
         mnewz[I]=mz/norm;
-
         
-/*
-        float theta=acos(mnewz[I]);
-        float phi=atan2(mnewy[I], mnewx[I]);
-        float sigma = 0.5235f;
-        mnewz[I]=cos(theta+angle1[I]*sigma);
-        mnewx[I]=sin(theta+angle1[I]*sigma)*cos(phi+angle2[I]*sigma);
-        mnewy[I]=sin(theta+angle1[I]*sigma)*sin(phi+angle2[I]*sigma);
-*/
         }
+
+        */
     }
