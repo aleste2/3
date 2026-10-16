@@ -13,7 +13,7 @@ var (
 	generator     curand.Generator
 	NumberMCSteps int
 	Ncell         = -1e0
-	delta         = 0.01
+	delta         = 0.1
 )
 
 func init() {
@@ -43,6 +43,7 @@ func (MCstep *MCstep) Step() {
 	// Rates
 	changed := cuda.Buffer(1, M.Buffer().Size())
 	defer cuda.Recycle(changed)
+	cuda.Zero(changed)
 
 	// Random numbers
 	dmx := cuda.Buffer(1, M.Buffer().Size())
@@ -63,19 +64,29 @@ func (MCstep *MCstep) Step() {
 	if Ncell == -1 {
 		dst := cuda.Buffer(1, M.Buffer().Size())
 		defer cuda.Recycle(dst)
+		cuda.Zero(dst)
+		data.Copy(mold, M.Buffer())
+		M.normalize()
 		cuda.AddDotProduct(dst, 1, M.Buffer(), M.Buffer())
+		data.Copy(M.Buffer(), mold)
 		Ncell = float64(cuda.Sum(dst))
+		//print(Ncell)
 	}
 
 	N := Mesh().NCell()
 
-	//generator.GenerateNormal(uintptr(dmx.DevPtr(0)), int64(N), 0, 1)
-	//generator.GenerateNormal(uintptr(dmy.DevPtr(0)), int64(N), 0, 1)
-	//generator.GenerateNormal(uintptr(dmz.DevPtr(0)), int64(N), 0, 1)
-	//generator.GenerateUniform(uintptr(du.DevPtr(0)), int64(N))
-	//generator.GenerateUniform(uintptr(dmm.DevPtr(0)), int64(N))
+	generator.GenerateNormal(uintptr(dmx.DevPtr(0)), int64(N), 0, 1)
+	generator.GenerateNormal(uintptr(dmy.DevPtr(0)), int64(N), 0, 1)
+	generator.GenerateNormal(uintptr(dmz.DevPtr(0)), int64(N), 0, 1)
+	generator.GenerateUniform(uintptr(du.DevPtr(0)), int64(N))
+	if LLBeq == true {
+		generator.GenerateUniform(uintptr(dmm.DevPtr(0)), int64(N))
+		MCCalcdm(dmm)
+	}
 
-	SetDemagField(BeffMC)
+	if EnableDemag == true {
+		SetDemagField(BeffMC)
+	}
 
 	norm0 := 0.0
 	if LLBeq == false {
@@ -85,39 +96,44 @@ func (MCstep *MCstep) Step() {
 	for net := 0; net < 2; net++ {
 
 		//delta=0.0
-
-		generator.GenerateNormal(uintptr(dmx.DevPtr(0)), int64(N), 0, 1)
-		generator.GenerateNormal(uintptr(dmy.DevPtr(0)), int64(N), 0, 1)
-		generator.GenerateNormal(uintptr(dmz.DevPtr(0)), int64(N), 0, 1)
-		generator.GenerateUniform(uintptr(du.DevPtr(0)), int64(N))
-		generator.GenerateUniform(uintptr(dmm.DevPtr(0)), int64(N))
-
+		/*
+			generator.GenerateNormal(uintptr(dmx.DevPtr(0)), int64(N), 0, 1)
+			generator.GenerateNormal(uintptr(dmy.DevPtr(0)), int64(N), 0, 1)
+			generator.GenerateNormal(uintptr(dmz.DevPtr(0)), int64(N), 0, 1)
+			generator.GenerateUniform(uintptr(du.DevPtr(0)), int64(N))
+			generator.GenerateUniform(uintptr(dmm.DevPtr(0)), int64(N))
+		*/
 		MCGetU(uold, BeffMC, mold)
 		data.Copy(mold, M.Buffer())
-		if LLBeq == true {
-			MCCalcdm(dmm)
-		}
+		//if LLBeq == true {
+		//	MCCalcdm(dmm)
+		//}
 		MCmove(M.Buffer(), dmx, dmy, dmz, dmm, net, float32(delta), float32(norm0))
 		MCGetU(unew, BeffMC, mold)
 		MCCompare(unew, uold, M.Buffer(), mold, du, net, changed)
 	}
 
 	if NumberMCSteps%50 == 0 {
-		err := 100 * float64(cuda.Sum(changed)/float32(N))
-		if err < 40 {
-			delta = delta * 0.73 // / 2
-			if delta < 0.001 {
-				delta = 0.001
+		//err := 100 * float64(cuda.Sum(changed)/float32(N))
+		ChangedPercent := 100 * float64(cuda.Sum(changed)/float32(Ncell))
+		if ChangedPercent < 40 {
+			delta = delta / 1.23 //0.73 // / 2
+			if delta < 0.00001 {
+				delta = 0.00001
+				//if delta > 1000 {
+				//	delta = 1000
 			}
 		}
-		if err > 50 {
+		if ChangedPercent > 50 {
 			delta = delta * 1.27 // * 2
-			if delta > 100 {
-				delta = 100
+			if delta > 10000 {
+				delta = 10000
+				//if delta < 0.0001 {
+				//	delta = 0.0001
 			}
 		}
 		MaxDt = delta
-		setLastErr(err)
+		setLastErr(ChangedPercent)
 	}
 	NumberMCSteps++
 	NSteps++
@@ -132,7 +148,7 @@ func MCsteps(steps int) {
 
 	//if (LLBeq == true) || (AFf == true) {
 	if AFf == true {
-		util.AssertMsg(0 > 1, "LLB, ato and AF still not supported in MC")
+		util.AssertMsg(0 > 1, "LLB and AF still not supported in MC")
 	}
 
 	// Save the settings we are changing...
@@ -163,10 +179,12 @@ func MCsteps(steps int) {
 		return (NumberMCSteps <= steps)
 	}
 
+	oldMaxDt := MaxDt
 	RunWhile(cond)
 	pause = true
 	stepper.Free()
 	Ncell = -1
+	MaxDt = oldMaxDt
 
 }
 
@@ -176,8 +194,12 @@ func MCGetU(dst, BeffMC, mold *data.Slice) {
 	//if (LLBeq == false) && (AFf == false) && (Ato == false) {
 	if (AFf == false) && (Ato == false) {
 		cuda.Zero(dst)
-		AddExchangeEnergyDensity(dst)
-		cuda.Madd2(dst, dst, dst, 1, 1) // y = y + dt * dy
+		if LLBeq == false {
+			AddExchangeEnergyDensity(dst)
+			cuda.Madd2(dst, dst, dst, 1, 1) // ×2 solo para la densidad estándar (−½)
+		} else {
+			AddLLBExchangeEnergyDensity(dst) // ya es la energía de sitio completa
+		}
 		AddAnisotropyEnergyDensity(dst)
 		AddMagnetoelasticEnergyDensity(dst)
 		AddCustomEnergyDensity(dst)
@@ -186,7 +208,8 @@ func MCGetU(dst, BeffMC, mold *data.Slice) {
 		if EnableDemag == true {
 			mf := ValueOf(M_full)
 			defer cuda.Recycle(mf)
-			factor := float32(-0.5)
+			//factor := float32(-0.5)
+			factor := float32(-1.0)
 			cuda.AddDotProduct(dst, factor, BeffMC, mf)
 		}
 
@@ -233,12 +256,6 @@ func MCCompare(unew, uold, mnew, mold, rnd *data.Slice, iteration int, changed *
 	cuda.MCCompare(unew, uold, mnew, mold, rnd, temp, iteration, M.Mesh(), changed, float32(Ncell))
 }
 
-func AddExchangeEnergyDensityPlus(dst, mold *data.Slice) {
-	ms := Msat.MSlice()
-	defer ms.Recycle()
-	cuda.AddUexchangePlus(dst, M.Buffer(), mold, lex2.Gpu(), ms, regions.Gpu(), M.Mesh())
-}
-
 func AddLLBEnergyDensity(dst *data.Slice) {
 	Tcurie := TCurie.MSlice()
 	defer Tcurie.Recycle()
@@ -264,4 +281,10 @@ func MCCalcdm(dst *data.Slice) {
 	c := M.Mesh().CellSize()
 	vol := float32((c[X] * c[Y] * c[Z]))
 	cuda.MCCalcdm(dst, M.Buffer(), Ms, temp, Tcurie, Mua, vol)
+}
+
+func AddLLBExchangeEnergyDensity(dst *data.Slice) {
+	ms := Msat.MSlice()
+	defer ms.Recycle()
+	cuda.AddLLBExchangeEnergyDensity(dst, M.Buffer(), lex2.Gpu(), ms, regions.Gpu(), M.Mesh())
 }

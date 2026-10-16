@@ -32,6 +32,11 @@ mccompare(
     float vol=wx*wy*wz;
     
     int I = idx(ix, iy, iz);
+    float mmo=sqrt(moldx[I]*moldx[I]+moldy[I]*moldy[I]+moldz[I]*moldz[I]);
+    if (mmo==0) {
+        return;
+    }
+
     int change=((ix%2)^(iy%2))^(iz%2);
     if (change==iteration) {
         changed[I]=1;
@@ -41,14 +46,15 @@ mccompare(
             printf("DeltaU: %e: KbT: %e Rnd: %e:\n",(unew[I]-uold[I])*wx*wy*wz,temp*1.38e-23,rnd[I]);
         }
 */
+
+/*
         if (unew[I]>=uold[I]) {
             float R;
             if (temp==0) {
                 R=0.0f;
             } else {
                 float mmn=sqrt(mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I]);
-                float mmo=sqrt(moldx[I]*moldx[I]+moldy[I]*moldy[I]+moldz[I]*moldz[I]);
-                float prefactor=pow(mmn/mmo,4); // For LLB
+                                float prefactor=pow(mmn/mmo,4); // For LLB
                 //prefactor=1.0f;
 
                 R=prefactor*exp(-(unew[I]-uold[I])*vol/(temp*1.38e-23));
@@ -61,5 +67,24 @@ mccompare(
                 changed[I]=0;
             }
         }
+*/
+
+// Claude code
+
+        float R;
+        if (temp > 0) {
+            float mmn = sqrtf(mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I]);
+            R = powf(mmn/mmo, 2.0f) * expf(-(unew[I]-uold[I])*vol/(temp*1.38064852e-23f)); //pow 2 y no 4 segun claude
+        } else {
+            R = (unew[I] <= uold[I]) ? 1.0f : 0.0f;
+        }
+        if (!(rnd[I] <= R)) {
+            mnewx[I]=moldx[I];
+            mnewy[I]=moldy[I];
+            mnewz[I]=moldz[I];
+            changed[I]=0;
+        }
+
+
     }
 }

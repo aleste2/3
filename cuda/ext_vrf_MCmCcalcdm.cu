@@ -27,21 +27,25 @@ mCCalcdm(float* __restrict__ dst,
         //const float mu0 = 1.256637e-6;
         const float kB=1.38064852e-23;
         //float m2=mx[i]*mx[i]+my[i]*my[i]+mz[i]*mz[i];
-        float me,xpar;
+        //float me,xpar;
+        float sigma;
         if (temp<TCurie) {
+            /*
             me=pow(1.0f-pow(temp/TCurie,1.23318f),0.433936f);
-            if (me<0.001) me=0.001;
+            if (me<0.001f) me=0.001f;
             float chiA=3.0f*TCurie/temp*me;
             xpar=(mua/kB)*DNL(chiA)/((temp-3.0f*TCurie*DNL(chiA)));
             //dst[i]+=Ms*pow((m2-me*me),2)/(8.0f*xpar*me*me);
+            */
+            //float me=meLLB(temp, TCurie);  // From LLB functions
+            //float xpar=chiParLLB(temp, me, mua);
+            float me=meMF(temp, TCurie);  // from LLB functions
+            float xpar=chiParMF(temp,TCurie, me, mua);
+            sigma=2.0f*me*sqrt(xpar*kB*temp/(vol*Ms));
+            if (sigma>0.03f) {sigma=0.03f;}
         } else {
-            me=0.001;
-            float chiA=3.0f*TCurie/temp*me;
-            xpar=(mua/kB)*DNL(chiA)/((temp-3.0f*TCurie*DNL(chiA)));
-            //dst[i]+=mu0*Ms*Ms/(2.0f*xpar)*(3.0f*temp/(10.0f*TCurie)*m2*m2+(temp/TCurie-1.0f)*m2);
+            sigma=0.03f;
         }
-        float sigma=2*me*sqrt(xpar*kB*temp/(vol*Ms));
-        if (sigma>0.03) {sigma=0.03;}
-        dst[i]=1.0f+sigma*2.0*(dst[i]-0.5f);
+        dst[i]=sigma*2.0f*(dst[i]-0.5f);
     }
 }

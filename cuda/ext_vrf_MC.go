@@ -8,10 +8,6 @@ import (
 
 // Change M
 func MCmove(mnew, x, y, z, dmm *data.Slice, i int, delta, norm float32, mesh *data.Mesh) {
-	//c := mesh.CellSize()
-	//wx := float32(1 / c[X])
-	//wy := float32(1 / c[Y])
-	//wz := float32(1 / c[Z])
 	N := mesh.Size()
 	cfg := make3DConf(N)
 	k_mcmove_async(mnew.DevPtr(X), mnew.DevPtr(Y), mnew.DevPtr(Z),
@@ -39,22 +35,6 @@ func MCCompare(unew, uold, mnew, mold, rnd *data.Slice, temp MSlice, i int, mesh
 		cells, cfg)
 }
 
-func AddUexchangePlus(U, m, mold *data.Slice, Aex SymmLUT, Msat MSlice, regions *Bytes, mesh *data.Mesh) {
-	c := mesh.CellSize()
-	wx := float32(2 / (c[X] * c[X]))
-	wy := float32(2 / (c[Y] * c[Y]))
-	wz := float32(2 / (c[Z] * c[Z]))
-	N := mesh.Size()
-	pbc := mesh.PBC_code()
-	cfg := make3DConf(N)
-	k_addUexchangePlus_async(U.DevPtr(X),
-		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
-		mold.DevPtr(X), mold.DevPtr(Y), mold.DevPtr(Z),
-		Msat.DevPtr(0), Msat.Mul(0),
-		unsafe.Pointer(Aex), regions.Ptr,
-		wx, wy, wz, N[X], N[Y], N[Z], pbc, cfg)
-}
-
 func AddLLBEnergyDensity(dst, m *data.Slice, Msat, Temp, Tcurie, mua MSlice) {
 	N := m.Len()
 	cfg := make1DConf(N)
@@ -80,4 +60,19 @@ func MCCalcdm(dst, m *data.Slice, Msat, Temp, Tcurie, mua MSlice, vol float32) {
 		mua.DevPtr(0), mua.Mul(0),
 		vol,
 		N, cfg)
+}
+
+func AddLLBExchangeEnergyDensity(dst, m *data.Slice, Aex SymmLUT, Msat MSlice, regions *Bytes, mesh *data.Mesh) {
+	c := mesh.CellSize()
+	wx := float32(2 / (c[X] * c[X]))
+	wy := float32(2 / (c[Y] * c[Y]))
+	wz := float32(2 / (c[Z] * c[Z]))
+	N := mesh.Size()
+	pbc := mesh.PBC_code()
+	cfg := make3DConf(N)
+	k_addLLBexchangeEnergyDensity_async(dst.DevPtr(X),
+		m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
+		Msat.DevPtr(0), Msat.Mul(0),
+		unsafe.Pointer(Aex), regions.Ptr,
+		wx, wy, wz, N[X], N[Y], N[Z], pbc, cfg)
 }

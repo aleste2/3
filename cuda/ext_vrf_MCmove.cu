@@ -24,15 +24,16 @@ mcmove(float* __restrict__ mnewx, float* __restrict__ mnewy, float* __restrict__
         return;
     }
     int I = idx(ix, iy, iz);
-    if ((mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I])==0){
+    float oldm=sqrt(mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I]);
+    if (oldm==0){
         return;
     }
     int change=((ix%2)^(iy%2))^(iz%2);
     if (change==iteration) {
-
-        float mx=mnewx[I]+delta*x[I];
-        float my=mnewy[I]+delta*y[I];
-        float mz=mnewz[I]+delta*z[I];
+        //delta=0;
+        float mx=mnewx[I]/oldm+delta*x[I];
+        float my=mnewy[I]/oldm+delta*y[I];
+        float mz=mnewz[I]/oldm+delta*z[I];
         float norm=sqrt(mx*mx+my*my+mz*mz);
         if (norm==0) {
             norm=1;
@@ -41,20 +42,29 @@ mcmove(float* __restrict__ mnewx, float* __restrict__ mnewy, float* __restrict__
             mz=mnewz[I];
         }
 
-        // LLB
-        if (norm0==0){
-            float oldm=sqrt(mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I]);
-            //float newm=(oldm+oldm*delta*(x[I]+y[I]+z[I]));
-            //float newm=oldm+0.01*(x[I]+y[I]+z[I]);
-            float newm=oldm*dmm[I];
-            if (newm>1) newm=1.0f;
-            if (newm<=0.0001) newm=0.0001;
-            norm=norm/newm;   
-        }
-
         mnewx[I]=mx/norm;
         mnewy[I]=my/norm;
         mnewz[I]=mz/norm;
+
+        // LLB
+        if (norm0==0){
+            //float oldm=sqrt(mnewx[I]*mnewx[I]+mnewy[I]*mnewy[I]+mnewz[I]*mnewz[I]);
+            //float newm=(oldm+oldm*delta*(x[I]+y[I]+z[I]));
+            //float newm=oldm+0.01*(x[I]+y[I]+z[I]);
+            float newm=oldm+dmm[I];
+            if (newm>1) newm=1.0f;
+            if (newm<=0.0001) newm=0.0001;  
+            mnewx[I]=mnewx[I]*newm;
+            mnewy[I]=mnewy[I]*newm;
+            mnewz[I]=mnewz[I]*newm;
+ 
+        }
+
+ //if (I==0) printf("%e %e %e %e %e %e %e\n",mnewx[I],mnewy[I],mnewz[I],mx,my,mz,norm);
+
+        //mnewx[I]=mx/norm;
+        //mnewy[I]=my/norm;
+        //mnewz[I]=mz/norm;
 
         }
 
